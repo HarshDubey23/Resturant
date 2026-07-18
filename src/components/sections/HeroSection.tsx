@@ -2,11 +2,8 @@
 
 import { ArrowRight, Bot, CookingPot, QrCode } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-interface HeroSectionProps {
-	onCtaClick: () => void;
-}
 
 const features = [
 	{ icon: QrCode, label: "QR Ordering" },
@@ -14,7 +11,7 @@ const features = [
 	{ icon: CookingPot, label: "Kitchen Display" },
 ];
 
-export default function HeroSection({ onCtaClick }: HeroSectionProps) {
+export default function HeroSection() {
 	return (
 		<section id="homepage" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
 			<div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background pointer-events-none" />
@@ -53,10 +50,12 @@ export default function HeroSection({ onCtaClick }: HeroSectionProps) {
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
 					className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-					<Button size="lg" onClick={onCtaClick}>
-						Get started
-						<ArrowRight className="ml-2 h-4 w-4" />
-					</Button>
+					<Link href="/signup">
+						<Button size="lg">
+							Get started
+							<ArrowRight className="ml-2 h-4 w-4" />
+						</Button>
+					</Link>
 					<Button variant="outline" size="lg" onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>
 						Learn more
 					</Button>

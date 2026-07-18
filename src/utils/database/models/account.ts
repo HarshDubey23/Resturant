@@ -15,6 +15,9 @@ const AccountSchema = new mongoose.Schema<TAccount>(
 		verified: { type: Boolean, default: false },
 		accountActive: { type: Boolean, default: true },
 		subscriptionActive: { type: Boolean, default: true },
+		plan: { type: String, enum: ["free", "pro", "enterprise"], default: "free" },
+		maxTables: { type: Number, default: 5 },
+		maxMenuItems: { type: Number, default: 20 },
 		profile: { type: mongoose.Schema.Types.ObjectId, ref: "profiles", unique: true },
 		kitchens: [{ type: mongoose.Schema.Types.ObjectId, ref: "kitchens", unique: true }],
 		tables: [{ type: mongoose.Schema.Types.ObjectId, ref: "tables", unique: true }],
@@ -35,6 +38,9 @@ export type TAccount = HydratedDocument<{
 	verified: boolean;
 	accountActive: boolean;
 	subscriptionActive: boolean;
+	plan: "free" | "pro" | "enterprise";
+	maxTables: number;
+	maxMenuItems: number;
 	profile: TProfile;
 	kitchens: Array<TKitchen>;
 	tables: Array<TTable>;

@@ -37,6 +37,9 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 								{item.label}
 							</button>
 						))}
+						<a href="/signup" className="text-sm font-medium text-primary hover:underline">
+							Get Started
+						</a>
 						<Button size="sm" onClick={onLoginClick}>
 							Sign In
 						</Button>
@@ -61,6 +64,9 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 							{item.label}
 						</button>
 					))}
+					<a href="/signup" className="text-lg font-medium text-primary">
+						Get Started
+					</a>
 					<Button size="lg" className="mt-4" onClick={onLoginClick}>
 						Sign In
 					</Button>

@@ -17,11 +17,11 @@ export default function PageContainer() {
 		<div>
 			<Navbar onLoginClick={scrollToLogin} />
 			<main>
-				<HeroSection onCtaClick={scrollToLogin} />
+				<HeroSection />
 				<FeaturesSection />
 				<AboutSection />
 				<LoginSection />
-				<CtaSection onCtaClick={scrollToLogin} />
+				<CtaSection />
 				<FooterSection />
 			</main>
 		</div>

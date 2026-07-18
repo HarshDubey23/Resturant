@@ -67,3 +67,14 @@ export const passwordCheckSchema = z.object({
 export const baseProfileSchema = z.object({
 	email: z.string().email(),
 });
+
+export const signupSchema = z.object({
+	email: z.string().email("Valid email is required"),
+	password: z.string().min(6, "Password must be at least 6 characters"),
+	restaurantName: z.string().min(1, "Restaurant name is required"),
+	restaurantID: z
+		.string()
+		.min(3, "Restaurant URL must be at least 3 characters")
+		.max(30, "Restaurant URL must be at most 30 characters")
+		.regex(/^[a-z0-9-]+$/, "Restaurant URL can only contain lowercase letters, numbers, and hyphens"),
+});

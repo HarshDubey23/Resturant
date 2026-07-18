@@ -2,13 +2,10 @@
 
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-interface CtaSectionProps {
-	onCtaClick: () => void;
-}
-
-export default function CtaSection({ onCtaClick }: CtaSectionProps) {
+export default function CtaSection() {
 	return (
 		<section className="relative py-24 sm:py-32">
 			<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
@@ -21,10 +18,12 @@ export default function CtaSection({ onCtaClick }: CtaSectionProps) {
 					<p className="mt-4 text-lg text-muted-foreground max-w-xl mx-auto">
 						Join the restaurants already using OrderWorder. Free to start, no commitment required.
 					</p>
-					<Button size="lg" className="mt-8" onClick={onCtaClick}>
-						Get started
-						<ArrowRight className="ml-2 h-4 w-4" />
-					</Button>
+					<Link href="/signup">
+						<Button size="lg" className="mt-8">
+							Get started
+							<ArrowRight className="ml-2 h-4 w-4" />
+						</Button>
+					</Link>
 				</motion.div>
 			</div>
 		</section>
