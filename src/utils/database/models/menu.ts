@@ -30,7 +30,10 @@ MenuSchema.pre("save", async function () {
 		if (account) accountCache.set(this.restaurantID, account);
 		else throw new Error(`The associated account with username '${this.restaurantID}'does not exist.`);
 	}
-	if (!account?.profile?.categories?.includes(this.category)) throw new Error("The menu item category does not exist.");
+	const validCategories = account?.profile?.categories;
+	if (validCategories?.length && !validCategories.includes(this.category)) {
+		throw new Error("The menu item category does not exist.");
+	}
 });
 MenuSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $addToSet: { menus: this._id } });

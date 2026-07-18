@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "xtreme-ui";
+
 
 export default function SignupPage() {
 	const [form, setForm] = useState({ email: "", password: "", restaurantName: "", restaurantID: "" });
@@ -111,9 +111,13 @@ export default function SignupPage() {
 
 					{error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>}
 
-					<Button type="submit" loading={loading} className="w-full">
-						Create Account
-					</Button>
+					<button
+						type="submit"
+						disabled={loading}
+						className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{loading ? "Creating..." : "Create Account"}
+					</button>
 				</form>
 
 				<p className="text-center text-sm text-gray-500 mt-6">

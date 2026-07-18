@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 	if (rateLimitResponse) return rateLimitResponse;
 
 	try {
-		const { restaurantID, name, price, category } = await req.json();
+		const { restaurantID, name, price, category, image } = await req.json();
 
 		if (!restaurantID || !name || !price || price <= 0) {
 			return Response.json({ message: "Invalid request. Name and price are required." }, { status: 400 });
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
 			restaurantID,
 			price,
 			category: category || "main",
+			image: image || "",
 			taxPercent: 0,
 			veg: "veg",
 			hidden: false,

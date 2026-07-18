@@ -3,7 +3,7 @@ import { signIn } from "next-auth/react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Button, Textfield } from "xtreme-ui";
+import { Textfield } from "xtreme-ui";
 
 import "./userLogin.scss";
 
@@ -116,7 +116,7 @@ const UserLogin = ({ setOpen }: UserLoginProps) => {
 				</div>
 			</div>
 			<div className="footer">
-				<Button label={buttonLabel} onClick={onNext} loading={busy} />
+				<button onClick={onNext} disabled={busy} className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50">{busy ? "Loading..." : buttonLabel}</button>
 			</div>
 		</div>
 	);

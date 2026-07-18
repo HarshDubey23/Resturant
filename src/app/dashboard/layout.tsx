@@ -12,10 +12,8 @@ export default async function RootLayout({ children }: IRootProps) {
 	const themeColor = await getThemeColor();
 	return (
 		<>
-			<head>
-				<script dangerouslySetInnerHTML={{ __html: themeController({ color: themeColor }) }} suppressHydrationWarning />
-			</head>
-			<body suppressHydrationWarning>{children}</body>
+			<script dangerouslySetInnerHTML={{ __html: themeController({ color: themeColor }) }} suppressHydrationWarning />
+			{children}
 		</>
 	);
 }

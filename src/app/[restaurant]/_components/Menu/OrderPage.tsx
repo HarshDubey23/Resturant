@@ -1,6 +1,6 @@
 import { signOut, useSession } from "next-auth/react";
 import { type SyntheticEvent, type UIEvent, useEffect, useMemo, useRef, useState } from "react";
-import { ActionCard, Button, Icon, Spinner } from "xtreme-ui";
+import { ActionCard, Icon, Spinner } from "xtreme-ui";
 
 import SearchButton from "#components/base/SearchButton";
 import SideSheet from "#components/base/SideSheet";
@@ -155,21 +155,23 @@ const OrderPage = () => {
 					<div className="options">
 						<SearchButton setSearchActive={setSearchActive} placeholder="Search menu" value={searchValue} setValue={setSearchValue} />
 						{(!session.data?.role || !showOrderButton) && (
-							<Button className="loginButton" label={showOrderButton ? "Order" : "Scan"} onClick={onLoginClick} />
+							<button className="loginButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={onLoginClick}>{showOrderButton ? "Order" : "Scan"}</button>
 						)}
 						{eligibleToOrder && (
-							<Button
-								icon="e43b"
-								iconType="solid"
-								label={`${selectedProducts?.length > 0 ? selectedProducts?.length : ""}`}
-								onClick={() => setSideSheetOpen(true)}
-							/>
+							<button className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => setSideSheetOpen(true)}>
+								<Icon code="e43b" type="solid" />
+								{selectedProducts?.length > 0 ? selectedProducts?.length : ""}
+							</button>
 						)}
 						{session.data?.role === "admin" && (
-							<Button className="dashboardButton" label="Dashboard" icon="e09f" iconType="solid" onClick={() => params.router.push("/dashboard")} />
+							<button className="dashboardButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => params.router.push("/dashboard")}>
+								<Icon code="e09f" type="solid" /> Dashboard
+							</button>
 						)}
 						{session.data?.role === "kitchen" && (
-							<Button className="kitchenButton" label="Kitchen" icon="e09f" iconType="solid" onClick={() => params.router.push("/kitchen")} />
+							<button className="kitchenButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => params.router.push("/kitchen")}>
+								<Icon code="e09f" type="solid" /> Kitchen
+							</button>
 						)}
 					</div>
 				</div>

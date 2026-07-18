@@ -13,8 +13,8 @@ export async function POST(req: Request) {
 	try {
 		const { restaurantID, count } = await req.json();
 
-		if (!restaurantID || !count || count < 1 || count > 5) {
-			return Response.json({ message: "Invalid request. Count must be between 1 and 5." }, { status: 400 });
+		if (!restaurantID || !count || count < 1) {
+			return Response.json({ message: "Invalid request. Count must be at least 1." }, { status: 400 });
 		}
 
 		await connectDB();
