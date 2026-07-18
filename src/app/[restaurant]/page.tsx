@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
 import { capitalize } from "lodash";
-import { Compass, UtensilsCrossed, Star, Phone, LogOut } from "lucide-react";
+import { Compass, LogOut, Phone, Star, UtensilsCrossed } from "lucide-react";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { ChatInterface } from "#components/chatbot/Chat";
 import { CustomerProvider } from "#components/context";
@@ -11,7 +12,6 @@ import { SITE_NAME, SITE_URL } from "#utils/seo/constants";
 import { buildMetadata } from "#utils/seo/metadata";
 
 import PageContainer from "./_components/PageContainer";
-
 
 const navItems = [
 	{ label: "explore", value: "explore", icon: <Compass className="h-5 w-5" /> },
@@ -38,6 +38,11 @@ export async function generateMetadata({ params }: IRestaurantProps): Promise<Me
 const Restaurant = async ({ params }: IRestaurantProps) => {
 	const { restaurant } = await params;
 	const profile = await getRestaurantProfile(restaurant);
+
+	if (!profile) {
+		notFound();
+	}
+
 	const name = profile?.name ?? capitalize(restaurant);
 
 	return (

@@ -121,7 +121,7 @@ export const authOptions: AuthOptions = {
 					token.user = {
 						role: user?.role,
 						themeColor: user?.themeColor,
-						...pick(user._doc, ["email", "accountActive", "subscriptionActive:", "username", "verified"]),
+						...pick(user._doc, ["email", "accountActive", "subscriptionActive", "username", "verified"]),
 					};
 				}
 			}

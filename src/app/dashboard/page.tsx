@@ -1,5 +1,5 @@
-import { ShoppingBag, Settings2 } from "lucide-react";
 import { capitalize } from "lodash";
+import { Settings2, ShoppingBag } from "lucide-react";
 
 import { DashboardProvider } from "#components/context";
 import NavSideBar from "#components/layout/NavSideBar";

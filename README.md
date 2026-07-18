@@ -15,11 +15,10 @@ Open http://localhost:3000
 
 ## Demo Data
 
-Visit `/api/refreshDemoData` to seed the database with demo restaurants (Empire & Starbucks).
+Visit `/api/refreshDemoData` to seed the database with demo restaurants.
 
 ### Admin Login (Homepage → Sign In)
-- **Empire**: email `admin@empire.com`, password `empire@123`
-- **Starbucks**: email `admin@starbucks.com`, password `starbucks@123`
+- Use the credentials printed in your terminal/server logs after seeding, or check the seed data at `src/app/api/refreshDemoData/_data/`.
 
 ### Customer Login
 Go to `/{restaurant}?table={id}` (e.g. `/empire?table=0`), enter name & phone.

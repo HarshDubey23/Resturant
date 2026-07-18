@@ -4,11 +4,22 @@ import { smartGenerateText } from "#utils/ai/switcher";
 import { getRestaurantData } from "#utils/database/helper/account";
 import type { TMenu } from "#utils/database/models/menu";
 import { authOptions } from "#utils/helper/authHelper";
+import { rateLimitMiddleware } from "#utils/helper/rateLimit";
+import { chatSchema } from "#utils/helper/validation";
 
 export async function POST(req: Request) {
 	try {
-		const { messages, restaurantId } = await req.json();
-		if (!restaurantId) return Response.json({ text: "Restaurant ID is required", toolResults: [] }, { status: 400 });
+		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+		const rateLimitResponse = rateLimitMiddleware(`chat:${ip}`, 20, 60000);
+		if (rateLimitResponse) return rateLimitResponse;
+
+		const body = await req.json();
+		const parsed = chatSchema.safeParse(body);
+		if (!parsed.success) {
+			return Response.json({ text: "Invalid request", toolResults: [], errors: parsed.error.flatten().fieldErrors }, { status: 400 });
+		}
+
+		const { messages, restaurantId } = parsed.data;
 
 		const session = await getServerSession(authOptions);
 		if (!session) return Response.json({ text: "Please login to chat with Jarvis", toolResults: [] }, { status: 401 });

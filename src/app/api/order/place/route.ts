@@ -6,6 +6,8 @@ import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { rateLimitMiddleware } from "#utils/helper/rateLimit";
+import { orderPlaceSchema } from "#utils/helper/validation";
 
 export async function POST(req: Request) {
 	try {
@@ -13,7 +15,13 @@ export async function POST(req: Request) {
 		const body = await req.json();
 
 		if (!session) throw { status: 401, message: "Authentication Required" };
-		if (!body?.products.length) throw { status: 400, message: "Can't place order on empty cart" };
+
+		const parsed = orderPlaceSchema.safeParse(body);
+		if (!parsed.success) throw { status: 400, message: parsed.error.flatten().fieldErrors?.products?.[0] ?? "Invalid request" };
+
+		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+		const rateLimitResponse = rateLimitMiddleware(`order:${ip}`, 5, 60000);
+		if (rateLimitResponse) return rateLimitResponse;
 
 		await connectDB();
 		const products: TProduct[] = await Promise.all(

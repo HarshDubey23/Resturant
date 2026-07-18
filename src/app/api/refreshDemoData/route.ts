@@ -5,9 +5,8 @@ import { Menus } from "#utils/database/models/menu";
 import { Profiles } from "#utils/database/models/profile";
 import { Tables } from "#utils/database/models/table";
 import { CatchNextResponse } from "#utils/helper/common";
-
+import brewpointData from "./_data/brewpoint/brewpoint";
 import empire from "./_data/empire/empire";
-import starbucks from "./_data/starbucks/starbucks";
 
 const deleteData = async (ids: string[]) => {
 	const start = performance.now();
@@ -57,14 +56,14 @@ export async function GET() {
 	await connectDB();
 	try {
 		const start = performance.now();
-		const deleteResult = await deleteData(["empire", "starbucks"]);
-		const [empireResult, starbucksResult] = await Promise.all([createData(empire), createData(starbucks)]);
+		const deleteResult = await deleteData(["empire", "brewpoint"]);
+		const [empireResult, brewpointResult] = await Promise.all([createData(empire), createData(brewpointData)]);
 
 		const res = {
 			totalProcessTime: (performance.now() - start) / 1000,
 			delete: deleteResult,
 			empire: empireResult,
-			starbucks: starbucksResult,
+			brewpoint: brewpointResult,
 		};
 		return new Response(JSON.stringify(res, null, 4));
 	} catch (err) {
