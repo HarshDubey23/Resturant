@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-
 export default function SignupPage() {
 	const [form, setForm] = useState({ email: "", password: "", restaurantName: "", restaurantID: "" });
 	const [error, setError] = useState("");
@@ -114,8 +113,7 @@ export default function SignupPage() {
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-					>
+						className="w-full bg-purple-600 text-white py-2.5 rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
 						{loading ? "Creating..." : "Create Account"}
 					</button>
 				</form>

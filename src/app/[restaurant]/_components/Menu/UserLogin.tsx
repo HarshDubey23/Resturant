@@ -116,7 +116,12 @@ const UserLogin = ({ setOpen }: UserLoginProps) => {
 				</div>
 			</div>
 			<div className="footer">
-				<button onClick={onNext} disabled={busy} className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50">{busy ? "Loading..." : buttonLabel}</button>
+				<button
+					onClick={onNext}
+					disabled={busy}
+					className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50">
+					{busy ? "Loading..." : buttonLabel}
+				</button>
 			</div>
 		</div>
 	);

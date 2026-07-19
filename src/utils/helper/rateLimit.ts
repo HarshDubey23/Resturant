@@ -1,25 +1,34 @@
-const store = new Map<string, { count: number; resetAt: number }>();
+import { getRedis } from "#utils/database/redis";
 
-export function rateLimit(key: string, maxRequests: number, windowMs: number): { ok: boolean; remaining: number; resetIn: number } {
-	const now = Date.now();
-	const entry = store.get(key);
+export async function rateLimit(key: string, maxRequests: number, windowMs: number): Promise<{ ok: boolean; remaining: number; resetIn: number }> {
+	try {
+		const redis = getRedis();
+		const now = Date.now();
+		const windowKey = `ratelimit:${key}`;
+		const windowStart = Math.floor(now / windowMs) * windowMs;
+		const countKey = `${windowKey}:${windowStart}`;
 
-	if (!entry || now > entry.resetAt) {
-		store.set(key, { count: 1, resetAt: now + windowMs });
+		const current = await redis.get<number>(countKey);
+		if (current === null) {
+			await redis.setex(countKey, Math.ceil(windowMs / 1000), 1);
+			return { ok: true, remaining: maxRequests - 1, resetIn: windowMs };
+		}
+
+		if (current >= maxRequests) {
+			const ttl = await redis.ttl(countKey);
+			return { ok: false, remaining: 0, resetIn: ttl > 0 ? ttl * 1000 : windowMs };
+		}
+
+		await redis.incr(countKey);
+		const ttl = await redis.ttl(countKey);
+		return { ok: true, remaining: maxRequests - (current + 1), resetIn: ttl > 0 ? ttl * 1000 : windowMs };
+	} catch {
 		return { ok: true, remaining: maxRequests - 1, resetIn: windowMs };
 	}
-
-	entry.count++;
-
-	if (entry.count > maxRequests) {
-		return { ok: false, remaining: 0, resetIn: entry.resetAt - now };
-	}
-
-	return { ok: true, remaining: maxRequests - entry.count, resetIn: entry.resetAt - now };
 }
 
-export function rateLimitMiddleware(key: string, maxRequests = 10, windowMs = 60000) {
-	const result = rateLimit(key, maxRequests, windowMs);
+export async function rateLimitMiddleware(key: string, maxRequests = 10, windowMs = 60000): Promise<Response | null> {
+	const result = await rateLimit(key, maxRequests, windowMs);
 	if (!result.ok) {
 		return Response.json(
 			{ message: "Too many requests. Please slow down." },

@@ -88,7 +88,12 @@ const CartPage = (props: TCartPageProps) => {
 						<p>Your order</p>
 						<p>will be accepted soon</p>
 					</div>
-					<button className="endOrder px-4 py-2.5 border border-red-300 rounded-lg text-red-700 hover:bg-red-50 transition disabled:opacity-50" disabled={cancelingOrder} onClick={onCancelOrder}>{cancelingOrder ? "Loading..." : "Cancel Order"}</button>
+					<button
+						className="endOrder px-4 py-2.5 border border-red-300 rounded-lg text-red-700 hover:bg-red-50 transition disabled:opacity-50"
+						disabled={cancelingOrder}
+						onClick={onCancelOrder}>
+						{cancelingOrder ? "Loading..." : "Cancel Order"}
+					</button>
 				</div>
 			</div>
 		);
@@ -139,13 +144,18 @@ const CartPage = (props: TCartPageProps) => {
 						</div>
 					)}
 					<div className="cartAction">
-						<button className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50" disabled={placingOrder} onClick={onOrderAction}>
+						<button
+							className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
+							disabled={placingOrder}
+							onClick={onOrderAction}>
 							<Icon code={bottomBarActive ? "f078" : props.selectedProducts.length > 0 ? "e1bc" : "f09d"} type="solid" />
-							{placingOrder ? "Loading..." : bottomBarActive
-								? "close"
-								: props.selectedProducts.length > 0
-									? `${selectionTotal} | ${order?.products?.length ? "Add to order" : "Place order"}`
-									: "Proceed to Pay"}
+							{placingOrder
+								? "Loading..."
+								: bottomBarActive
+									? "close"
+									: props.selectedProducts.length > 0
+										? `${selectionTotal} | ${order?.products?.length ? "Add to order" : "Place order"}`
+										: "Proceed to Pay"}
 						</button>
 					</div>
 				</div>

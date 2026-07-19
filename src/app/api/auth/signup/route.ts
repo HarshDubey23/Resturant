@@ -6,7 +6,7 @@ import { signupSchema } from "#utils/helper/validation";
 
 export async function POST(req: Request) {
 	const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-	const rateLimitResponse = rateLimitMiddleware(`signup:${ip}`, 5, 60000);
+	const rateLimitResponse = await rateLimitMiddleware(`signup:${ip}`, 5, 60000);
 	if (rateLimitResponse) return rateLimitResponse;
 
 	try {

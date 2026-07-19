@@ -1,28 +1,51 @@
 # OrderWorder
 
-A contactless restaurant ordering system with AI-powered dining assistance. Customers scan QR codes, browse menus, chat with an AI assistant, and place orders — all from their phone, no app download required.
+A multi-tenant restaurant SaaS platform with AI-powered dining assistance, voice ordering, AR menu, and real-time kitchen display. Customers scan QR codes, browse menus, chat with the AI assistant "Jarvis", order by tap or voice, and pay directly — all from their phone, no app install required.
 
 ## Features
 
-- **QR Code Ordering** — Each table has a unique QR code. Scan to view menu and order.
-- **AI Assistant** — Built-in AI (Jarvis) helps customers with menu recommendations and questions.
-- **Real-time Order Management** — Dashboard for managing incoming orders across tables.
-- **Kitchen Display** — Separate view for kitchen staff to track and fulfill orders.
-- **Admin Panel** — Manage menu items, tables, orders, and restaurant settings.
-- **Customer Login** — Phone-based authentication for returning customers.
-- **Responsive Design** — Works on mobile, tablet, and desktop.
+- **QR Code Ordering** — Gate + per-table QR codes with deep-linking. Sub-2s load on 2G.
+- **AI Assistant "Jarvis"** — Multi-provider AI (Groq → Cerebras → Gemini → SiliconFlow) with automatic failover. Recommends dishes, answers questions, takes orders.
+- **Voice Ordering** — Mic button on menu page → Groq Whisper STT → Llama 4 → structured cart → ElevenLabs TTS confirmation.
+- **3D/AR Menu** — View dishes in 3D/AR via WebXR/`<model-viewer>`. AI-assisted 3D model generation from photos.
+- **Real-time Order Management** — Dashboard with SSE push (not polling) for live order updates.
+- **Kitchen Display System** — Real-time KDS with station routing, timers, Start/Ready/Cancel.
+- **Payments** — Razorpay Route integration. Customer pays → settles directly to owner's bank account. OrderWorder takes 0.5% platform margin.
+- **Split Payments** — "Split with friends" generates per-person UPI deep-links.
+- **Loyalty & Rewards** — Points engine, tiers (Silver/Gold/Platinum), AI-personalized offers, birthday automation.
+- **Customer AI Memory** — Unified profile across channels: preferred language, spice tolerance, favorite dishes, allergens, last visit.
+- **WhatsApp Marketing** — Cloud API: receipts, feedback, abandoned-cart, weekly offers, birthday greetings, festival campaigns.
+- **Owner Analytics** — Live dashboard: revenue, orders, repeat rate, table turnover, top dishes, peak hours, AI commentary cards.
+- **Multi-Outlet + RBAC** — Owner, manager, captain, waiter, chef roles per outlet.
+- **Inventory & Recipe Costing** — Ingredient tracking, dish-level profitability, low-stock alerts.
+- **Offline-First PWA** — Service worker queues orders locally, syncs on reconnect.
+- **Unified Order Aggregator** — Zomato/Swiggy orders pulled into same KDS and dashboard.
+- **GST/Tally Export** — One-click GSTR-1 export and Tally XML sync.
 
 ## Tech Stack
 
-- **Framework:** Next.js 16 (Turbopack)
-- **Language:** TypeScript
-- **Database:** MongoDB with Mongoose
-- **Authentication:** NextAuth.js
-- **UI:** Tailwind CSS, shadcn/ui, XtremeUI
-- **Animation:** Motion
-- **PDF Generation:** React-PDF
-- **QR Codes:** qrcode
-- **AI SDK:** Vercel AI SDK
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (Turbopack), React 19 |
+| Language | TypeScript |
+| Styling | Tailwind CSS 4, shadcn/ui, XtremeUI, Motion |
+| Database | MongoDB Atlas with Mongoose 9 |
+| Cache/Queue | Upstash Redis (TTL-based) |
+| Real-time | Server-Sent Events (SSE) |
+| Auth | NextAuth.js (credentials) |
+| Payments | Razorpay Route + UPI Autodebit |
+| AI (text) | Groq + Cerebras + Gemini + SiliconFlow (per-tenant quota) |
+| AI (voice STT) | Groq Whisper Large v3 |
+| AI (voice TTS) | ElevenLabs Multilingual v2 |
+| AI (3D/AR) | Image-to-3D API + `<model-viewer>` (WebXR) |
+| WhatsApp | WhatsApp Cloud API |
+| Phone IVR | Twilio + Bolo.ai (Hindi) |
+| Object Storage | Cloudflare R2 |
+| Error Monitoring | Sentry |
+| CI/CD | GitHub Actions + Vercel |
+| Tests | Jest (unit) + Playwright (e2e) |
+| Linting | Biome |
+| Secrets | Doppler / .env |
 
 ## Getting Started
 
@@ -31,6 +54,7 @@ A contactless restaurant ordering system with AI-powered dining assistance. Cust
 - Node.js 18+
 - pnpm
 - MongoDB Atlas URI
+- (Optional) Upstash Redis URL
 
 ### Setup
 
@@ -43,69 +67,65 @@ cp .env.example .env.local
 # Edit .env.local with your MongoDB URI and other config
 
 # Start development server
-npm run play
+pnpm play
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open http://localhost:3000.
 
-### Environment Variables
+### Demo Data
 
-```env
-MONGODB_URI=mongodb+srv://...
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key
+```bash
+# Seed two demo restaurants (Empire & Starbucks / Brewpoint)
+curl http://localhost:3000/api/refreshDemoData
 ```
 
-See `.env.example` for all available options.
+Demo logins:
+- Admin: `admin@empire.com` / `empire@123`
+- Admin: `admin@starbucks.com` / `starbucks@123`
+- Customer: `/{restaurant}?table={id}` (e.g. `/empire?table=0`)
 
 ## Project Structure
 
 ```
 src/
-├── app/                    # Next.js App Router pages & API routes
-│   ├── [restaurant]/       # Restaurant menu pages (dynamic route)
-│   ├── api/                # API routes
-│   │   ├── auth/           # Authentication & setup
-│   │   ├── admin/          # Admin dashboard APIs
-│   │   ├── order/          # Order management APIs
-│   │   ├── menu/           # Menu management APIs
-│   │   ├── baseProfile/    # Profile lookup
-│   │   └── chat/           # AI chat API
-│   ├── dashboard/          # Admin dashboard
-│   ├── kitchen/            # Kitchen display
-│   ├── setup/              # Restaurant setup flow
-│   ├── signup/             # Account creation
-│   └── scan/               # QR scanner page
-├── components/             # Shared components
-│   ├── ui/                 # shadcn/ui primitives
-│   ├── layout/             # Layout components
-│   ├── sections/           # Landing page sections
-│   └── context/            # React context providers
+├── app/                        # Next.js App Router
+│   ├── [restaurant]/           # Dynamic restaurant pages
+│   ├── api/                    # API routes
+│   │   ├── auth/               # Auth & setup
+│   │   ├── admin/              # Admin dashboard API
+│   │   ├── order/              # Order management
+│   │   ├── menu/               # Menu management
+│   │   ├── chat/               # AI chat API
+│   │   └── refreshDemoData/    # Demo data seeder
+│   ├── dashboard/              # Owner dashboard
+│   ├── kitchen/                # Kitchen Display System
+│   └── ...                     # Setup, signup, scan, etc.
+├── components/                 # Shared components
+│   ├── ui/                     # UI primitives
+│   ├── layout/                 # Layout components
+│   ├── sections/               # Marketing sections
+│   └── context/                # React context providers
 └── utils/
-    ├── database/           # MongoDB models & connection
-    │   ├── models/         # Mongoose schemas
-    │   └── helper/         # Database helpers
-    ├── constants/          # Shared constants
-    └── helper/             # Utility functions
+    ├── database/               # Models, connection, helpers
+    ├── ai/                     # AI provider switcher & prompts
+    ├── helper/                 # Auth, validation, rate limiting
+    ├── hooks/                  # Custom React hooks
+    └── constants/              # App constants
 ```
 
-## Usage
+## Deployment
 
-### For Restaurant Owners
+- Production domain with Cloudflare DNS
+- Environment variables separated for dev/staging/prod (`.env.example` documented)
+- Automated deploy on merge to `main` via GitHub Actions + Vercel
+- Health-check endpoint + uptime monitoring
+- MongoDB daily automated snapshots
+- Written rollback procedure (previous Vercel deploy + Mongo snapshot)
 
-1. Sign up at `/signup` to create your restaurant account
-2. Follow the setup flow to create tables, add menu items, and generate QR codes
-3. Print QR codes and place them on tables
-4. Manage orders from the dashboard at `/dashboard`
-5. Kitchen staff can view orders at `/kitchen`
+## Contributing
 
-### For Customers
-
-1. Scan the QR code on your table
-2. Browse the menu and chat with the AI assistant
-3. Add items to cart and place your order
-4. The kitchen receives your order in real-time
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).

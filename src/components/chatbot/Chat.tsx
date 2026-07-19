@@ -11,6 +11,7 @@ import { useResize } from "../../utils/hooks/useResize";
 import { useOrder, useRestaurant } from "../context/useContext";
 import { ChatFab } from "./ChatFab";
 import { MessageList } from "./MessageList";
+import { VoiceButton } from "./VoiceButton";
 import { Welcome } from "./Welcome";
 
 export const ChatInterface = () => {
@@ -62,9 +63,19 @@ export const ChatInterface = () => {
 						<MessageList messages={messages} isLoading={isLoading} bottomRef={messagesEndRef} onResizeStart={handleResizeStart} />
 						<div className="border-t p-3 shrink-0">
 							<div className="flex items-center gap-2">
+								<VoiceButton
+									onTranscript={(text) => {
+										setInput(text);
+										if (text.trim()) {
+											sendMessage(text);
+											setInput("");
+										}
+									}}
+									disabled={isLoading}
+								/>
 								<Input
 									value={input}
-									placeholder="Ask me anything"
+									placeholder="Ask me anything or use the mic"
 									className="flex-1"
 									onChange={(e) => setInput(e.target.value)}
 									onKeyDown={(e) => {

@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
-
 type Table = { name: string; qr: string };
 
 export default function SetupPage() {
@@ -157,12 +156,11 @@ export default function SetupPage() {
 								className="w-24 px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
 							/>
 							<button
-									onClick={generateTables}
-									disabled={loading}
-									className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
-								>
-									{loading ? "Creating..." : "Create Tables"}
-								</button>
+								onClick={generateTables}
+								disabled={loading}
+								className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50">
+								{loading ? "Creating..." : "Create Tables"}
+							</button>
 						</div>
 
 						{error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{error}</div>}
@@ -170,7 +168,9 @@ export default function SetupPage() {
 						{tables.length > 0 && (
 							<div className="mt-4 p-4 bg-green-50 rounded-lg">
 								<p className="text-green-700 font-medium">{tables.length} tables created successfully!</p>
-								<button className="mt-3 px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => setStep("menu")}>
+								<button
+									className="mt-3 px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+									onClick={() => setStep("menu")}>
 									Next: Add Menu Items
 								</button>
 							</div>
@@ -223,17 +223,14 @@ export default function SetupPage() {
 									onChange={handleMenuImage}
 									className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
 								/>
-								{menuImagePreview && (
-									<img src={menuImagePreview} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border" />
-								)}
+								{menuImagePreview && <img src={menuImagePreview} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border" />}
 							</div>
 							<button
-									onClick={addMenuItem}
-									disabled={loading}
-									className="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
-								>
-									{loading ? "Adding..." : "Add Item"}
-								</button>
+								onClick={addMenuItem}
+								disabled={loading}
+								className="w-full px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50">
+								{loading ? "Adding..." : "Add Item"}
+							</button>
 						</div>
 
 						{menuItems.length > 0 && (
@@ -254,7 +251,9 @@ export default function SetupPage() {
 						)}
 
 						<div className="mt-4 flex gap-3">
-							<button onClick={() => setStep("qr")} className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+							<button
+								onClick={() => setStep("qr")}
+								className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
 								{menuItems.length > 0 ? "Next: Generate QR Codes" : "Skip to QR Codes"}
 							</button>
 						</div>
@@ -279,10 +278,14 @@ export default function SetupPage() {
 						</div>
 
 						<div className="no-print flex gap-3">
-							<button onClick={() => window.print()} className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+							<button
+								onClick={() => window.print()}
+								className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
 								Print QR Sheet
 							</button>
-							<button onClick={() => router.push("/dashboard")} className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
+							<button
+								onClick={() => router.push("/dashboard")}
+								className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition">
 								Go to Dashboard
 							</button>
 						</div>

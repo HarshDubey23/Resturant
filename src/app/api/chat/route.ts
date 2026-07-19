@@ -1,7 +1,9 @@
 import { getServerSession } from "next-auth";
 import { getSystemPrompt } from "#utils/ai/prompt";
 import { smartGenerateText } from "#utils/ai/switcher";
+import connectDB from "#utils/database/connect";
 import { getRestaurantData } from "#utils/database/helper/account";
+import { Loyalties } from "#utils/database/models/loyalty";
 import type { TMenu } from "#utils/database/models/menu";
 import { authOptions } from "#utils/helper/authHelper";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
@@ -10,7 +12,7 @@ import { chatSchema } from "#utils/helper/validation";
 export async function POST(req: Request) {
 	try {
 		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-		const rateLimitResponse = rateLimitMiddleware(`chat:${ip}`, 20, 60000);
+		const rateLimitResponse = await rateLimitMiddleware(`chat:${ip}`, 20, 60000);
 		if (rateLimitResponse) return rateLimitResponse;
 
 		const body = await req.json();
@@ -32,8 +34,37 @@ export async function POST(req: Request) {
 		const items: TMenu[] = account?.menus || [];
 		const menuMap = new Map(items.map((i) => [i.name.toLowerCase(), i]));
 
-		const result = await smartGenerateText({
-			system: getSystemPrompt(name, items, session?.customer?.fname),
+		let memory = null;
+		try {
+			await connectDB();
+			const customerId = session?.customer?._id;
+			if (restaurantId && customerId) {
+				const loyalty = await Loyalties.findOne({ restaurantID: restaurantId, customer: customerId })
+					.populate("preferences.favoriteDishes")
+					.lean();
+				if (loyalty) {
+					memory = {
+						isReturning: (loyalty.visitCount || 0) > 1,
+						visitCount: loyalty.visitCount || 0,
+						tier: loyalty.tier || "silver",
+						totalPoints: loyalty.points || 0,
+						preferences: {
+							language: loyalty.preferences?.language,
+							spiceTolerance: loyalty.preferences?.spiceTolerance,
+							allergens: loyalty.preferences?.allergens,
+							favoriteDishes: loyalty.preferences?.favoriteDishes as Array<{ name: string }> | undefined,
+							notes: loyalty.preferences?.notes,
+						},
+						birthday: loyalty.birthday?.toISOString(),
+					};
+				}
+			}
+		} catch {
+			console.log("Failed to load customer memory");
+		}
+
+		const result = await smartGenerateText(restaurantId, {
+			system: getSystemPrompt(name, items, session?.customer?.fname, memory),
 			messages,
 		});
 

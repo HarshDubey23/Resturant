@@ -4,12 +4,16 @@ import type { TCustomer } from "./customer";
 import type { TMenu } from "./menu";
 
 const orderState = ["active", "reject", "cancel", "complete"] as const;
+const paymentStatus = ["pending", "paid", "failed", "refunded", "partially_refunded"] as const;
+
 const OrderSchema = new mongoose.Schema<TOrder>(
 	{
 		restaurantID: { type: String, trim: true, lowercase: true, required: true },
 		table: { type: String, trim: true, lowercase: true, required: true },
 		customer: { type: mongoose.Schema.Types.ObjectId, ref: "customers" },
 		state: { type: String, trim: true, lowercase: true, enum: orderState, default: "active" },
+		paymentStatus: { type: String, trim: true, lowercase: true, enum: paymentStatus, default: "pending" },
+		paymentId: { type: String, trim: true },
 		orderTotal: { type: Number },
 		taxTotal: { type: Number },
 		products: [
@@ -20,6 +24,8 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 				tax: { type: Number, required: true },
 				adminApproved: { type: Boolean, default: false },
 				fulfilled: { type: Boolean, default: false },
+				kitchenStatus: { type: String, enum: ["pending", "preparing", "ready", "served"], default: "pending" },
+				station: { type: String, default: "main" },
 			},
 		],
 	},
@@ -41,6 +47,8 @@ export type TOrder = HydratedDocument<{
 	table: string;
 	customer: TCustomer;
 	state: (typeof orderState)[number];
+	paymentStatus: (typeof paymentStatus)[number];
+	paymentId: string;
 	orderTotal: number;
 	taxTotal: number;
 	products: Array<TProduct>;
@@ -54,4 +62,6 @@ export type TProduct = TMenu & {
 	tax: number;
 	fulfilled: boolean;
 	adminApproved: boolean;
+	kitchenStatus: "pending" | "preparing" | "ready" | "served";
+	station: string;
 };

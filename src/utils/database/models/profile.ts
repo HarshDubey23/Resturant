@@ -1,9 +1,7 @@
 import mongoose, { type HydratedDocument } from "mongoose";
 import type { TThemeColor } from "xtreme-ui";
 
-import { Accounts, type TAccount } from "./account";
-
-const accountCache = new Map<string, TAccount | null>();
+import { Accounts } from "./account";
 
 const ProfileSchema = new mongoose.Schema<TProfile>(
 	{
@@ -26,12 +24,8 @@ const ProfileSchema = new mongoose.Schema<TProfile>(
 );
 
 ProfileSchema.pre("save", async function () {
-	let account = accountCache.get(this.restaurantID);
-	if (!account) {
-		account = await Accounts.findOne<TAccount>({ username: this.restaurantID });
-		if (account) accountCache.set(this.restaurantID, account);
-		else throw new Error(`The associated account with username '${this.restaurantID}'does not exist.`);
-	}
+	const account = await Accounts.findOne({ username: this.restaurantID });
+	if (!account) throw new Error(`The associated account with username '${this.restaurantID}'does not exist.`);
 
 	this.categories = Array.from(new Set(this.categories));
 });

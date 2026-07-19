@@ -8,6 +8,7 @@ const CustomerSchema = new mongoose.Schema<TCustomer>(
 		phone: { type: String, trim: true, unique: true, required: true, sparse: true, index: { unique: true } },
 		email: { type: String, trim: true, unique: true, sparse: true, index: { unique: true } },
 		gender: { type: String, trim: true, lowercase: true, enum: gender },
+		whatsappOptIn: { type: Boolean, default: false },
 	},
 	{ timestamps: true },
 );
@@ -19,4 +20,5 @@ export type TCustomer = HydratedDocument<{
 	gender: (typeof gender)[number];
 	phone: string;
 	email: string;
+	whatsappOptIn: boolean;
 }>;

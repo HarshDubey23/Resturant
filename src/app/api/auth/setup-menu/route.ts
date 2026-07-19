@@ -5,7 +5,7 @@ import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
 export async function POST(req: Request) {
 	const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-	const rateLimitResponse = rateLimitMiddleware(`setup-menu:${ip}`, 30, 60000);
+	const rateLimitResponse = await rateLimitMiddleware(`setup-menu:${ip}`, 30, 60000);
 	if (rateLimitResponse) return rateLimitResponse;
 
 	try {

@@ -1,5 +1,5 @@
 import { capitalize } from "lodash";
-import { Settings2, ShoppingBag } from "lucide-react";
+import { Award, BarChart3, Megaphone, Settings2, ShoppingBag } from "lucide-react";
 
 import { DashboardProvider } from "#components/context";
 import NavSideBar from "#components/layout/NavSideBar";
@@ -8,6 +8,9 @@ import PageContainer from "./_components/PageContainer";
 
 const navItems = [
 	{ label: "orders", icon: <ShoppingBag className="h-5 w-5" />, value: "orders" },
+	{ label: "analytics", icon: <BarChart3 className="h-5 w-5" />, value: "analytics" },
+	{ label: "campaigns", icon: <Megaphone className="h-5 w-5" />, value: "campaigns" },
+	{ label: "loyalty", icon: <Award className="h-5 w-5" />, value: "loyalty" },
 	{ label: "settings", icon: <Settings2 className="h-5 w-5" />, value: "settings" },
 ];
 

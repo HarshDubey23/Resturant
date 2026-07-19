@@ -4,6 +4,9 @@ import { useSession } from "next-auth/react";
 import { type UIEvent, useEffect, useState } from "react";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 import NavTopBar from "./Orders/NavTopBar";
+import Analytics from "./Analytics/Analytics";
+import Campaigns from "./Campaigns/Campaigns";
+import Loyalty from "./Loyalty/Loyalty";
 import Orders from "./Orders/Orders";
 import Settings from "./Settings/Settings";
 
@@ -39,6 +42,9 @@ export default function PageContainer() {
 			<div className="flex-1 overflow-auto" onScroll={onScroll}>
 				<div className="p-4 sm:p-6">
 					{tab === "orders" && <Orders onScroll={onScroll} />}
+					{tab === "analytics" && <Analytics />}
+					{tab === "campaigns" && <Campaigns />}
+					{tab === "loyalty" && <Loyalty />}
 					{tab === "settings" && <Settings onScroll={onScroll} />}
 				</div>
 			</div>

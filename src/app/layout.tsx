@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { GlobalProvider } from "#components/context";
 import { inter, montserrat } from "#utils/helper/fontHelper";
+import PWARegister from "#components/base/PWARegister";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL } from "#utils/seo/constants";
 import "./tailwind.css";
 import "./globals.scss";
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: IRootProps) {
 		<html lang="en" className={`${inter.variable} ${montserrat.variable}`} suppressHydrationWarning>
 			<body>
 				<GlobalProvider>{children}</GlobalProvider>
+				<PWARegister />
 			</body>
 		</html>
 	);

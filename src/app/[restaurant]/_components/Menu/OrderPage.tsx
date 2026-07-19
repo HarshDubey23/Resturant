@@ -155,21 +155,31 @@ const OrderPage = () => {
 					<div className="options">
 						<SearchButton setSearchActive={setSearchActive} placeholder="Search menu" value={searchValue} setValue={setSearchValue} />
 						{(!session.data?.role || !showOrderButton) && (
-							<button className="loginButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={onLoginClick}>{showOrderButton ? "Order" : "Scan"}</button>
+							<button
+								className="loginButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+								onClick={onLoginClick}>
+								{showOrderButton ? "Order" : "Scan"}
+							</button>
 						)}
 						{eligibleToOrder && (
-							<button className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => setSideSheetOpen(true)}>
+							<button
+								className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+								onClick={() => setSideSheetOpen(true)}>
 								<Icon code="e43b" type="solid" />
 								{selectedProducts?.length > 0 ? selectedProducts?.length : ""}
 							</button>
 						)}
 						{session.data?.role === "admin" && (
-							<button className="dashboardButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => params.router.push("/dashboard")}>
+							<button
+								className="dashboardButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+								onClick={() => params.router.push("/dashboard")}>
 								<Icon code="e09f" type="solid" /> Dashboard
 							</button>
 						)}
 						{session.data?.role === "kitchen" && (
-							<button className="kitchenButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition" onClick={() => params.router.push("/kitchen")}>
+							<button
+								className="kitchenButton px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+								onClick={() => params.router.push("/kitchen")}>
 								<Icon code="e09f" type="solid" /> Kitchen
 							</button>
 						)}

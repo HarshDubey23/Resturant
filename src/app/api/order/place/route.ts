@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
+import { Loyalties, computeTier } from "#utils/database/models/loyalty";
 import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
 		if (!parsed.success) throw { status: 400, message: parsed.error.flatten().fieldErrors?.products?.[0] ?? "Invalid request" };
 
 		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-		const rateLimitResponse = rateLimitMiddleware(`order:${ip}`, 5, 60000);
+		const rateLimitResponse = await rateLimitMiddleware(`order:${ip}`, 5, 60000);
 		if (rateLimitResponse) return rateLimitResponse;
 
 		await connectDB();
@@ -52,6 +53,23 @@ export async function POST(req: Request) {
 
 		const newOrder = new Orders({ restaurantID, table, customer, products: products });
 		await newOrder.save();
+
+		if (customer) {
+			try {
+				let loyalty = await Loyalties.findOne({ restaurantID, customer });
+				if (!loyalty) loyalty = await Loyalties.create({ restaurantID, customer });
+				const points = Math.floor((newOrder.orderTotal || 0) / 10);
+				loyalty.points += points;
+				loyalty.lifetimePoints += points;
+				loyalty.lastVisit = new Date();
+				loyalty.visitCount += 1;
+				const newTier = computeTier(loyalty.lifetimePoints);
+				if (newTier !== loyalty.tier) loyalty.tier = newTier;
+				await loyalty.save();
+			} catch {
+				console.log("Failed to award loyalty points");
+			}
+		}
 
 		return NextResponse.json({ status: 200, message: "Order placed successfully" });
 	} catch (err) {
