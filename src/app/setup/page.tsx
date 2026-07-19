@@ -216,14 +216,20 @@ export default function SetupPage() {
 								/>
 							</div>
 							<div>
-								<label className="block text-sm text-gray-500 mb-1">Photo (optional)</label>
+								<label htmlFor="menu-photo" className="block text-sm text-gray-500 mb-1">
+									Photo (optional)
+								</label>
 								<input
+									id="menu-photo"
 									type="file"
 									accept="image/*"
 									onChange={handleMenuImage}
 									className="w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
 								/>
-								{menuImagePreview && <img src={menuImagePreview} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border" />}
+								{menuImagePreview && (
+									// biome-ignore lint/performance/noImgElement: dynamic blob URL from file upload
+									<img src={menuImagePreview} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border" />
+								)}
 							</div>
 							<button
 								onClick={addMenuItem}
@@ -239,7 +245,10 @@ export default function SetupPage() {
 								<div className="space-y-2 max-h-48 overflow-y-auto">
 									{menuItems.map((item, i) => (
 										<div key={i} className="flex items-center gap-3 bg-gray-50 p-2 rounded text-sm">
-											{item.image && <img src={item.image} alt="" className="w-10 h-10 object-cover rounded" />}
+											{item.image && (
+												// biome-ignore lint/performance/noImgElement: dynamic preview image
+												<img src={item.image} alt="" className="w-10 h-10 object-cover rounded" />
+											)}
 											<span className="flex-1">{item.name}</span>
 											<span className="text-gray-500">
 												${item.price} — {item.category}
@@ -270,6 +279,7 @@ export default function SetupPage() {
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
 								{tables.map((table) => (
 									<div key={table.name} className="border rounded-lg p-4 text-center">
+										{/* biome-ignore lint/performance/noImgElement: QR code from API response */}
 										<img src={table.qr} alt={`Table ${table.name}`} className="w-full aspect-square mx-auto mb-2" />
 										<p className="text-sm font-medium text-gray-700">Table {table.name}</p>
 									</div>

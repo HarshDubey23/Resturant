@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: shadcn pattern
 		<div
 			data-slot="input-group"
 			role="group"
@@ -40,6 +41,7 @@ const inputGroupAddonVariants = cva(
 
 function InputGroupAddon({ className, align = "inline-start", ...props }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: shadcn pattern
 		<div
 			role="group"
 			data-slot="input-group-addon"
