@@ -39,9 +39,7 @@ export async function POST(req: Request) {
 			await connectDB();
 			const customerId = session?.customer?._id;
 			if (restaurantId && customerId) {
-				const loyalty = await Loyalties.findOne({ restaurantID: restaurantId, customer: customerId })
-					.populate("preferences.favoriteDishes")
-					.lean();
+				const loyalty = await Loyalties.findOne({ restaurantID: restaurantId, customer: customerId }).populate("preferences.favoriteDishes").lean();
 				if (loyalty) {
 					memory = {
 						isReturning: (loyalty.visitCount || 0) > 1,

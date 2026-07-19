@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
-import { Loyalties, type TLoyalty, computeTier } from "#utils/database/models/loyalty";
+import { computeTier, Loyalties } from "#utils/database/models/loyalty";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 

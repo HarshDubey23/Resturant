@@ -84,8 +84,6 @@ export async function sendWhatsAppText(to: string, text: string) {
 }
 
 export async function sendWhatsAppOrderReceipt(to: string, order: { table: string; items: string; total: number; points: number }) {
-	const { phoneNumberId, token } = getConfig();
-
 	const body = `Thank you for ordering at Table ${order.table}!
 
 Your Order:

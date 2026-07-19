@@ -24,7 +24,7 @@ const STATION_COLORS: Record<string, string> = {
 const TIMER_COLORS = ["text-green-600", "text-yellow-600", "text-orange-600", "text-red-600"];
 
 export default function KitchenPage() {
-	const { data: session, status } = useSession();
+	const { status } = useSession();
 	const [orders, setOrders] = useState<KitchenOrder[]>([]);
 	const [stations, setStations] = useState<Set<string>>(new Set(["main"]));
 	const [activeStation, setActiveStation] = useState<string>("all");
@@ -151,7 +151,7 @@ export default function KitchenPage() {
 			<main className="p-4 sm:p-6">
 				{filteredOrders.length === 0 && (
 					<div className="flex flex-col items-center justify-center py-20 text-gray-500">
-						<svg className="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<svg className="h-16 w-16 mb-4 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
 							<path
 								strokeLinecap="round"
 								strokeLinejoin="round"

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import PWARegister from "#components/base/PWARegister";
 import { GlobalProvider } from "#components/context";
 import { inter, montserrat } from "#utils/helper/fontHelper";
-import PWARegister from "#components/base/PWARegister";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL } from "#utils/seo/constants";
 import "./tailwind.css";
 import "./globals.scss";

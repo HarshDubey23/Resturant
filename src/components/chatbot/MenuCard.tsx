@@ -32,7 +32,7 @@ export function MenuCard({ item }: MenuCardProps) {
 			<div className="min-w-0 flex-1">
 				<h4 className="text-sm font-medium truncate">{item.name}</h4>
 				<p className="flex items-center gap-1 text-xs text-muted-foreground">
-					{VegIcon && <VegIcon className={cn("h-3 w-3", VEG_ICONS[item.veg!]?.className)} />}
+					{VegIcon && <VegIcon className={cn("h-3 w-3", VEG_ICONS[item.veg || "veg"]?.className)} />}
 					<span>₹{item.price}</span>
 				</p>
 			</div>

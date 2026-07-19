@@ -1,19 +1,17 @@
 "use client";
 
-import { Loader2, Mic, MicOff, Volume2 } from "lucide-react";
+import { Loader2, Mic, MicOff } from "lucide-react";
 import { memo, useCallback, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { useVoiceRecorder } from "#utils/hooks/useVoiceRecorder";
+import { Button } from "@/components/ui/button";
 
 interface VoiceButtonProps {
 	onTranscript: (text: string) => void;
 	disabled?: boolean;
-	lang?: "hi" | "en" | "hi-en";
 }
 
-export const VoiceButton = memo(({ onTranscript, disabled, lang }: VoiceButtonProps) => {
-	const { isRecording, isProcessing, error, audioLevel, startRecording, stopRecording, cancelRecording, supported } =
-		useVoiceRecorder();
+export const VoiceButton = memo(({ onTranscript, disabled }: VoiceButtonProps) => {
+	const { isRecording, isProcessing, error, audioLevel, startRecording, stopRecording } = useVoiceRecorder();
 	const [showError, setShowError] = useState(false);
 
 	useEffect(() => {
@@ -56,35 +54,12 @@ export const VoiceButton = memo(({ onTranscript, disabled, lang }: VoiceButtonPr
 				variant={isRecording ? "destructive" : "ghost"}
 				disabled={disabled || isProcessing}
 				onClick={handleClick}
-				title={
-					showError
-						? error || ""
-						: isRecording
-							? "Tap to stop recording"
-							: error
-								? error
-								: `Voice order${lang === "hi" ? " (हिंदी)" : ""}`
-				}
-				className="h-9 w-9 shrink-0 relative z-10"
-			>
-				{isProcessing ? (
-					<Loader2 className="h-4 w-4 animate-spin" />
-				) : isRecording ? (
-					<MicOff className="h-4 w-4 animate-pulse" />
-				) : (
-					<Mic className="h-4 w-4" />
-				)}
+				title={showError ? error || "" : isRecording ? "Tap to stop recording" : error ? error : "Voice order"}
+				className="h-9 w-9 shrink-0 relative z-10">
+				{isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : isRecording ? <MicOff className="h-4 w-4 animate-pulse" /> : <Mic className="h-4 w-4" />}
 			</Button>
-			{isRecording && (
-				<span className="ml-1.5 text-[10px] text-red-500 font-mono w-6 tabular-nums">
-					{level}%
-				</span>
-			)}
-			{showError && !isRecording && error && (
-				<span className="ml-1.5 text-[10px] text-destructive max-w-24 truncate">
-					{error}
-				</span>
-			)}
+			{isRecording && <span className="ml-1.5 text-[10px] text-red-500 font-mono w-6 tabular-nums">{level}%</span>}
+			{showError && !isRecording && error && <span className="ml-1.5 text-[10px] text-destructive max-w-24 truncate">{error}</span>}
 		</div>
 	);
 });

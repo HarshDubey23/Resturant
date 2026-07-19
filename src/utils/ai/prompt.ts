@@ -27,7 +27,7 @@ function formatMemory(memory: CustomerMemory | null): string {
 }
 
 export const getSystemPrompt = (restaurant: string, items: TMenu[], userName?: string, memory?: CustomerMemory | null) => {
-	const memoryStr = memory && memory.isReturning ? `\nCUSTOMER MEMORY: ${formatMemory(memory)}` : "";
+	const memoryStr = memory?.isReturning ? `\nCUSTOMER MEMORY: ${formatMemory(memory)}` : "";
 
 	return `
 <SYSTEM_DIRECTIVES>

@@ -2,7 +2,6 @@
 
 import { Check, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useAdmin } from "#components/context/useContext";
 import type { TOrder } from "#utils/database/models/order";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

@@ -1,17 +1,16 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { type UIEvent, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import MenuEditorItem from "./MenuEditorItem";
 
 export default function MenuEditor() {
 	const { profile, menus, profileLoading, profileMutate } = useAdmin();
-	const [modalState, setModalState] = useState("");
+	const [_modalState, setModalState] = useState("");
 	const [_editItem, setEditItem] = useState<TMenu>();
 	const [hideSettingsLoading, setHideSettingsLoading] = useState<string[]>([]);
 	const [category, setCategory] = useState(0);

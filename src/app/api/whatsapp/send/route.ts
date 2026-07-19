@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
-import { Customers } from "#utils/database/models/customer";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
-import { sendWhatsAppOrderReceipt, sendWhatsAppOrderReady, sendWhatsAppText } from "#utils/whatsapp";
+import { sendWhatsAppOrderReady, sendWhatsAppOrderReceipt, sendWhatsAppText } from "#utils/whatsapp";
 
 export async function POST(req: Request) {
 	try {

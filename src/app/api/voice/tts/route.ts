@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { CatchNextResponse } from "#utils/helper/common";
 
-const ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
+const _ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
 
 export async function POST(req: Request) {
 	try {

@@ -7,7 +7,7 @@ const PROVIDERS = [
 ];
 
 const RECORDING_TOO_SHORT = "Recording too short. Please speak again.";
-const NO_SPEECH_DETECTED = "No speech detected. Please try again.";
+const _NO_SPEECH_DETECTED = "No speech detected. Please try again.";
 const SERVICE_UNAVAILABLE = "Voice service unavailable. Please type your order.";
 
 async function tryProvider(provider: { keyEnv: string; url: string; model: string }, audio: Blob, signal?: AbortSignal): Promise<string | null> {

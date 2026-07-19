@@ -3,7 +3,6 @@
 import { Search } from "lucide-react";
 import { useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 
 interface TSearchButton {
 	placeholder: string;

@@ -65,12 +65,7 @@ export interface RazorpayPayment {
 	created_at: number;
 }
 
-export async function createRazorpayOrder(params: {
-	amount: number;
-	currency?: string;
-	receipt: string;
-	notes?: Record<string, string>;
-}): Promise<RazorpayOrder> {
+export async function createRazorpayOrder(params: { amount: number; currency?: string; receipt: string; notes?: Record<string, string> }): Promise<RazorpayOrder> {
 	const platformFee = Math.round(params.amount * (PLATFORM_FEE_PERCENT / 100));
 	return razorpayFetch("/orders", {
 		method: "POST",
@@ -91,10 +86,7 @@ export async function verifyPaymentSignature(orderId: string, paymentId: string,
 	const secret = process.env.RAZORPAY_KEY_SECRET;
 	if (!secret) return false;
 
-	const expected = crypto
-		.createHmac("sha256", secret)
-		.update(`${orderId}|${paymentId}`)
-		.digest("hex");
+	const expected = crypto.createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
 
 	return expected === signature;
 }
@@ -135,11 +127,7 @@ export async function createPaymentLink(params: {
 	});
 }
 
-export async function createRecurringSubscription(params: {
-	customerId: string;
-	planId: string;
-	totalCount: number;
-}): Promise<unknown> {
+export async function createRecurringSubscription(params: { customerId: string; planId: string; totalCount: number }): Promise<unknown> {
 	return razorpayFetch("/subscriptions", {
 		method: "POST",
 		body: JSON.stringify({
@@ -153,12 +141,7 @@ export async function createRecurringSubscription(params: {
 	});
 }
 
-export async function createRazorpayContact(params: {
-	name: string;
-	email: string;
-	contact: string;
-	type?: string;
-}): Promise<{ id: string }> {
+export async function createRazorpayContact(params: { name: string; email: string; contact: string; type?: string }): Promise<{ id: string }> {
 	return razorpayFetch("/contacts", {
 		method: "POST",
 		body: JSON.stringify({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Crown, Gem, Loader2, Star, TrendingUp } from "lucide-react";
+import { Award, Crown, Gem, Loader2, type Star, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface LoyaltyEntry {
@@ -38,9 +38,7 @@ export default function Loyalty() {
 		fetchData();
 	}, []);
 
-	const sorted = [...customers].sort((a, b) =>
-		sortBy === "points" ? b.lifetimePoints - a.lifetimePoints : b.visitCount - a.visitCount,
-	);
+	const sorted = [...customers].sort((a, b) => (sortBy === "points" ? b.lifetimePoints - a.lifetimePoints : b.visitCount - a.visitCount));
 
 	const stats = {
 		total: customers.length,
@@ -75,21 +73,21 @@ export default function Loyalty() {
 				<button
 					type="button"
 					onClick={() => setSortBy("points")}
-					className={`text-xs px-2 py-1 rounded ${sortBy === "points" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-				>
+					className={`text-xs px-2 py-1 rounded ${sortBy === "points" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
 					By Points
 				</button>
 				<button
 					type="button"
 					onClick={() => setSortBy("visits")}
-					className={`text-xs px-2 py-1 rounded ${sortBy === "visits" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-				>
+					className={`text-xs px-2 py-1 rounded ${sortBy === "visits" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
 					By Visits
 				</button>
 			</div>
 
 			{loading ? (
-				<div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+				<div className="flex justify-center py-8">
+					<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+				</div>
 			) : sorted.length === 0 ? (
 				<p className="text-sm text-muted-foreground py-8 text-center">No loyalty data yet</p>
 			) : (

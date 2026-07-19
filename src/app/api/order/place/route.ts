@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
-import { Loyalties, computeTier } from "#utils/database/models/loyalty";
+import { computeTier, Loyalties } from "#utils/database/models/loyalty";
 import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";

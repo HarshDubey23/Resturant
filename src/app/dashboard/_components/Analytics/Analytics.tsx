@@ -56,8 +56,11 @@ export default function Analytics() {
 			try {
 				const res = await fetch("/api/admin/analytics");
 				if (res.ok) setData(await res.json());
-			} catch { /* ignore */ }
-			finally { setLoading(false); }
+			} catch {
+				/* ignore */
+			} finally {
+				setLoading(false);
+			}
 		};
 		fetchData();
 		const interval = setInterval(fetchData, 60000);
@@ -65,7 +68,11 @@ export default function Analytics() {
 	}, []);
 
 	if (loading) {
-		return <div className="flex justify-center py-12"><span className="text-muted-foreground">Loading analytics...</span></div>;
+		return (
+			<div className="flex justify-center py-12">
+				<span className="text-muted-foreground">Loading analytics...</span>
+			</div>
+		);
 	}
 
 	if (!data) {
@@ -80,7 +87,12 @@ export default function Analytics() {
 				<StatCard icon={DollarSign} label="Today Revenue" value={`₹${data.live.todayRevenue.toLocaleString()}`} />
 				<StatCard icon={ShoppingCart} label="Today Orders" value={data.live.todayOrders.toString()} sub={`${data.live.completedToday} completed`} />
 				<StatCard icon={Users} label="Repeat Rate" value={`${data.live.repeatRate}%`} />
-				<StatCard icon={TrendingUp} label="Avg Ticket" value={`₹${data.live.avgTicket.toLocaleString()}`} sub={`GST: ₹${data.live.gstCollected.toLocaleString()}`} />
+				<StatCard
+					icon={TrendingUp}
+					label="Avg Ticket"
+					value={`₹${data.live.avgTicket.toLocaleString()}`}
+					sub={`GST: ₹${data.live.gstCollected.toLocaleString()}`}
+				/>
 			</div>
 
 			<div className="grid sm:grid-cols-2 gap-4">
@@ -137,7 +149,9 @@ export default function Analytics() {
 					</div>
 					<ul className="space-y-1">
 						{data.aiCommentary.map((c, i) => (
-							<li key={i} className="text-xs text-muted-foreground">{c}</li>
+							<li key={i} className="text-xs text-muted-foreground">
+								{c}
+							</li>
 						))}
 					</ul>
 				</div>

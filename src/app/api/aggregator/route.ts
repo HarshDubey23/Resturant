@@ -15,10 +15,7 @@ export async function GET() {
 		const restaurantID = session.username || session.restaurant?.username;
 		if (!restaurantID) throw { status: 400, message: "Restaurant ID required" };
 
-		const orders = await AggregatorOrders.find({ restaurantID })
-			.sort({ createdAt: -1 })
-			.limit(50)
-			.lean();
+		const orders = await AggregatorOrders.find({ restaurantID }).sort({ createdAt: -1 }).limit(50).lean();
 
 		return NextResponse.json(orders);
 	} catch (err) {

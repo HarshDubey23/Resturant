@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, MessageCircle, Send, X } from "lucide-react";
+import { Bot, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";

@@ -3,10 +3,10 @@
 import { useSession } from "next-auth/react";
 import { type UIEvent, useEffect, useState } from "react";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
-import NavTopBar from "./Orders/NavTopBar";
 import Analytics from "./Analytics/Analytics";
 import Campaigns from "./Campaigns/Campaigns";
 import Loyalty from "./Loyalty/Loyalty";
+import NavTopBar from "./Orders/NavTopBar";
 import Orders from "./Orders/Orders";
 import Settings from "./Settings/Settings";
 

@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 				if (refundOrderId) {
 					const order = await Orders.findById(refundOrderId);
 					if (order) {
-						const totalRefunded = order.paymentStatus === "partially_refunded" ? true : false;
+						const _totalRefunded = order.paymentStatus === "partially_refunded";
 						order.paymentStatus = order.amount === refund.amount ? "refunded" : "partially_refunded";
 						await order.save();
 					}

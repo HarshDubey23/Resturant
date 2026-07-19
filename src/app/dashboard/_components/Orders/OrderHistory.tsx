@@ -2,10 +2,8 @@
 
 import { type UIEvent, useEffect, useState } from "react";
 import { useAdmin } from "#components/context/useContext";
-import type { TOrder } from "#utils/database/models/order";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 interface OrderHistoryProps {
@@ -19,7 +17,7 @@ const states: Record<string, { label: string; variant: "secondary" | "destructiv
 };
 
 export default function OrderHistory({ onScroll }: OrderHistoryProps) {
-	const { orderHistory = [], profile } = useAdmin();
+	const { orderHistory = [] } = useAdmin();
 	const [activeCardID, setActiveCardID] = useState<string>();
 
 	useEffect(() => {
@@ -30,7 +28,8 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 		}
 	}, [activeCardID, orderHistory]);
 
-	const activeData = orderHistory.find((o) => o._id.toString() === activeCardID);
+	// biome-ignore lint/suspicious/noExplicitAny: activeData has MongoDB timestamps not in TOrder type
+	const activeData = orderHistory.find((o) => String(o._id) === activeCardID) as any;
 
 	return (
 		<div className="flex gap-4 h-full">
@@ -78,7 +77,7 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 							<div className="grid grid-cols-2 gap-4 text-sm">
 								<div>
 									<span className="text-muted-foreground">Date</span>
-									<p className="font-medium">{(activeData as any).createdAt ? new Date((activeData as any).createdAt).toLocaleDateString() : "-"}</p>
+									<p className="font-medium">{activeData.createdAt ? new Date(activeData.createdAt).toLocaleDateString() : "-"}</p>
 								</div>
 								<div>
 									<span className="text-muted-foreground">Table</span>
@@ -105,7 +104,7 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 							<div>
 								<h4 className="text-sm font-medium mb-2">Items</h4>
 								<div className="space-y-2">
-									{activeData.products?.map((item, i) => (
+									{activeData.products?.map((item: { name: string; quantity: number; price: number }, i: number) => (
 										<div key={i} className="flex items-center justify-between text-sm">
 											<span className="text-muted-foreground">
 												{item.name} × {item.quantity}

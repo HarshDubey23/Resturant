@@ -10,7 +10,7 @@ interface OrderProduct {
 	adminApproved: boolean;
 }
 
-interface TestOrder {
+interface _TestOrder {
 	state: OrderState;
 	paymentStatus: PaymentStatus;
 	products: OrderProduct[];

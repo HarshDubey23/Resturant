@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
-import { Loyalties } from "#utils/database/models/loyalty";
-import { Orders, type TOrder } from "#utils/database/models/order";
+import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 
@@ -20,7 +19,7 @@ export async function GET() {
 		const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 		const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 86400000);
 		const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 86400000);
-		const ninetyDaysAgo = new Date(todayStart.getTime() - 90 * 86400000);
+		const _ninetyDaysAgo = new Date(todayStart.getTime() - 90 * 86400000);
 
 		const allOrders = await Orders.find({ restaurantID }).populate("customer").lean();
 
@@ -38,7 +37,7 @@ export async function GET() {
 		const categoryCounts: Record<string, number> = {};
 		for (const order of monthOrders) {
 			for (const product of order.products) {
-				const name = (product as unknown as Record<string, unknown>).name as string || product.product?.toString() || "unknown";
+				const name = ((product as unknown as Record<string, unknown>).name as string) || product.product?.toString() || "unknown";
 				productCounts[name] = (productCounts[name] || 0) + product.quantity;
 				const station = product.station || "main";
 				categoryCounts[station] = (categoryCounts[station] || 0) + product.quantity;
@@ -65,9 +64,7 @@ export async function GET() {
 			peakHours[hour] = (peakHours[hour] || 0) + 1;
 		}
 
-		const avgTicket = monthOrders.length > 0
-			? monthOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0) / monthOrders.length
-			: 0;
+		const avgTicket = monthOrders.length > 0 ? monthOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0) / monthOrders.length : 0;
 
 		const gstCollected = monthOrders.reduce((sum, o) => sum + (o.taxTotal || 0), 0);
 
@@ -81,7 +78,9 @@ export async function GET() {
 			}
 			return acc;
 		}, {});
-		const top20ByLTV = Object.values(topCustomers).sort((a, b) => b.total - a.total).slice(0, 20);
+		const top20ByLTV = Object.values(topCustomers)
+			.sort((a, b) => b.total - a.total)
+			.slice(0, 20);
 
 		const churnedCustomers = Object.entries(returningCustomers)
 			.filter(([, count]) => count === 1)
@@ -110,7 +109,7 @@ export async function GET() {
 				gstCollected: Math.round(gstCollected * 100) / 100,
 			},
 			topDishes,
-			peakHours: Object.entries(peakHours).map(([hour, count]) => ({ hour: Number.parseInt(hour), count })),
+			peakHours: Object.entries(peakHours).map(([hour, count]) => ({ hour: Number.parseInt(hour, 10), count })),
 			topCustomers: top20ByLTV,
 			churnedCustomers,
 			aiCommentary,
@@ -140,7 +139,7 @@ function generateAICommentary(data: {
 	if (data.avgTicket < 300) {
 		comments.push(`Average ticket is ₹${data.avgTicket.toFixed(0)}. Try bundling combos or suggesting add-ons.`);
 	}
-	if (data.todayRevenue > data.weekRevenue / 7 * 1.3) {
+	if (data.todayRevenue > (data.weekRevenue / 7) * 1.3) {
 		comments.push("Today's revenue is 30% above your weekly average — great momentum!");
 	}
 	if (comments.length === 0) {

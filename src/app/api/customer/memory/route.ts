@@ -19,9 +19,7 @@ export async function GET() {
 			return NextResponse.json({ memory: null });
 		}
 
-		const loyalty = await Loyalties.findOne({ restaurantID, customer: customerId })
-			.populate("preferences.favoriteDishes")
-			.lean();
+		const loyalty = await Loyalties.findOne({ restaurantID, customer: customerId }).populate("preferences.favoriteDishes").lean();
 
 		if (!loyalty) {
 			return NextResponse.json({ memory: null });

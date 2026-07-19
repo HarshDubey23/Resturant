@@ -17,10 +17,7 @@ export async function GET() {
 		await connectDB();
 		const restaurantID = session.username;
 
-		const campaigns = await Campaigns.find({ restaurantID })
-			.sort({ createdAt: -1 })
-			.limit(50)
-			.lean();
+		const campaigns = await Campaigns.find({ restaurantID }).sort({ createdAt: -1 }).limit(50).lean();
 
 		return NextResponse.json(campaigns);
 	} catch (err) {
@@ -34,7 +31,7 @@ export async function POST(req: Request) {
 		const session = await getServerSession(authOptions);
 		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 
-		const body = await req.json() as Record<string, unknown>;
+		const body = (await req.json()) as Record<string, unknown>;
 		const title = String(body.title || "");
 		const msg = String(body.message || "");
 		if (!title || !msg) throw { status: 400, message: "title and message required" };

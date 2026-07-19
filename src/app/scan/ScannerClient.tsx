@@ -1,7 +1,7 @@
 "use client";
 
 import { Scanner } from "@yudiel/react-qr-scanner";
-import { AlertTriangle, ChevronDown, Flashlight, ScanLine, ZoomIn, ZoomOut } from "lucide-react";
+import { AlertTriangle, Flashlight, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";

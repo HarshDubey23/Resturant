@@ -2,7 +2,7 @@
 
 import { Check, DollarSign, Phone, User, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { TMenu } from "#utils/database/models/menu";
 import type { TOrder } from "#utils/database/models/order";
 import { Badge } from "@/components/ui/badge";

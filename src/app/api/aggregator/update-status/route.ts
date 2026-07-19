@@ -19,11 +19,7 @@ export async function POST(req: Request) {
 
 		await connectDB();
 
-		const order = await AggregatorOrders.findOneAndUpdate(
-			{ _id: orderId, restaurantID: session.username },
-			{ status },
-			{ new: true },
-		);
+		const order = await AggregatorOrders.findOneAndUpdate({ _id: orderId, restaurantID: session.username }, { status }, { new: true });
 
 		if (!order) throw { status: 404, message: "Order not found" };
 

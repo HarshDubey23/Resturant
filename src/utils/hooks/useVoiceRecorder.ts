@@ -53,9 +53,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 				},
 			});
 
-			const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-				? "audio/webm;codecs=opus"
-				: "audio/webm";
+			const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
 
 			const recorder = new MediaRecorder(stream, { mimeType });
 			mediaRecorderRef.current = recorder;
@@ -120,9 +118,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 			};
 			animFrameRef.current = requestAnimationFrame(checkLevel);
 		} catch (err) {
-			const message = err instanceof DOMException && err.name === "NotAllowedError"
-				? "Microphone access denied"
-				: "Could not start recording";
+			const message = err instanceof DOMException && err.name === "NotAllowedError" ? "Microphone access denied" : "Could not start recording";
 			setError(message);
 		}
 	}, [cleanup]);
@@ -139,7 +135,7 @@ export function useVoiceRecorder(): UseVoiceRecorderReturn {
 
 			resolveRef.current = resolve;
 
-			const originalOnStop = recorder.onstop;
+			const _originalOnStop = recorder.onstop;
 			recorder.onstop = async () => {
 				setIsRecording(false);
 				cleanup();
