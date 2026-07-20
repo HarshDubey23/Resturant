@@ -44,18 +44,18 @@ jobs:
           NEXTAUTH_SECRET: "dummy-secret-for-build-only-do-not-use-in-runtime"
           NEXT_PUBLIC_SITE_URL: "https://orderworder.ritik.me"
 
-  deploy:
-    needs: lint-test-build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: "--prod"
+  # deploy job disabled — VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+  # secrets are not configured in the repository.
+  # deploy:
+  #   needs: lint-test-build
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Deploy to Vercel
+  #       uses: amondnet/vercel-action@v25
+  #       with:
+  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #         vercel-args: "--prod"
