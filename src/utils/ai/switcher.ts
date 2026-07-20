@@ -52,8 +52,7 @@ export const smartGenerateText = async (restaurantID: string, params: Omit<Param
 	let currentProvider = await getAvailableProvider(restaurantID);
 
 	if (!currentProvider) {
-		await resetProviders(restaurantID);
-		currentProvider = PROVIDER_ORDER[0];
+		throw new Error("AI temporarily unavailable. All providers are in cooldown. Please try again later.");
 	}
 
 	while (currentProvider) {

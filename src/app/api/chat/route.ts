@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { getSystemPrompt } from "#utils/ai/prompt";
 import { smartGenerateText } from "#utils/ai/switcher";
+import { captureError } from "#utils/helper/sentryWrapper";
 import connectDB from "#utils/database/connect";
 import { getRestaurantData } from "#utils/database/helper/account";
 import { Loyalties } from "#utils/database/models/loyalty";
@@ -81,7 +82,9 @@ export async function POST(req: Request) {
 					const found = names.map((n: string) => menuMap.get(n.toLowerCase())).filter((i): i is TMenu => !!i);
 					if (found.length) toolResults.push(found);
 				}
-			} catch {}
+				} catch (e) {
+					captureError(e instanceof Error ? e : new Error(`Failed to parse recommendation JSON: ${match[1]}`), { route: "chat/recommendation", raw: match[1] });
+				}
 		}
 
 		return Response.json({ text, toolResults });

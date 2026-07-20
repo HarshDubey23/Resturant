@@ -6,7 +6,7 @@ const Veg = ["veg", "non-veg", "contains-egg"] as const;
 
 const MenuSchema = new mongoose.Schema<TMenu>(
 	{
-		name: { type: String, trim: true, unique: true, required: true, sparse: true, index: { unique: true } },
+		name: { type: String, trim: true, unique: true, required: true, sparse: true },
 		restaurantID: { type: String, trim: true, lowercase: true, required: true },
 		description: { type: String, trim: true },
 		category: { type: String, trim: true, lowercase: true },

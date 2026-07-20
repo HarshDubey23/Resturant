@@ -1,8 +1,10 @@
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
 import { Accounts } from "#utils/database/models/account";
+import { deductInventoryForOrder } from "#utils/database/helper/deductInventory";
 import { computePoints, computeTier, Loyalties } from "#utils/database/models/loyalty";
 import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
@@ -112,6 +114,16 @@ export async function POST(req: Request) {
 			items: products.map((p) => ({ name: p.name || "Item", quantity: p.quantity, price: p.price })),
 			total: (newOrder.orderTotal || 0) + (newOrder.taxTotal || 0),
 		}).catch(() => {});
+
+		if (restaurantID) {
+			const inventoryProducts = products.map((p) => ({
+				product: typeof p.product === "object" ? (p.product as { _id: mongoose.Types.ObjectId })._id : p.product,
+				quantity: p.quantity,
+			})) as Array<{ product: mongoose.Types.ObjectId; quantity: number }>;
+			deductInventoryForOrder(restaurantID, inventoryProducts).catch((e: unknown) =>
+				captureError(e, { context: "inventory deduction failed", orderId: newOrder._id.toString() }),
+			);
+		}
 
 		return NextResponse.json({ status: 200, message: "Order placed successfully", orderId: newOrder._id });
 	} catch (err) {

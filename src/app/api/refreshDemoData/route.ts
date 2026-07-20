@@ -10,6 +10,7 @@ import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import brewpointData from "./_data/brewpoint/brewpoint";
 import empire from "./_data/empire/empire";
+import spiceroute from "./_data/spiceroute/spiceroute";
 
 const deleteData = async (ids: string[]) => {
 	const start = performance.now();
@@ -61,19 +62,23 @@ export const runtime = "nodejs";
 export async function GET() {
 	await connectDB();
 	try {
+		if (process.env.DEMO_MODE !== "true") {
+			return new Response(JSON.stringify({ message: "Demo mode is disabled. Set DEMO_MODE=true to seed demo data." }), { status: 403 });
+		}
 		const session = await getServerSession(authOptions);
 		if (!session || session.role !== "admin") {
 			return new Response(JSON.stringify({ message: "Unauthorized. Admin access required." }), { status: 401 });
 		}
 		const start = performance.now();
-		const deleteResult = await deleteData(["empire", "brewpoint"]);
-		const [empireResult, brewpointResult] = await Promise.all([createData(empire), createData(brewpointData)]);
+		const deleteResult = await deleteData(["empire", "brewpoint", "spiceroute"]);
+		const [empireResult, brewpointResult, spicerouteResult] = await Promise.all([createData(empire), createData(brewpointData), createData(spiceroute)]);
 
 		const res = {
 			totalProcessTime: (performance.now() - start) / 1000,
 			delete: deleteResult,
 			empire: empireResult,
 			brewpoint: brewpointResult,
+			spiceroute: spicerouteResult,
 		};
 		return new Response(JSON.stringify(res, null, 4));
 	} catch (err) {
