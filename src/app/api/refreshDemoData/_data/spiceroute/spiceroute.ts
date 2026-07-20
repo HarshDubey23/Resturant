@@ -14,7 +14,8 @@ const profile = {
 	_id: new mongoose.Types.ObjectId(`${REF_SPICEROUTE}${TYPE_PROFILE}${ID_SUFFIX}000001`),
 	name: "Spice Route Demo",
 	restaurantID: "spiceroute",
-	description: "Authentic Indian restaurant showcasing the rich and diverse flavors of India's culinary heritage — from North Indian classics to South Indian specialties.",
+	description:
+		"Authentic Indian restaurant showcasing the rich and diverse flavors of India's culinary heritage — from North Indian classics to South Indian specialties.",
 	address: "Indiranagar, Bengaluru",
 	themeColor: { h: 30, s: 100, l: 40 },
 	avatar: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=200&h=200&fit=crop",

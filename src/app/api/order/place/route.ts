@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import type mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
-import { Accounts } from "#utils/database/models/account";
 import { deductInventoryForOrder } from "#utils/database/helper/deductInventory";
+import { Accounts } from "#utils/database/models/account";
 import { computePoints, computeTier, Loyalties } from "#utils/database/models/loyalty";
 import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
