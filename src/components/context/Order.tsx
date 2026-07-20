@@ -30,17 +30,19 @@ export const OrderProvider = ({ children }: TOrderProviderProps) => {
 	const [cancelingOrder, setCancelingOrder] = useState(false);
 	const [loginOpen, setLoginOpen] = useState(false);
 
-	const placeOrder = async (products: Array<TMenuCustom>) => {
+	const placeOrder = async (products: Array<TMenuCustom>, paymentMethod?: string) => {
 		setPlacingOrder(true);
 		const req = await fetch("/api/order/place", {
 			method: "POST",
 			body: JSON.stringify({
 				products: products.map((product) => pick(product, ["_id", "quantity"])),
+				paymentMethod: paymentMethod || "razorpay",
 			}),
 		});
 		const res = await req.json();
 
 		if (!req.ok) toast.error(res?.message);
+		else if (paymentMethod === "cash") toast.success("Order placed. Pay at the counter when done.");
 		await mutate();
 		setPlacingOrder(false);
 	};
@@ -72,7 +74,7 @@ export type TOrderProviderProps = {
 export type TOrderInitialType = {
 	order?: TOrder;
 	loading: boolean;
-	placeOrder: (products: Array<TMenuCustom>) => Promise<void>;
+	placeOrder: (products: Array<TMenuCustom>, paymentMethod?: string) => Promise<void>;
 	placingOrder: boolean;
 	cancelOrder: () => void;
 	cancelingOrder: boolean;

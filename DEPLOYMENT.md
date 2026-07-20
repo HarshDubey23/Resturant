@@ -237,46 +237,79 @@ Header: Authorization: Bearer YOUR_CRON_SECRET
 
 ---
 
-## 4. Alternative: Docker Deployment
+## 4. Docker Deployment (Recommended for Self-Hosting)
 
-Create a `Dockerfile` in the project root:
-
-```dockerfile
-FROM node:22-alpine AS base
-RUN corepack enable && corepack prepare pnpm@11 --activate
-WORKDIR /app
-
-FROM base AS deps
-COPY pnpm-lock.yaml package.json ./
-RUN pnpm install --frozen-lockfile
-
-FROM base AS build
-COPY . .
-COPY --from=deps /app/node_modules ./node_modules
-RUN pnpm build
-
-FROM node:22-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/public ./public
-COPY --from=build /app/package.json ./package.json
-
-EXPOSE 3000
-CMD ["pnpm", "start"]
-```
-
-Build & run:
+The repo includes a `Dockerfile` and `docker-compose.yml`:
 
 ```bash
-docker build -t orderworder .
-docker run -p 3000:3000 \
-  -e MONGODB_URI=mongodb+srv://... \
-  -e NEXTAUTH_URL=http://localhost:3000 \
-  -e NEXTAUTH_SECRET=... \
-  orderworder
+# Start everything (app + MongoDB)
+docker compose up
+
+# With Redis and n8n
+docker compose --profile with-redis --profile with-n8n up
 ```
+
+The app is available at http://localhost:3050.
+
+### Production Build
+
+```bash
+docker compose up --build
+```
+
+### Demo Restaurant
+
+After startup, seed the demo data:
+```bash
+curl http://localhost:3050/api/refreshDemoData
+```
+
+Demo credentials:
+- Admin: `demo@orderworder.com` / `Demo@12345`
+- Customer: Visit `http://localhost:3050/demo?table=T1`
+
+## 5. Render Deployment (One-Click)
+
+The repo includes a `render.yaml` Blueprint for one-click deployment on Render:
+
+1. Fork the repo on GitHub
+2. Go to https://dashboard.render.com/select-repo?type=blueprint
+3. Select your fork
+4. Fill in the environment variables marked as `sync: false`
+5. Click "Apply"
+
+Render will:
+- Build the Docker image
+- Deploy with health checks at `/api/health`
+- Auto-deploy on push
+
+## 6. Self-hosted GlitchTip (Error Monitoring)
+
+For zero-cost self-hosted error monitoring:
+1. Deploy GlitchTip using their Docker Compose: https://glitchtip.com
+2. Set `SENTRY_DSN` to your GlitchTip project DSN
+3. The Sentry SDK speaks the same protocol — no code changes needed
+
+## 7. OpenWA (Self-hosted WhatsApp)
+
+For free self-hosted WhatsApp messaging:
+1. Deploy OpenWA: https://github.com/open-wa/wa-automate
+2. Set `OPENWA_API_URL` to your OpenWA instance URL
+3. Optionally set `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` for Meta Cloud API instead
+
+## 8. BYOK (Bring Your Own AI Keys)
+
+Each restaurant can override the global AI provider keys from the dashboard:
+1. Go to Settings → AI Keys
+2. Paste provider-specific API keys
+3. Keys are stored per-tenant and are write-only (never returned in GET responses)
+
+## 9. MongoDB Change Streams
+
+For production, run MongoDB as a replica set:
+- Atlas free tier is already a replica set — Change Streams work out of the box
+- For self-hosted, configure a single-node replica set
+- If Change Streams are unavailable, the app falls back to polling at 10s intervals
 
 ---
 

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+	output: "standalone",
 	async headers() {
 		return [
 			{
@@ -46,11 +47,17 @@ const nextConfig: NextConfig = {
 			},
 			{
 				protocol: "https",
-				hostname: "b.zmtcdn.com",
+				hostname: "**.zmtcdn.com",
+			},
+			{
+				protocol: "https",
+				hostname: "**.r2.dev",
 			},
 		],
 	},
-	transpilePackages: ["three", "@react-three/fiber", "@react-three/drei"],
+	experimental: {
+		serverActions: { bodySizeLimit: "2mb" },
+	},
 	turbopack: {
 		rules: {
 			"*.svg": {

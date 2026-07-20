@@ -24,49 +24,104 @@ export async function GET(req: Request) {
 
 	const encoder = new TextEncoder();
 	let lastEventId = 0;
+	let changeStream: ReturnType<typeof Orders.watch> | null = null;
+	let pollingInterval: ReturnType<typeof setInterval> | null = null;
+	let usePolling = false;
 
 	const stream = new ReadableStream({
 		async start(controller) {
 			const sendEvent = (data: unknown) => {
 				lastEventId++;
 				const message = `id: ${lastEventId}\nevent: order\ndata: ${JSON.stringify(data)}\n\n`;
-				controller.enqueue(encoder.encode(message));
+				try {
+					controller.enqueue(encoder.encode(message));
+				} catch {}
+			};
+
+			const formatOrders = async () => {
+				const orders = await Orders.find({ restaurantID })
+					.populate<{ customer: TCustomer }>("customer")
+					.populate<{ products: { product: TMenu }[] }>("products.product")
+					.sort({ updatedAt: -1 })
+					.limit(50)
+					.lean();
+
+				const formattedOrders = (orders as unknown as TOrder[]).map((order) => {
+					if (order?.products) {
+						const products = order.products.map((p) => {
+							const product = p as unknown as TProduct;
+							const menu = product.product as unknown as TMenu;
+							return { ...product, ...menu, product: menu?._id };
+						});
+						return { ...order, products };
+					}
+					return order;
+				});
+
+				sendEvent({ type: "orders", data: formattedOrders, timestamp: Date.now() });
 			};
 
 			const pollAndSend = async () => {
 				try {
-					const orders = await Orders.find({ restaurantID })
-						.populate<{ customer: TCustomer }>("customer")
-						.populate<{ products: { product: TMenu }[] }>("products.product")
-						.sort({ updatedAt: -1 })
-						.limit(50)
-						.lean();
-
-					const formattedOrders = (orders as unknown as TOrder[]).map((order) => {
-						if (order?.products) {
-							const products = order.products.map((p) => {
-								const product = p as unknown as TProduct;
-								const menu = product.product as unknown as TMenu;
-								return { ...product, ...menu, product: menu?._id };
-							});
-							return { ...order, products };
-						}
-						return order;
-					});
-
-					sendEvent({ type: "orders", data: formattedOrders, timestamp: Date.now() });
+					await formatOrders();
 				} catch {
 					sendEvent({ type: "error", message: "Failed to fetch orders" });
 				}
 			};
 
+			try {
+				const db = (await import("mongoose")).default.connection.db;
+				if (db) {
+					changeStream = Orders.watch(
+						[
+							{
+								$match: {
+									operationType: { $in: ["insert", "update", "replace"] },
+									"fullDocument.restaurantID": restaurantID,
+								},
+							},
+						],
+						{ fullDocument: "updateLookup" },
+					);
+
+					changeStream.on("change", async () => {
+						try {
+							await formatOrders();
+						} catch {
+							sendEvent({ type: "error", message: "Failed to fetch orders after change" });
+						}
+					});
+
+					changeStream.on("error", (err: Error) => {
+						console.warn("[order/stream] Change Stream error (replica set required?):", err.message);
+						console.warn("[order/stream] Falling back to polling mode at 10s interval");
+						usePolling = true;
+						changeStream?.close();
+						changeStream = null;
+						pollingInterval = setInterval(pollAndSend, 10000);
+					});
+				} else {
+					throw new Error("No MongoDB connection available");
+				}
+			} catch (err) {
+				console.warn("[order/stream] Change Stream setup failed:", (err as Error).message);
+				console.warn("[order/stream] Falling back to polling mode at 10s interval");
+				usePolling = true;
+				pollingInterval = setInterval(pollAndSend, 10000);
+			}
+
 			await pollAndSend();
 
-			const interval = setInterval(pollAndSend, 3000);
+			if (!usePolling && !pollingInterval) {
+				pollingInterval = setInterval(pollAndSend, 10000);
+			}
 
 			req.signal.addEventListener("abort", () => {
-				clearInterval(interval);
-				controller.close();
+				if (changeStream) changeStream.close();
+				if (pollingInterval) clearInterval(pollingInterval);
+				try {
+					controller.close();
+				} catch {}
 			});
 		},
 	});

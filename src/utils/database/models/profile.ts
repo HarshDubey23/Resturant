@@ -23,6 +23,7 @@ const ProfileSchema = new mongoose.Schema<TProfile>(
 		avatar: { type: String, trim: true },
 		cover: { type: String, trim: true },
 		photos: [{ type: String, trim: true }],
+		upiId: { type: String, trim: true },
 	},
 	{ timestamps: true },
 );
@@ -53,4 +54,5 @@ export type TProfile = HydratedDocument<{
 	brandColor: string;
 	logoUrl: string;
 	categories: Array<string>;
+	upiId?: string;
 }>;

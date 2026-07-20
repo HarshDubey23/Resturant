@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
 import { Accounts } from "#utils/database/models/account";
+import { Customers } from "#utils/database/models/customer";
 import { Kitchens } from "#utils/database/models/kitchen";
 import { Menus } from "#utils/database/models/menu";
 import { Profiles } from "#utils/database/models/profile";
@@ -9,6 +10,7 @@ import { Tables } from "#utils/database/models/table";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import brewpointData from "./_data/brewpoint/brewpoint";
+import demoData from "./_data/demo/demo";
 import empire from "./_data/empire/empire";
 import spiceroute from "./_data/spiceroute/spiceroute";
 
@@ -70,8 +72,23 @@ export async function GET() {
 			return new Response(JSON.stringify({ message: "Unauthorized. Admin access required." }), { status: 401 });
 		}
 		const start = performance.now();
-		const deleteResult = await deleteData(["empire", "brewpoint", "spiceroute"]);
-		const [empireResult, brewpointResult, spicerouteResult] = await Promise.all([createData(empire), createData(brewpointData), createData(spiceroute)]);
+		const deleteResult = await deleteData(["demo", "empire", "brewpoint", "spiceroute"]);
+
+		await Customers.deleteMany({ restaurantID: "demo" });
+
+		const [empireResult, brewpointResult, spicerouteResult, demoResult] = await Promise.all([
+			createData(empire),
+			createData(brewpointData),
+			createData(spiceroute),
+			createData(demoData),
+		]);
+
+		const demoCustomer = await new Customers({
+			fname: "Demo",
+			lname: "User",
+			phone: "9999999999",
+			restaurantID: "demo",
+		}).save();
 
 		const res = {
 			totalProcessTime: (performance.now() - start) / 1000,
@@ -79,6 +96,7 @@ export async function GET() {
 			empire: empireResult,
 			brewpoint: brewpointResult,
 			spiceroute: spicerouteResult,
+			demo: { ...demoResult, customer: demoCustomer },
 		};
 		return new Response(JSON.stringify(res, null, 4));
 	} catch (err) {

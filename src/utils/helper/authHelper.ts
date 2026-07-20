@@ -62,13 +62,22 @@ export const authOptions: AuthOptions = {
 				phone: { label: "Phone Number", type: "number", placeholder: "Enter your phone number" },
 				fname: { label: "Name", type: "text", placeholder: "Enter your first name" },
 				lname: { label: "Name", type: "text", placeholder: "Enter your last name" },
+				verificationToken: { label: "Verification Token", type: "text" },
+				tablePin: { label: "Table PIN", type: "text" },
 			},
 			async authorize(cred) {
 				if (!cred?.restaurant) throw new Error("Restaurant id is required");
 				if (!cred?.table) throw new Error("Table id is required");
-				if (!cred?.fname) throw new Error("First name is required");
-				if (!cred?.lname) throw new Error("Last name is required");
 				if (!cred?.phone) throw new Error("Phone number is required");
+
+				const isDemo = cred?.restaurant === "demo" && process.env.DEMO_MODE === "true";
+
+				if (!isDemo) {
+					if (!cred?.verificationToken) throw new Error("OTP verification is required. Please complete the OTP flow first.");
+					const tokenParts = cred.verificationToken.split(":");
+					const tokenTime = Number(tokenParts[1]);
+					if (Date.now() > tokenTime) throw new Error("Verification token expired. Please verify again.");
+				}
 
 				await connectDB();
 				let customerCred: Record<string, string | undefined> = {
@@ -89,8 +98,15 @@ export const authOptions: AuthOptions = {
 				if (!account) throw new Error("Restaurant not found.");
 				if (!account?.tables?.some?.(({ username }: { username: string }) => username === cred?.table)) throw new Error("Invalid table id");
 
+				if (!isDemo) {
+					const tableObj = account.tables.find((t) => t.username === cred?.table);
+					if (tableObj?.pin && tableObj.pin !== cred?.tablePin) {
+						throw new Error("Invalid table PIN. Please use the PIN printed on the table QR card.");
+					}
+				}
+
 				return {
-					id: customer._id.toString(), // Use customer ID or empty string if suitable
+					id: customer._id.toString(),
 					role: "customer",
 					themeColor: account?.profile?.themeColor,
 					_doc: {
@@ -102,7 +118,6 @@ export const authOptions: AuthOptions = {
 							name: account?.profile?.name,
 							avatar: account?.profile?.avatar,
 						},
-						// biome-ignore lint/suspicious/noExplicitAny: Complex type matching
 					} as any,
 				};
 			},

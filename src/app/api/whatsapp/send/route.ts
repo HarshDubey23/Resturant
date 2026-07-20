@@ -26,13 +26,14 @@ export async function POST(req: Request) {
 			const phone = order.customer?.phone;
 			if (!phone) throw { status: 400, message: "Customer phone not found" };
 
-			await sendWhatsAppOrderReceipt(phone, {
+			const result = await sendWhatsAppOrderReceipt(phone, {
 				table: order.table,
 				items: order.products.map((p: { quantity: number; price: number }) => `x${p.quantity} ₹${p.price}`).join(", "),
 				total: order.orderTotal + order.taxTotal,
 				points: Math.floor((order.orderTotal || 0) / 10),
 			});
-			return NextResponse.json({ status: 200, message: "Receipt sent" });
+			const skipped = (result as { skipped?: boolean })?.skipped;
+			return NextResponse.json({ status: 200, message: skipped ? "WhatsApp not configured — receipt logged" : "Receipt sent", skipped });
 		}
 
 		if (action === "order_ready" && orderId) {
@@ -41,13 +42,15 @@ export async function POST(req: Request) {
 			const phone = order.customer?.phone;
 			if (!phone) throw { status: 400, message: "Customer phone not found" };
 
-			await sendWhatsAppOrderReady(phone, order.table);
-			return NextResponse.json({ status: 200, message: "Ready notification sent" });
+			const result = await sendWhatsAppOrderReady(phone, order.table);
+			const skipped = (result as { skipped?: boolean })?.skipped;
+			return NextResponse.json({ status: 200, message: skipped ? "WhatsApp not configured — notification logged" : "Ready notification sent", skipped });
 		}
 
 		if (action === "custom" && customerPhone && message) {
-			await sendWhatsAppText(customerPhone, message);
-			return NextResponse.json({ status: 200, message: "Message sent" });
+			const result = await sendWhatsAppText(customerPhone, message);
+			const skipped = (result as { skipped?: boolean })?.skipped;
+			return NextResponse.json({ status: 200, message: skipped ? "WhatsApp not configured — message logged" : "Message sent", skipped });
 		}
 
 		throw { status: 400, message: "Invalid action" };

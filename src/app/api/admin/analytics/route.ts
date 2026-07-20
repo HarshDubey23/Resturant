@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import mongoose from "mongoose";
 import { smartGenerateText } from "#utils/ai/switcher";
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
@@ -17,7 +18,7 @@ type AnalyticsData = {
 	gstCollected: number;
 };
 
-export async function GET() {
+export async function GET(req: Request) {
 	try {
 		const session = await getServerSession(authOptions);
 		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
@@ -26,64 +27,80 @@ export async function GET() {
 		const restaurantID = session.username;
 		if (!restaurantID) throw { status: 400, message: "Restaurant ID required" };
 
+		const { searchParams } = new URL(req.url);
+		const range = searchParams.get("range") || "30d";
+
 		const now = new Date();
 		const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-		const sevenDaysAgo = new Date(todayStart.getTime() - 7 * 86400000);
-		const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 86400000);
-		const _ninetyDaysAgo = new Date(todayStart.getTime() - 90 * 86400000);
+		const dayRanges: Record<string, number> = { today: 0, "7d": 7, "30d": 30, "90d": 90 };
+		const rangeDays = dayRanges[range] ?? 30;
 
-		const allOrders = await Orders.find({ restaurantID }).populate("customer").lean();
+		const rangeStart = rangeDays > 0 ? new Date(todayStart.getTime() - rangeDays * 86400000) : todayStart;
 
-		const todayOrders = allOrders.filter((o) => new Date(o.createdAt || "") >= todayStart);
-		const recentOrders = allOrders.filter((o) => new Date(o.createdAt || "") >= sevenDaysAgo);
-		const monthOrders = allOrders.filter((o) => new Date(o.createdAt || "") >= thirtyDaysAgo);
+		const todayAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: todayStart } } },
+			{ $group: { _id: null, revenue: { $sum: { $add: ["$orderTotal", "$taxTotal"] } }, count: { $sum: 1 }, gst: { $sum: "$taxTotal" } } },
+		]);
 
-		const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0);
-		const weekRevenue = recentOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0);
-		const monthRevenue = monthOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0);
+		const weekAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: new Date(todayStart.getTime() - 7 * 86400000) } } },
+			{ $group: { _id: null, revenue: { $sum: { $add: ["$orderTotal", "$taxTotal"] } }, count: { $sum: 1 } } },
+		]);
 
-		const completedToday = todayOrders.filter((o) => o.state === "complete").length;
+		const monthAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart } } },
+			{ $group: { _id: null, revenue: { $sum: { $add: ["$orderTotal", "$taxTotal"] } }, count: { $sum: 1 }, gst: { $sum: "$taxTotal" } } },
+		]);
 
-		const productCounts: Record<string, number> = {};
-		for (const order of monthOrders) {
-			for (const product of order.products) {
-				const name = ((product as unknown as Record<string, unknown>).name as string) || product.product?.toString() || "unknown";
-				productCounts[name] = (productCounts[name] || 0) + product.quantity;
-			}
-		}
+		const topDishesAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart } } },
+			{ $unwind: "$products" },
+			{ $group: { _id: "$products.name", count: { $sum: "$products.quantity" } } },
+			{ $sort: { count: -1 } },
+			{ $limit: 10 },
+			{ $project: { _id: 0, name: "$_id", count: 1 } },
+		]);
 
-		const topDishes = Object.entries(productCounts)
-			.sort(([, a], [, b]) => b - a)
-			.slice(0, 10)
-			.map(([name, count]) => ({ name, count }));
+		const repeatAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart }, customer: { $exists: true, $ne: null } } },
+			{ $group: { _id: "$customer", count: { $sum: 1 } } },
+			{ $group: { _id: null, total: { $sum: 1 }, repeat: { $sum: { $cond: [{ $gte: ["$count", 2] }, 1, 0] } } } },
+		]);
 
-		const uniqueCustomers = new Set(allOrders.map((o) => o.customer?.toString()).filter(Boolean));
-		const returningCustomers = allOrders.reduce<Record<string, number>>((acc, o) => {
-			const id = o.customer?.toString();
-			if (id) acc[id] = (acc[id] || 0) + 1;
-			return acc;
-		}, {});
-		const repeatCount = Object.values(returningCustomers).filter((c) => c > 1).length;
-		const repeatRate = uniqueCustomers.size > 0 ? (repeatCount / uniqueCustomers.size) * 100 : 0;
+		const todayData = todayAgg[0] || { revenue: 0, count: 0, gst: 0 };
+		const weekData = weekAgg[0] || { revenue: 0, count: 0 };
+		const monthData = monthAgg[0] || { revenue: 0, count: 0, gst: 0 };
+		const repeatData = repeatAgg[0] || { total: 0, repeat: 0 };
 
-		const avgTicket = monthOrders.length > 0 ? monthOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0) / monthOrders.length : 0;
-		const gstCollected = monthOrders.reduce((sum, o) => sum + (o.taxTotal || 0), 0);
+		const avgTicket = monthData.count > 0 ? monthData.revenue / monthData.count : 0;
+		const repeatRate = repeatData.total > 0 ? (repeatData.repeat / repeatData.total) * 100 : 0;
 
-		const analyticsData: AnalyticsData = { todayRevenue, weekRevenue, monthRevenue, topDishes, avgTicket, repeatRate, gstCollected };
+		const completedToday = await Orders.countDocuments({ restaurantID, state: "complete", createdAt: { $gte: todayStart } });
+
+		const analyticsData: AnalyticsData = {
+			todayRevenue: todayData.revenue,
+			weekRevenue: weekData.revenue,
+			monthRevenue: monthData.revenue,
+			topDishes: topDishesAgg,
+			avgTicket,
+			repeatRate,
+			gstCollected: monthData.gst,
+		};
+
 		const aiCommentary = await generateAICommentary(analyticsData, restaurantID);
 
 		return NextResponse.json({
 			live: {
-				todayRevenue,
-				todayOrders: todayOrders.length,
+				todayRevenue: todayData.revenue,
+				todayOrders: todayData.count,
 				completedToday,
-				weekRevenue,
-				monthRevenue,
+				weekRevenue: weekData.revenue,
+				monthRevenue: monthData.revenue,
 				repeatRate: Math.round(repeatRate * 100) / 100,
 				avgTicket: Math.round(avgTicket * 100) / 100,
-				gstCollected: Math.round(gstCollected * 100) / 100,
+				gstCollected: Math.round(monthData.gst * 100) / 100,
 			},
-			topDishes,
+			topDishes: topDishesAgg,
 			peakHours: [],
 			topCustomers: [],
 			churnedCustomers: [],

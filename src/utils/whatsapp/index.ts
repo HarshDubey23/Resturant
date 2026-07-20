@@ -1,10 +1,42 @@
-const WHATSAPP_API = "https://graph.facebook.com/v22.0";
+import { MetaWhatsAppClient } from "./meta";
+import { NoopWhatsAppClient } from "./noop";
+import { OpenWAClient } from "./openwa";
 
-function getConfig() {
-	const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-	const token = process.env.WHATSAPP_ACCESS_TOKEN;
-	if (!phoneNumberId || !token) throw new Error("WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN must be set");
-	return { phoneNumberId, token };
+type WhatsAppClient = MetaWhatsAppClient | OpenWAClient | NoopWhatsAppClient;
+
+let clientInstance: WhatsAppClient | null = null;
+
+let _warned = false;
+
+export function getWhatsAppClient(): WhatsAppClient {
+	if (clientInstance) return clientInstance;
+
+	if (process.env.OPENWA_API_URL) {
+		if (!_warned) {
+			console.info("[whatsapp] Using OpenWA client");
+			_warned = true;
+		}
+		clientInstance = new OpenWAClient();
+	} else if (process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
+		if (!_warned) {
+			console.info("[whatsapp] Using Meta Cloud API client");
+			_warned = true;
+		}
+		clientInstance = new MetaWhatsAppClient();
+	} else {
+		if (!_warned) {
+			console.info("[whatsapp] No WhatsApp provider configured — using no-op client. Messages will be logged but not sent.");
+			_warned = true;
+		}
+		clientInstance = new NoopWhatsAppClient();
+	}
+
+	return clientInstance;
+}
+
+export function resetClient() {
+	clientInstance = null;
+	_warned = false;
 }
 
 export type WhatsAppTemplate = "order_confirmed" | "order_ready" | "feedback" | "abandoned_cart" | "birthday_offer" | "weekly_offer";
@@ -19,68 +51,14 @@ const TEMPLATE_NAMES: Record<WhatsAppTemplate, string> = {
 };
 
 export async function sendWhatsAppMessage(to: string, template: WhatsAppTemplate, params: Record<string, string>) {
-	const { phoneNumberId, token } = getConfig();
-
-	const res = await fetch(`${WHATSAPP_API}/${phoneNumberId}/messages`, {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${token}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			messaging_product: "whatsapp",
-			recipient_type: "individual",
-			to: to.replace(/[^0-9]/g, ""),
-			type: "template",
-			template: {
-				name: TEMPLATE_NAMES[template],
-				language: { code: "hi" },
-				components: [
-					{
-						type: "body",
-						parameters: Object.entries(params).map(([key, value]) => ({
-							type: "text",
-							parameter_name: key,
-							text: value,
-						})),
-					},
-				],
-			},
-		}),
-	});
-
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({}));
-		throw new Error(err.error?.message || "WhatsApp API error");
-	}
-
-	return res.json();
+	const client = getWhatsAppClient();
+	const result = await client.sendTemplate(to, TEMPLATE_NAMES[template], params);
+	return result;
 }
 
 export async function sendWhatsAppText(to: string, text: string) {
-	const { phoneNumberId, token } = getConfig();
-
-	const res = await fetch(`${WHATSAPP_API}/${phoneNumberId}/messages`, {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${token}`,
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify({
-			messaging_product: "whatsapp",
-			recipient_type: "individual",
-			to: to.replace(/[^0-9]/g, ""),
-			type: "text",
-			text: { preview_url: false, body: text },
-		}),
-	});
-
-	if (!res.ok) {
-		const err = await res.json().catch(() => ({}));
-		throw new Error(err.error?.message || "WhatsApp API error");
-	}
-
-	return res.json();
+	const client = getWhatsAppClient();
+	return client.sendText(to, text);
 }
 
 export async function sendWhatsAppOrderReceipt(to: string, order: { table: string; items: string; total: number; points: number }) {
@@ -98,5 +76,5 @@ We'll notify you when it's ready!`;
 }
 
 export async function sendWhatsAppOrderReady(to: string, table: string) {
-	return sendWhatsAppText(to, `🍽️ Your order for Table ${table} is ready! Please collect from the counter.`);
+	return sendWhatsAppText(to, `Your order for Table ${table} is ready! Please collect from the counter.`);
 }

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import z from "zod";
 
 import connectDB from "#utils/database/connect";
-import { computeTier, Loyalties } from "#utils/database/models/loyalty";
+import { computePoints, computeTier, Loyalties } from "#utils/database/models/loyalty";
+import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 
@@ -51,18 +53,33 @@ export async function POST(req: Request) {
 		if (!restaurantID || !customerId) throw { status: 400, message: "Customer and restaurant required" };
 
 		if (action === "award") {
-			const { amount } = body;
-			if (!amount || amount <= 0 || amount > 100000) throw { status: 400, message: "Valid amount required (1-100000)" };
+			const awardSchema = z.object({ orderId: z.string().min(1), amount: z.number().positive() });
+			const parsed = awardSchema.safeParse(body);
+			if (!parsed.success) throw { status: 400, message: parsed.error.issues[0].message };
 
-			const orderExists = await (await import("#utils/database/models/order")).Orders.findOne({ restaurantID, customer: customerId, orderTotal: { $gte: amount } });
-			if (!orderExists) throw { status: 400, message: "No matching order found for this amount" };
+			const { orderId, amount } = parsed.data;
+			if (amount > 100000) throw { status: 400, message: "Amount exceeds maximum allowed (100000)" };
+
+			const order = await Orders.findById(orderId);
+			if (!order) throw { status: 404, message: "Order not found" };
+			if (order.restaurantID !== restaurantID) throw { status: 403, message: "Order belongs to another restaurant" };
+			if (order.customer?.toString() !== customerId) throw { status: 403, message: "Order does not belong to this customer" };
+			if (order.state !== "complete") throw { status: 400, message: "Order is not completed" };
+			if (order.loyaltyAwarded) throw { status: 409, message: "Loyalty points already awarded for this order" };
+
+			const claimed = await Orders.findOneAndUpdate(
+				{ _id: orderId, loyaltyAwarded: { $ne: true } },
+				{ $set: { loyaltyAwarded: true } },
+				{ new: true },
+			);
+			if (!claimed) throw { status: 409, message: "Loyalty points already awarded for this order" };
 
 			let loyalty = await Loyalties.findOne({ restaurantID, customer: customerId });
 			if (!loyalty) {
 				loyalty = await Loyalties.create({ restaurantID, customer: customerId });
 			}
 
-			const points = Math.floor(amount / 10);
+			const points = computePoints(order.orderTotal, loyalty.tier);
 			loyalty.points += points;
 			loyalty.lifetimePoints += points;
 			loyalty.lastVisit = new Date();

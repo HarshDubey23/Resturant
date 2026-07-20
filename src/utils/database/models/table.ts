@@ -8,6 +8,7 @@ const TableSchema = new mongoose.Schema<TTable>(
 		username: { type: String, trim: true, required: true },
 
 		restaurantID: { type: String, trim: true, lowercase: true, required: true },
+		pin: { type: String, default: null, select: false },
 	},
 	{ timestamps: true },
 );
@@ -27,4 +28,5 @@ export type TTable = {
 	name: string;
 	username: string;
 	restaurantID: string;
+	pin?: string | null;
 };

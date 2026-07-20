@@ -40,6 +40,12 @@ const CartPage = (props: TCartPageProps) => {
 		await placeOrder(selectedProducts);
 		resetSelectedProducts();
 	};
+
+	const onPayAtTable = async () => {
+		if (selectedProducts.length === 0) return;
+		await placeOrder(selectedProducts, "cash");
+		resetSelectedProducts();
+	};
 	const onCancelOrder = async () => {
 		await cancelOrder();
 		resetSelectedProducts();
@@ -144,19 +150,36 @@ const CartPage = (props: TCartPageProps) => {
 						</div>
 					)}
 					<div className="cartAction">
-						<button
-							className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
-							disabled={placingOrder}
-							onClick={onOrderAction}>
-							<Icon code={bottomBarActive ? "f078" : props.selectedProducts.length > 0 ? "e1bc" : "f09d"} type="solid" />
-							{placingOrder
-								? "Loading..."
-								: bottomBarActive
-									? "close"
-									: props.selectedProducts.length > 0
-										? `${selectionTotal} | ${order?.products?.length ? "Add to order" : "Place order"}`
-										: "Proceed to Pay"}
-						</button>
+						{props.selectedProducts.length > 0 && !order?.products?.length ? (
+							<div className="flex gap-2">
+								<button
+									className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
+									disabled={placingOrder}
+									onClick={onOrderAction}>
+									{placingOrder ? "Loading..." : "Pay Now (Online)"}
+								</button>
+								<button
+									className="flex-1 px-4 py-2.5 border border-green-600 text-green-600 rounded-lg font-medium hover:bg-green-50 transition disabled:opacity-50"
+									disabled={placingOrder}
+									onClick={onPayAtTable}>
+									{placingOrder ? "Loading..." : "Pay at Table (Cash / UPI)"}
+								</button>
+							</div>
+						) : (
+							<button
+								className="px-4 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition disabled:opacity-50"
+								disabled={placingOrder}
+								onClick={onOrderAction}>
+								<Icon code={bottomBarActive ? "f078" : props.selectedProducts.length > 0 ? "e1bc" : "f09d"} type="solid" />
+								{placingOrder
+									? "Loading..."
+									: bottomBarActive
+										? "close"
+										: props.selectedProducts.length > 0
+											? `${selectionTotal} | Add to order`
+											: "Proceed to Pay"}
+							</button>
+						)}
 					</div>
 				</div>
 				{order && (

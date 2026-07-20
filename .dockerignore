@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+*.md
+download
+scripts
+.env
+.env.*
+!.env.example

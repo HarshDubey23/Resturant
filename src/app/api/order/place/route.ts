@@ -21,6 +21,8 @@ export async function POST(req: Request) {
 
 		if (!session) throw { status: 401, message: "Authentication Required" };
 
+		const paymentMethod = body.paymentMethod || "razorpay";
+
 		const parsed = orderPlaceSchema.safeParse(body);
 		if (!parsed.success) throw { status: 400, message: parsed.error.flatten().fieldErrors?.products?.[0] ?? "Invalid request" };
 
@@ -66,6 +68,8 @@ export async function POST(req: Request) {
 			restaurantID,
 			table,
 			customer,
+			paymentGateway: paymentMethod,
+			state: paymentMethod === "cash" ? "active" : undefined,
 			products,
 			cartSnapshot: {
 				items: products.map((p) => ({

@@ -22,8 +22,6 @@ export async function POST(req: Request) {
 		if (!order) throw { status: 400, message: `Order with id: ${body?.orderID} not found` };
 		if (order.restaurantID !== session.username) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
 
-		if (!order) throw { status: 400, message: `Order with id: ${body?.orderID} not found` };
-
 		if (body.action === "accept")
 			order.products.forEach((product) => {
 				product.adminApproved = true;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 
 import type { TOrder, TProduct } from "#utils/database/models/order";
@@ -28,7 +28,13 @@ export default function KitchenPage() {
 	const [orders, setOrders] = useState<KitchenOrder[]>([]);
 	const [stations, setStations] = useState<Set<string>>(new Set(["main"]));
 	const [activeStation, setActiveStation] = useState<string>("all");
+	const [tick, setTick] = useState(0);
 	const eventSourceRef = useRef<EventSource | null>(null);
+
+	useEffect(() => {
+		const timer = setInterval(() => setTick((t) => t + 1), 1000);
+		return () => clearInterval(timer);
+	}, []);
 
 	useEffect(() => {
 		if (status !== "authenticated") return;
@@ -83,6 +89,8 @@ export default function KitchenPage() {
 	}
 
 	const filteredOrders = activeStation === "all" ? orders : orders.filter((o) => o.products.some((p) => p.station === activeStation));
+
+	void tick;
 
 	const getElapsed = (createdAt: string) => {
 		const elapsed = Date.now() - new Date(createdAt).getTime();

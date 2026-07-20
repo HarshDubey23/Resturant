@@ -23,6 +23,7 @@ const configs = [
 	},
 ] as const;
 
+export { configs };
 type AIProvider = ReturnType<ReturnType<typeof createOpenAICompatible>>;
 
 export const models = Object.fromEntries(
@@ -37,3 +38,15 @@ export const models = Object.fromEntries(
 ) as Record<(typeof configs)[number]["platform"], AIProvider>;
 
 export const getModel = (provider: keyof typeof models) => models[provider];
+
+export async function resolveProviderKey(platform: string, restaurantID?: string): Promise<string | undefined> {
+	if (restaurantID) {
+		try {
+			const AIConfig = (await import("#utils/database/models/aiConfig")).default;
+			const config = await AIConfig.findOne({ restaurantID }).lean();
+			const keys = (config as Record<string, unknown> | null)?.providerKeys as Record<string, string> | undefined;
+			if (keys?.[platform]) return keys[platform];
+		} catch {}
+	}
+	return process.env[`AI_${platform.toUpperCase()}_KEY`];
+}

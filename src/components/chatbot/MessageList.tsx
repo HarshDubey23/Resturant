@@ -1,9 +1,10 @@
 "use client";
 
 import DOMPurify from "dompurify";
-import { Bot } from "lucide-react";
+import { Bot, Volume2 } from "lucide-react";
 import { memo, type RefObject } from "react";
 import { cn } from "@/lib/utils";
+import { useTTS } from "#utils/hooks/useTTS";
 import type { ChatMessage } from "../../types/chat";
 import { MenuCard } from "./MenuCard";
 
@@ -13,6 +14,25 @@ interface MessageListProps {
 	bottomRef: RefObject<HTMLDivElement | null>;
 	onResizeStart: (e: React.MouseEvent) => void;
 }
+
+const MessageContent = ({ content }: { content: string }) => {
+	const { speak } = useTTS();
+	return (
+		<div className="flex items-start gap-2">
+			<div className="text-sm leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }} />
+			<button
+				type="button"
+				onClick={(e) => {
+					e.stopPropagation();
+					speak(content.replace(/<[^>]*>/g, ""));
+				}}
+				className="shrink-0 mt-0.5 p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+				title="Read aloud">
+				<Volume2 className="h-3.5 w-3.5" />
+			</button>
+		</div>
+	);
+};
 
 export const MessageList = memo(({ messages, isLoading, bottomRef, onResizeStart }: MessageListProps) => {
 	return (
@@ -41,9 +61,7 @@ export const MessageList = memo(({ messages, isLoading, bottomRef, onResizeStart
 									</div>
 								</div>
 								<div className="space-y-2">
-									{message.content && (
-										<div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.content) }} />
-									)}
+									{message.content && <MessageContent content={message.content} />}
 									{message.toolResults && message.toolResults.length > 0 && (
 										<div className="space-y-2">
 											{message.toolResults.map((items, idx) => (

@@ -1,5 +1,6 @@
 import { useSearchParams } from "next/navigation.js";
 import type { UIEvent } from "react";
+import AIKeysSettings from "./AIKeysSettings";
 import MenuEditor from "./MenuEditor/MenuEditor";
 import SettingsAccount from "./SettingsAccount";
 
@@ -15,6 +16,7 @@ export default function Settings({ onScroll }: SettingsProps) {
 		<div className="h-full" onScroll={onScroll}>
 			{subTab === "account" && <SettingsAccount />}
 			{subTab === "menu" && <MenuEditor />}
+			{subTab === "ai-keys" && <AIKeysSettings />}
 		</div>
 	);
 }

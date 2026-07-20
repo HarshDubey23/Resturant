@@ -65,22 +65,35 @@ cp .env.example .env.local
 # Edit .env.local with your MongoDB URI and other config
 
 # Start development server
-pnpm play
+pnpm dev
 ```
 
-Open http://localhost:3000.
+Open http://localhost:3050.
 
 ### Demo Data
 
 ```bash
-# Seed two demo restaurants (Empire & Starbucks / Brewpoint)
-curl http://localhost:3000/api/refreshDemoData
+# Seed demo restaurants
+curl http://localhost:3050/api/refreshDemoData
 ```
 
 Demo logins:
-- Admin: `admin@empire.com` / `empire@123`
-- Admin: `admin@starbucks.com` / `starbucks@123`
-- Customer: `/{restaurant}?table={id}` (e.g. `/empire?table=0`)
+- Admin (The Spice Kitchen): `demo@orderworder.com` / `Demo@12345`
+- Admin (Empire): `admin@empire.com` / `empire@123`
+- Admin (BrewPoint): `admin@brewpoint.com` / `brewpoint@123`
+- Customer: `/demo?table=T1` (phone: `9999999999`, OTP will be displayed in console in dev mode)
+
+### Docker
+
+```bash
+docker compose up
+```
+
+This starts the app at http://localhost:3050 along with MongoDB, Redis (optional), and n8n (optional).
+
+### Deployment
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for Vercel, Docker, and Render deployment guides.
 
 ## Project Structure
 

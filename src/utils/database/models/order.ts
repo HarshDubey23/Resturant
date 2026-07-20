@@ -34,6 +34,7 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 			taxTotal: Number,
 			grandTotal: Number,
 		},
+		loyaltyAwarded: { type: Boolean, default: false },
 		settledAt: { type: Date },
 		products: [
 			{
@@ -50,6 +51,12 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 	},
 	{ timestamps: true },
 );
+
+OrderSchema.index({ restaurantID: 1, state: 1, createdAt: -1 });
+OrderSchema.index({ restaurantID: 1, customer: 1, state: 1 });
+OrderSchema.index({ restaurantID: 1, createdAt: -1 });
+OrderSchema.index({ restaurantID: 1, n8nEventId: 1 }, { unique: true, sparse: true });
+OrderSchema.index({ invoiceNumber: 1 }, { sparse: true });
 
 OrderSchema.pre("save", function () {
 	if (this.isModified("products")) {
