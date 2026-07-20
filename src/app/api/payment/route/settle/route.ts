@@ -3,6 +3,7 @@ import type { Session } from "next-auth";
 import { getServerSession } from "next-auth";
 import connectDB from "#utils/database/connect";
 import { Accounts } from "#utils/database/models/account";
+import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import { captureError } from "#utils/helper/sentryWrapper";
@@ -22,6 +23,16 @@ export async function POST(req: Request) {
 			throw { status: 400, message: "orderId, amount, ownerVpa required" };
 		}
 		await connectDB();
+
+		const order = await Orders.findById(orderId);
+		if (!order) throw { status: 404, message: "Order not found" };
+		if (order.restaurantID !== session.username) throw { status: 403, message: "Access denied" };
+		if (order.paymentStatus !== "paid") throw { status: 400, message: "Order not paid yet" };
+
+		const maxSettleAmount = (order.orderTotal || 0) + (order.taxTotal || 0) - (order.refundedAmount || 0);
+		if (amount > maxSettleAmount) {
+			throw { status: 400, message: `Settle amount exceeds maximum allowed (${maxSettleAmount})` };
+		}
 
 		const account = await Accounts.findOne({ username: session.username }).populate("profile");
 		const profile = account?.profile as Record<string, unknown> | null;

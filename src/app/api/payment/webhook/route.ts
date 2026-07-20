@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
@@ -8,12 +9,23 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
 	try {
-		const body = await req.json();
+		const rawBody = await req.text();
+		const body = JSON.parse(rawBody);
 		const event = body.event;
 		const payload = body.payload;
 
 		if (!event || !payload) {
 			return new Response("Missing event or payload", { status: 400 });
+		}
+
+		const signature = req.headers.get("x-razorpay-signature");
+		const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+		if (!signature || !webhookSecret) {
+			return new Response("Missing webhook signature or secret", { status: 400 });
+		}
+		const expectedSignature = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
+		if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+			return new Response("Invalid webhook signature", { status: 401 });
 		}
 
 		await connectDB();

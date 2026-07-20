@@ -31,6 +31,9 @@ export async function POST(req: Request) {
 		const order = await Orders.findById(orderId);
 		if (!order) throw { status: 404, message: "Order not found" };
 
+		const sessionRestaurant = session.restaurant?.username || session.username;
+		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
+
 		const product = order.products.find((p: { _id?: { toString(): string } }) => p._id?.toString() === productId);
 		if (!product) throw { status: 404, message: "Product not found in order" };
 

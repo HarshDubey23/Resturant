@@ -22,6 +22,7 @@ export async function POST(req: Request) {
 
 		const order = await Orders.findById(orderId);
 		if (!order) throw { status: 404, message: "Order not found" };
+		if (order.restaurantID !== session.username) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
 		if (!order.paymentId) throw { status: 400, message: "No payment to refund" };
 		if (order.paymentStatus === "refunded") throw { status: 400, message: "Already refunded" };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import DOMPurify from "dompurify";
 import { Bot } from "lucide-react";
 import { memo, type RefObject } from "react";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,9 @@ export const MessageList = memo(({ messages, isLoading, bottomRef, onResizeStart
 									</div>
 								</div>
 								<div className="space-y-2">
-									{message.content && <div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: message.content }} />}
+									{message.content && (
+										<div className="text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.content) }} />
+									)}
 									{message.toolResults && message.toolResults.length > 0 && (
 										<div className="space-y-2">
 											{message.toolResults.map((items, idx) => (

@@ -25,6 +25,9 @@ export async function POST(req: Request) {
 		const order = await Orders.findById(orderId).populate("customer");
 		if (!order) throw { status: 404, message: "Order not found" };
 
+		const sessionRestaurant = session.restaurant?.username || session.username;
+		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
+
 		const totalAmount = (order.orderTotal || 0) + (order.taxTotal || 0);
 		const splitAmount = Math.round((totalAmount / splits.length) * 100);
 

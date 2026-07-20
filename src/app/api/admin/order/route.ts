@@ -12,7 +12,7 @@ export async function GET() {
 	try {
 		await connectDB();
 		const session = await getServerSession(authOptions);
-		if (!session) throw { status: 401, message: "Authentication Required" };
+		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 
 		const restaurantID = session?.username;
 		const orders =

@@ -5,13 +5,16 @@ const CustomerSchema = new mongoose.Schema<TCustomer>(
 	{
 		fname: { type: String, trim: true, required: true },
 		lname: { type: String, trim: true, required: true },
-		phone: { type: String, trim: true, unique: true, required: true, sparse: true, index: { unique: true } },
-		email: { type: String, trim: true, unique: true, sparse: true, index: { unique: true } },
+		phone: { type: String, trim: true, required: true, sparse: true },
+		email: { type: String, trim: true, unique: true, sparse: true },
 		gender: { type: String, trim: true, lowercase: true, enum: gender },
 		whatsappOptIn: { type: Boolean, default: false },
+		restaurantID: { type: String, trim: true, lowercase: true, required: true },
 	},
 	{ timestamps: true },
 );
+
+CustomerSchema.index({ phone: 1, restaurantID: 1 }, { unique: true });
 
 export const Customers = mongoose.models?.customers ?? mongoose.model<TCustomer>("customers", CustomerSchema);
 export type TCustomer = HydratedDocument<{
@@ -21,4 +24,5 @@ export type TCustomer = HydratedDocument<{
 	phone: string;
 	email: string;
 	whatsappOptIn: boolean;
+	restaurantID: string;
 }>;

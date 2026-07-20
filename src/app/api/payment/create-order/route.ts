@@ -24,6 +24,9 @@ export async function POST(req: Request) {
 		if (!order) throw { status: 404, message: "Order not found" };
 		if (order.paymentStatus === "paid") throw { status: 400, message: "Order already paid" };
 
+		const sessionRestaurant = session.restaurant?.username || session.username;
+		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
+
 		const amountInPaise = Math.round((order.orderTotal + order.taxTotal) * 100);
 		const receipt = `order_${order._id?.toString()?.slice(-12)}`;
 

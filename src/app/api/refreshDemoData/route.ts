@@ -1,9 +1,12 @@
+import { getServerSession } from "next-auth";
+
 import connectDB from "#utils/database/connect";
 import { Accounts } from "#utils/database/models/account";
 import { Kitchens } from "#utils/database/models/kitchen";
 import { Menus } from "#utils/database/models/menu";
 import { Profiles } from "#utils/database/models/profile";
 import { Tables } from "#utils/database/models/table";
+import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import brewpointData from "./_data/brewpoint/brewpoint";
 import empire from "./_data/empire/empire";
@@ -58,6 +61,10 @@ export const runtime = "nodejs";
 export async function GET() {
 	await connectDB();
 	try {
+		const session = await getServerSession(authOptions);
+		if (!session || session.role !== "admin") {
+			return new Response(JSON.stringify({ message: "Unauthorized. Admin access required." }), { status: 401 });
+		}
 		const start = performance.now();
 		const deleteResult = await deleteData(["empire", "brewpoint"]);
 		const [empireResult, brewpointResult] = await Promise.all([createData(empire), createData(brewpointData)]);

@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+
+import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
 const PROVIDERS = [
 	{ keyEnv: "AI_GROQ_KEY", url: "https://api.groq.com/openai/v1/audio/transcriptions", model: "whisper-large-v3" },
@@ -41,6 +45,13 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
 	try {
+		const session = await getServerSession(authOptions);
+		if (!session) throw { status: 401, message: "Authentication Required" };
+
+		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+		const rateLimitResponse = await rateLimitMiddleware(`voice-stt:${ip}`, 10, 60000);
+		if (rateLimitResponse) return rateLimitResponse;
+
 		const formData = await req.formData();
 		const audio = formData.get("audio") as Blob | null;
 		if (!audio) throw { status: 400, message: "Audio blob is required" };

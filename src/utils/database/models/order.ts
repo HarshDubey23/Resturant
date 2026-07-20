@@ -52,12 +52,14 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 );
 
 OrderSchema.pre("save", function () {
-	this.orderTotal = 0;
-	this.taxTotal = 0;
-	this?.products?.forEach(({ quantity, price, tax }) => {
-		this.orderTotal += price * quantity;
-		this.taxTotal += tax;
-	});
+	if (this.isModified("products")) {
+		this.orderTotal = 0;
+		this.taxTotal = 0;
+		this?.products?.forEach(({ quantity, price, tax }) => {
+			this.orderTotal += price * quantity;
+			this.taxTotal += tax;
+		});
+	}
 });
 
 export const Orders = mongoose.models?.orders ?? mongoose.model<TOrder>("orders", OrderSchema);

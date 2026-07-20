@@ -1,6 +1,8 @@
+import mongoose from "mongoose";
 import connectDB from "#utils/database/connect";
 import { Accounts } from "#utils/database/models/account";
-import { Invoices } from "#utils/database/models/invoice";
+
+const COUNTERS_COLLECTION = "invoice_counters";
 
 export async function generateInvoiceNumber(restaurantID: string): Promise<string> {
 	await connectDB();
@@ -15,12 +17,12 @@ export async function generateInvoiceNumber(restaurantID: string): Promise<strin
 	const fyStart = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
 	const fyEnd = fyStart + 1;
 	const fy = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
-
 	const prefixPattern = `${shortPrefix}/${fy}/`;
-	const lastInvoice = await Invoices.findOne({ invoiceNumber: { $regex: `^${prefixPattern}` } }, {}, { sort: { invoiceNumber: -1 } }).lean();
 
-	const lastSeq = lastInvoice ? Number.parseInt((lastInvoice.invoiceNumber as string).split("/").pop() || "0", 10) : 0;
-	const newSeq = lastSeq + 1;
+	const counterDoc = await mongoose.connection.db
+		?.collection(COUNTERS_COLLECTION)
+		?.findOneAndUpdate({ counterKey: `invoice_${restaurantID}_${fy}` }, { $inc: { seq: 1 } }, { upsert: true, returnDocument: "after" });
 
+	const newSeq = (counterDoc as { seq?: number } | null)?.seq ?? 1;
 	return `${prefixPattern}${String(newSeq).padStart(5, "0")}`;
 }

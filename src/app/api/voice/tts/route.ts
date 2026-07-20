@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+
+import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
 const _ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
 
@@ -8,6 +12,13 @@ export const runtime = "nodejs";
 
 export async function POST(req: Request) {
 	try {
+		const session = await getServerSession(authOptions);
+		if (!session) throw { status: 401, message: "Authentication Required" };
+
+		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+		const rateLimitResponse = await rateLimitMiddleware(`voice-tts:${ip}`, 10, 60000);
+		if (rateLimitResponse) return rateLimitResponse;
+
 		const { text, voice } = await req.json();
 		if (!text || typeof text !== "string") throw { status: 400, message: "Text is required" };
 

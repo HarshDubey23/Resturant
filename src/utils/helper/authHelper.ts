@@ -71,15 +71,18 @@ export const authOptions: AuthOptions = {
 				if (!cred?.phone) throw new Error("Phone number is required");
 
 				await connectDB();
-				const customerCred = {
+				let customerCred: Record<string, string | undefined> = {
 					fname: cred?.fname,
 					lname: cred?.lname,
 					phone: cred?.phone,
 				};
 
-				let customer = await Customers.findOne({ phone: cred?.phone });
+				let customer = await Customers.findOne({ phone: cred?.phone, restaurantID: cred?.restaurant });
 
-				if (!customer) customer = await new Customers(customerCred).save();
+				if (!customer) {
+					customerCred = { ...customerCred, restaurantID: cred?.restaurant };
+					customer = await new Customers(customerCred).save();
+				}
 
 				const account = await Accounts.findOne<TAccount>({ username: cred?.restaurant }).populate("profile").populate("tables");
 

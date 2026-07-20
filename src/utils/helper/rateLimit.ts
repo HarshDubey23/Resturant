@@ -23,7 +23,7 @@ export async function rateLimit(key: string, maxRequests: number, windowMs: numb
 		const ttl = await redis.ttl(countKey);
 		return { ok: true, remaining: maxRequests - (current + 1), resetIn: ttl > 0 ? ttl * 1000 : windowMs };
 	} catch {
-		return { ok: true, remaining: maxRequests - 1, resetIn: windowMs };
+		return { ok: false, remaining: 0, resetIn: windowMs };
 	}
 }
 

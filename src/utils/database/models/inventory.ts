@@ -20,6 +20,9 @@ InventorySchema.virtual("isLowStock").get(function () {
 	return this.currentStock <= this.reorderLevel;
 });
 
+InventorySchema.set("toJSON", { virtuals: true });
+InventorySchema.set("toObject", { virtuals: true });
+
 export const Inventory = mongoose.models?.inventory ?? mongoose.model<TInventory>("inventory", InventorySchema);
 
 export type TInventory = HydratedDocument<{

@@ -52,7 +52,10 @@ export async function POST(req: Request) {
 
 		if (action === "award") {
 			const { amount } = body;
-			if (!amount) throw { status: 400, message: "Amount required" };
+			if (!amount || amount <= 0 || amount > 100000) throw { status: 400, message: "Valid amount required (1-100000)" };
+
+			const orderExists = await (await import("#utils/database/models/order")).Orders.findOne({ restaurantID, customer: customerId, orderTotal: { $gte: amount } });
+			if (!orderExists) throw { status: 400, message: "No matching order found for this amount" };
 
 			let loyalty = await Loyalties.findOne({ restaurantID, customer: customerId });
 			if (!loyalty) {
@@ -75,7 +78,7 @@ export async function POST(req: Request) {
 
 		if (action === "redeem") {
 			const { points } = body;
-			if (!points) throw { status: 400, message: "Points to redeem required" };
+			if (!points || points <= 0) throw { status: 400, message: "Valid positive points value required" };
 
 			const loyalty = await Loyalties.findOne({ restaurantID, customer: customerId });
 			if (!loyalty) throw { status: 404, message: "No loyalty account found" };

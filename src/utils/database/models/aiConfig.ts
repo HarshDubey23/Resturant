@@ -15,7 +15,6 @@ const aiConfigSchema = new Schema<IAIConfig>(
 			required: true,
 			unique: true,
 			sparse: true,
-			index: { unique: true },
 		},
 		exhaustedProviders: {
 			type: [String],

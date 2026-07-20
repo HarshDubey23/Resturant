@@ -9,8 +9,8 @@ import type { TTable } from "./table";
 
 const AccountSchema = new mongoose.Schema<TAccount>(
 	{
-		username: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true, index: { unique: true } },
-		email: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true, index: { unique: true } },
+		username: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true },
+		email: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true },
 		password: { type: String, required: true },
 		verified: { type: Boolean, default: false },
 		accountActive: { type: Boolean, default: true },

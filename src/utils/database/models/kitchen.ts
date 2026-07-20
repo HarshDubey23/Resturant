@@ -6,12 +6,14 @@ import { Accounts } from "./account";
 
 const KitchenSchema = new mongoose.Schema<TKitchen>(
 	{
-		username: { type: String, trim: true, unique: true, required: true, sparse: true, index: { unique: true } },
+		username: { type: String, trim: true, required: true },
 		password: { type: String, required: true },
 		restaurantID: { type: String, trim: true, lowercase: true, required: true },
 	},
 	{ timestamps: true },
 );
+
+KitchenSchema.index({ username: 1, restaurantID: 1 }, { unique: true });
 
 KitchenSchema.pre("save", async function () {
 	const account = await Accounts.findOne({ username: this.restaurantID });

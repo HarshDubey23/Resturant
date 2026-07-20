@@ -12,13 +12,14 @@ export async function POST(req: Request) {
 		const session = await getServerSession(authOptions);
 		const { itemId, hidden } = await req.json();
 
-		if (!session) throw { status: 401, message: "Authentication Required" };
+		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 		if (!itemId) throw { status: 400, message: "Menu item id is required" };
 		if (hidden === undefined) throw { status: 400, message: "Hidden value required" };
 
 		const menuItem = await Menus.findById<TMenu>(itemId);
 
 		if (!menuItem) throw { status: 404, message: `Menu item with id: ${itemId}, not found` };
+		if (menuItem.restaurantID !== session.username) throw { status: 403, message: "Access denied. Menu item belongs to another restaurant." };
 
 		menuItem.hidden = hidden;
 

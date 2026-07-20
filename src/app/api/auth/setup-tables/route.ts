@@ -1,8 +1,10 @@
+import { getServerSession } from "next-auth";
 import QRCode from "qrcode";
 
 import connectDB from "#utils/database/connect";
 import { Accounts } from "#utils/database/models/account";
 import { Tables } from "#utils/database/models/table";
+import { authOptions } from "#utils/helper/authHelper";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +16,10 @@ export async function POST(req: Request) {
 	if (rateLimitResponse) return rateLimitResponse;
 
 	try {
+		const session = await getServerSession(authOptions);
+		if (!session || session.role !== "admin") {
+			return Response.json({ message: "Unauthorized. Admin access required." }, { status: 401 });
+		}
 		const { restaurantID, count } = await req.json();
 
 		if (!restaurantID || !count || count < 1) {

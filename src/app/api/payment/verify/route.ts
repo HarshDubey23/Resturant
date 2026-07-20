@@ -30,6 +30,9 @@ export async function POST(req: Request) {
 		const order = await Orders.findById(orderId);
 		if (!order) throw { status: 404, message: "Order not found" };
 
+		const sessionRestaurant = session.restaurant?.username || session.username;
+		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
+
 		order.paymentStatus = "paid";
 		order.paymentId = razorpayPaymentId;
 		await order.save();

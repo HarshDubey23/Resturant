@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 		const session = await getServerSession(authOptions);
 		const body = await req.json();
 
-		if (!session) throw { status: 401, message: "Authentication Required" };
+		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 
 		const parsed = themeUpdateSchema.safeParse(body);
 		if (!parsed.success) throw { status: 400, message: "Valid theme color is required" };

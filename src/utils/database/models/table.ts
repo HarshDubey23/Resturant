@@ -6,6 +6,7 @@ const TableSchema = new mongoose.Schema<TTable>(
 	{
 		name: { type: String, trim: true, required: true },
 		username: { type: String, trim: true, required: true },
+
 		restaurantID: { type: String, trim: true, lowercase: true, required: true },
 	},
 	{ timestamps: true },

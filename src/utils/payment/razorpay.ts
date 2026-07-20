@@ -88,7 +88,8 @@ export async function verifyPaymentSignature(orderId: string, paymentId: string,
 
 	const expected = crypto.createHmac("sha256", secret).update(`${orderId}|${paymentId}`).digest("hex");
 
-	return expected === signature;
+	if (expected.length !== signature.length) return false;
+	return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
 }
 
 export async function capturePayment(paymentId: string, amount: number): Promise<RazorpayPayment> {

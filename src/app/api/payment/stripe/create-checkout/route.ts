@@ -22,7 +22,11 @@ export async function POST(req: Request) {
 		const order = await Orders.findById<TOrder>(orderId);
 		if (!order) throw { status: 404, message: "Order not found" };
 
+		const allowedOrigins = [process.env.NEXT_PUBLIC_URL || "http://localhost:3050", "http://localhost:3050", "http://localhost:3000"].filter(Boolean);
 		const origin = req.headers.get("origin") || "http://localhost:3050";
+		if (!allowedOrigins.some((allowed) => origin.startsWith(allowed || ""))) {
+			throw { status: 400, message: "Invalid origin" };
+		}
 		const checkoutSession = await createStripeCheckoutSession({
 			orderId: order._id.toString(),
 			restaurantID: order.restaurantID,

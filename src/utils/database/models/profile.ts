@@ -6,7 +6,7 @@ import { Accounts } from "./account";
 const ProfileSchema = new mongoose.Schema<TProfile>(
 	{
 		name: { type: String, trim: true, required: true },
-		restaurantID: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true, index: { unique: true } },
+		restaurantID: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true },
 		description: { type: String, trim: true },
 		address: { type: String, trim: true },
 		phone: { type: String, trim: true },

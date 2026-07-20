@@ -12,13 +12,15 @@ export async function POST(req: Request) {
 		const session = await getServerSession(authOptions);
 		const body = await req.json();
 
-		if (!session) throw { status: 401, message: "Authentication Required" };
+		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 		if (!body?.orderID) throw { status: 400, message: "Order id is required to perform an action" };
 		if (!actions.includes(body?.action)) throw { status: 400, message: "Invalid action provided" };
 
 		await connectDB();
 
 		const order = await Orders.findById<TOrder>(body?.orderID);
+		if (!order) throw { status: 400, message: `Order with id: ${body?.orderID} not found` };
+		if (order.restaurantID !== session.username) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
 
 		if (!order) throw { status: 400, message: `Order with id: ${body?.orderID} not found` };
 
