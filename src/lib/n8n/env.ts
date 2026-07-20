@@ -20,4 +20,4 @@ if (!parsed.success) {
 	console.warn("[n8n] Some environment variables are not configured. n8n integration will be disabled.");
 }
 
-export const env = parsed.success ? parsed.data : {} as z.infer<typeof EnvSchema>;
+export const env = parsed.success ? parsed.data : ({} as z.infer<typeof EnvSchema>);
