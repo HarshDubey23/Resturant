@@ -6,6 +6,9 @@ import type { TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET(req: Request) {
 	const session = await getServerSession(authOptions);
 	if (!session) {

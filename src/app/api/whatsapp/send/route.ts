@@ -7,6 +7,9 @@ import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import { sendWhatsAppOrderReady, sendWhatsAppOrderReceipt, sendWhatsAppText } from "#utils/whatsapp";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	try {
 		const session = await getServerSession(authOptions);

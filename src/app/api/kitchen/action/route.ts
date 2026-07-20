@@ -6,6 +6,9 @@ import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	try {
 		const session = await getServerSession(authOptions);

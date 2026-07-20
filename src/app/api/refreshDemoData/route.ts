@@ -52,6 +52,9 @@ const createData = async (props: TDocumentData) => {
 	};
 };
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET() {
 	await connectDB();
 	try {

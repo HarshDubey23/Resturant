@@ -36,6 +36,9 @@ async function tryProvider(provider: { keyEnv: string; url: string; model: strin
 	return text || null;
 }
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	try {
 		const formData = await req.formData();

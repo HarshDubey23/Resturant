@@ -3,6 +3,9 @@ import { Accounts } from "#utils/database/models/account";
 import { Menus } from "#utils/database/models/menu";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	const ip = req.headers.get("x-forwarded-for") ?? "unknown";
 	const rateLimitResponse = await rateLimitMiddleware(`setup-menu:${ip}`, 30, 60000);

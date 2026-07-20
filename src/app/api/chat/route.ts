@@ -9,6 +9,9 @@ import { authOptions } from "#utils/helper/authHelper";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 import { chatSchema } from "#utils/helper/validation";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	try {
 		const ip = req.headers.get("x-forwarded-for") ?? "unknown";

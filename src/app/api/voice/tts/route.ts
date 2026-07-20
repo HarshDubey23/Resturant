@@ -3,6 +3,9 @@ import { CatchNextResponse } from "#utils/helper/common";
 
 const _ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
 	try {
 		const { text, voice } = await req.json();

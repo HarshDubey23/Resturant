@@ -3,6 +3,9 @@ import NextAuth from "next-auth";
 import { authOptions } from "#utils/helper/authHelper";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const handler = NextAuth(authOptions);
 
 async function wrappedHandler(req: Request, ctx: { params: Promise<{ nextauth: string[] }> }) {
