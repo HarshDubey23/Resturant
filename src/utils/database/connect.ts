@@ -28,10 +28,7 @@ async function connectDB() {
 	if (MONGODB_CACHE.mongoose!.conn) return MONGODB_CACHE.mongoose!.conn;
 
 	if (!process.env.MONGODB_URI) {
-		const err = new Error(
-			"MONGODB_URI environment variable is not set. " +
-				"Add it to .env.local (dev) or your hosting provider's env vars (prod).",
-		);
+		const err = new Error("MONGODB_URI environment variable is not set. " + "Add it to .env.local (dev) or your hosting provider's env vars (prod).");
 		(err as Error & { status?: number }).status = 500;
 		throw err;
 	}

@@ -22,6 +22,31 @@ const AccountSchema = new mongoose.Schema<TAccount>(
 		kitchens: [{ type: mongoose.Schema.Types.ObjectId, ref: "kitchens", unique: true }],
 		tables: [{ type: mongoose.Schema.Types.ObjectId, ref: "tables", unique: true }],
 		menus: [{ type: mongoose.Schema.Types.ObjectId, ref: "menus", unique: true }],
+		stripeCustomerId: { type: String, trim: true, index: true },
+		stripeAccountId: { type: String, trim: true },
+		razorpayContactId: { type: String, trim: true },
+		razorpayFundAccountId: { type: String, trim: true },
+		razorpayAccountId: { type: String, trim: true },
+		n8nWebhookUrl: { type: String, trim: true },
+		outlets: [
+			{
+				name: { type: String, required: true },
+				slug: { type: String, required: true },
+				address: { type: String },
+				phone: { type: String },
+				gstin: { type: String },
+				isPrimary: { type: Boolean, default: false },
+			},
+		],
+		staff: [
+			{
+				user: { type: mongoose.Schema.Types.ObjectId, ref: "accounts" },
+				role: { type: String, enum: ["owner", "manager", "captain", "waiter", "chef"] },
+				outlets: [{ type: String }],
+				permissions: [{ type: String }],
+				isActive: { type: Boolean, default: true },
+			},
+		],
 	},
 	{ timestamps: true },
 );
@@ -45,4 +70,12 @@ export type TAccount = HydratedDocument<{
 	kitchens: Array<TKitchen>;
 	tables: Array<TTable>;
 	menus: Array<TMenu>;
+	stripeCustomerId: string;
+	stripeAccountId: string;
+	razorpayContactId: string;
+	razorpayFundAccountId: string;
+	razorpayAccountId: string;
+	n8nWebhookUrl: string;
+	outlets: Array<{ name: string; slug: string; address?: string; phone?: string; gstin?: string; isPrimary: boolean }>;
+	staff: Array<{ user: mongoose.Types.ObjectId; role: string; outlets: string[]; permissions: string[]; isActive: boolean }>;
 }>;

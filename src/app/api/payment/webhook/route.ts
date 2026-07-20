@@ -1,5 +1,7 @@
+import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
+import { captureError } from "#utils/helper/sentryWrapper";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,6 +27,7 @@ export async function POST(req: Request) {
 						paymentStatus: "paid",
 						paymentId: payment.id,
 					});
+					triggerN8nWorkflow("payment.succeeded", { orderId, gateway: "razorpay" }).catch((e: unknown) => captureError(e, { context: "n8n trigger failed" }));
 				}
 				break;
 			}
@@ -41,21 +44,28 @@ export async function POST(req: Request) {
 			case "refund.created": {
 				const refund = payload.refund?.entity;
 				const refundOrderId = refund?.notes?.orderId;
-				if (refundOrderId) {
-					const order = await Orders.findById(refundOrderId);
-					if (order) {
-						const _totalRefunded = order.paymentStatus === "partially_refunded";
-						order.paymentStatus = order.amount === refund.amount ? "refunded" : "partially_refunded";
-						await order.save();
-					}
+				if (!refundOrderId) break;
+				const order = await Orders.findById(refundOrderId);
+				if (!order) break;
+
+				const refundAmountInRupees = (refund.amount ?? 0) / 100;
+				const orderTotalInRupees = (order.orderTotal ?? 0) + (order.taxTotal ?? 0);
+
+				order.refundedAmount = (order.refundedAmount ?? 0) + refundAmountInRupees;
+
+				if (order.refundedAmount >= orderTotalInRupees) {
+					order.paymentStatus = "refunded";
+				} else if (order.refundedAmount > 0) {
+					order.paymentStatus = "partially_refunded";
 				}
+				await order.save();
 				break;
 			}
 		}
 
 		return new Response("OK", { status: 200 });
 	} catch (error) {
-		console.error("Webhook error:", error);
+		captureError(error, { route: "/api/payment/webhook" });
 		return new Response("Webhook error", { status: 500 });
 	}
 }

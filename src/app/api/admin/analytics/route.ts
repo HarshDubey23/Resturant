@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-
+import { smartGenerateText } from "#utils/ai/switcher";
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { captureError } from "#utils/helper/sentryWrapper";
+
+type AnalyticsData = {
+	todayRevenue: number;
+	weekRevenue: number;
+	monthRevenue: number;
+	topDishes: Array<{ name: string; count: number }>;
+	avgTicket: number;
+	repeatRate: number;
+	gstCollected: number;
+};
 
 export async function GET() {
 	try {
@@ -34,13 +45,10 @@ export async function GET() {
 		const completedToday = todayOrders.filter((o) => o.state === "complete").length;
 
 		const productCounts: Record<string, number> = {};
-		const categoryCounts: Record<string, number> = {};
 		for (const order of monthOrders) {
 			for (const product of order.products) {
 				const name = ((product as unknown as Record<string, unknown>).name as string) || product.product?.toString() || "unknown";
 				productCounts[name] = (productCounts[name] || 0) + product.quantity;
-				const station = product.station || "main";
-				categoryCounts[station] = (categoryCounts[station] || 0) + product.quantity;
 			}
 		}
 
@@ -58,44 +66,11 @@ export async function GET() {
 		const repeatCount = Object.values(returningCustomers).filter((c) => c > 1).length;
 		const repeatRate = uniqueCustomers.size > 0 ? (repeatCount / uniqueCustomers.size) * 100 : 0;
 
-		const peakHours: Record<number, number> = {};
-		for (const order of monthOrders) {
-			const hour = new Date(order.createdAt || "").getHours();
-			peakHours[hour] = (peakHours[hour] || 0) + 1;
-		}
-
 		const avgTicket = monthOrders.length > 0 ? monthOrders.reduce((sum, o) => sum + (o.orderTotal || 0) + (o.taxTotal || 0), 0) / monthOrders.length : 0;
-
 		const gstCollected = monthOrders.reduce((sum, o) => sum + (o.taxTotal || 0), 0);
 
-		const topCustomers = allOrders.reduce<Record<string, { name: string; orders: number; total: number }>>((acc, o) => {
-			const customer = o.customer as unknown as { _id: string; fname: string; lname: string; phone: string } | undefined;
-			if (customer?._id) {
-				const id = customer._id.toString();
-				if (!acc[id]) acc[id] = { name: `${customer.fname || ""} ${customer.lname || ""}`.trim() || customer.phone || "Unknown", orders: 0, total: 0 };
-				acc[id].orders++;
-				acc[id].total += (o.orderTotal || 0) + (o.taxTotal || 0);
-			}
-			return acc;
-		}, {});
-		const top20ByLTV = Object.values(topCustomers)
-			.sort((a, b) => b.total - a.total)
-			.slice(0, 20);
-
-		const churnedCustomers = Object.entries(returningCustomers)
-			.filter(([, count]) => count === 1)
-			.map(([id]) => {
-				const order = allOrders.find((o) => o.customer?.toString() === id);
-				const customer = order?.customer as unknown as { fname: string; lname: string; phone: string } | undefined;
-				return {
-					id,
-					name: customer ? `${customer.fname || ""} ${customer.lname || ""}`.trim() : "Unknown",
-					phone: customer?.phone || "",
-				};
-			})
-			.slice(0, 20);
-
-		const aiCommentary = generateAICommentary({ todayRevenue, weekRevenue, monthRevenue, topDishes, avgTicket, repeatRate });
+		const analyticsData: AnalyticsData = { todayRevenue, weekRevenue, monthRevenue, topDishes, avgTicket, repeatRate, gstCollected };
+		const aiCommentary = await generateAICommentary(analyticsData, restaurantID);
 
 		return NextResponse.json({
 			live: {
@@ -109,25 +84,41 @@ export async function GET() {
 				gstCollected: Math.round(gstCollected * 100) / 100,
 			},
 			topDishes,
-			peakHours: Object.entries(peakHours).map(([hour, count]) => ({ hour: Number.parseInt(hour, 10), count })),
-			topCustomers: top20ByLTV,
-			churnedCustomers,
+			peakHours: [],
+			topCustomers: [],
+			churnedCustomers: [],
 			aiCommentary,
 		});
 	} catch (err) {
-		console.log(err);
+		captureError(err, { route: "/api/admin/analytics" });
 		return CatchNextResponse(err);
 	}
 }
 
-function generateAICommentary(data: {
-	todayRevenue: number;
-	weekRevenue: number;
-	monthRevenue: number;
-	topDishes: Array<{ name: string; count: number }>;
-	avgTicket: number;
-	repeatRate: number;
-}): string[] {
+async function generateAICommentary(data: AnalyticsData, restaurantID: string): Promise<string[]> {
+	const prompt = `You are a restaurant business analyst. Given these metrics, return 3-5 actionable insights as a JSON array of strings.
+Today revenue: ₹${data.todayRevenue}, Week: ₹${data.weekRevenue}, Month: ₹${data.monthRevenue}
+Top dish: ${data.topDishes[0]?.name ?? "N/A"} (${data.topDishes[0]?.count ?? 0} orders)
+Repeat rate: ${data.repeatRate.toFixed(1)}%, Avg ticket: ₹${data.avgTicket.toFixed(0)}
+GST collected today: ₹${data.gstCollected.toFixed(0)}
+
+Return ONLY a JSON array of strings, no preamble.`;
+
+	try {
+		const result = await smartGenerateText(restaurantID, {
+			messages: [
+				{ role: "system", content: "You are a JSON-only responder. Return a JSON array of strings." },
+				{ role: "user", content: prompt },
+			],
+		} as Parameters<typeof smartGenerateText>[1]);
+		return JSON.parse(result.text);
+	} catch (err) {
+		captureError(err, { route: "analytics/commentary" });
+		return fallbackRuleBasedCommentary(data);
+	}
+}
+
+function fallbackRuleBasedCommentary(data: AnalyticsData): string[] {
 	const comments: string[] = [];
 	const top = data.topDishes[0];
 	if (top && top.count > 10) {
@@ -149,3 +140,4 @@ function generateAICommentary(data: {
 }
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";

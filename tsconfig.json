@@ -27,7 +27,8 @@
 			"#assets/*": ["./src/assets/*"],
 			"#components/*": ["./src/components/*"],
 			"#data/*": ["./src/data/*"],
-			"#utils/*": ["./src/utils/*"]
+			"#utils/*": ["./src/utils/*"],
+			"#lib/*": ["./src/lib/*"]
 		}
 	},
 	"include": ["src", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],

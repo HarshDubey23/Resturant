@@ -14,8 +14,27 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 		state: { type: String, trim: true, lowercase: true, enum: orderState, default: "active" },
 		paymentStatus: { type: String, trim: true, lowercase: true, enum: paymentStatus, default: "pending" },
 		paymentId: { type: String, trim: true },
+		paymentGateway: { type: String, enum: ["razorpay", "stripe", "cash"], default: "razorpay" },
 		orderTotal: { type: Number },
 		taxTotal: { type: Number },
+		refundedAmount: { type: Number, default: 0 },
+		n8nEventId: { type: String, index: true },
+		invoiceNumber: { type: String, index: true },
+		cartSnapshot: {
+			items: [
+				{
+					name: String,
+					price: Number,
+					tax: Number,
+					quantity: Number,
+					veg: String,
+				},
+			],
+			subtotal: Number,
+			taxTotal: Number,
+			grandTotal: Number,
+		},
+		settledAt: { type: Date },
 		products: [
 			{
 				product: { type: mongoose.Schema.Types.ObjectId, ref: "menus" },
@@ -49,8 +68,21 @@ export type TOrder = HydratedDocument<{
 	state: (typeof orderState)[number];
 	paymentStatus: (typeof paymentStatus)[number];
 	paymentId: string;
+	paymentGateway: "razorpay" | "stripe" | "cash";
 	orderTotal: number;
 	taxTotal: number;
+	refundedAmount: number;
+	n8nEventId: string;
+	invoiceNumber: string;
+	cartSnapshot:
+		| {
+				items: Array<{ name: string; price: number; tax: number; quantity: number; veg: string }>;
+				subtotal: number;
+				taxTotal: number;
+				grandTotal: number;
+		  }
+		| undefined;
+	settledAt: Date;
 	products: Array<TProduct>;
 }>;
 

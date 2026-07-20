@@ -19,7 +19,7 @@ export async function GET() {
 
 		const orders = await Orders.find({
 			restaurantID,
-			state: { $in: ["active", "preparing"] },
+			state: "active",
 		})
 			.populate<{ customer: TCustomer }>("customer")
 			.populate<{ products: { product: TMenu }[] }>("products.product")

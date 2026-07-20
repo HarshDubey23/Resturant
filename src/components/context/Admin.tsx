@@ -1,6 +1,6 @@
 import noop from "lodash/noop";
 import { useSearchParams } from "next/navigation";
-import { createContext, type ReactNode, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import useSWR from "swr";
 
@@ -33,8 +33,31 @@ export const AdminProvider = ({ children }: TAdminProviderProps) => {
 	const _tab = params.get("tab");
 	const _subTab = params.get("subTab");
 	const { data: { profile, menus = [], tables = [] } = {}, isLoading: profileLoading, mutate: profileMutate } = useSWR("/api/admin", fetcher);
-	const { data: orderData = [], isLoading: orderLoading, mutate } = useSWR("/api/admin/order", fetcher, { refreshInterval: 5000 });
+	const { data: orderData = [], isLoading: orderLoading, mutate } = useSWR("/api/admin/order", fetcher, { refreshInterval: 60000 });
 	const [orderActionLoading, setOrderActionLoading] = useState(false);
+	const eventSourceRef = useRef<EventSource | null>(null);
+
+	useEffect(() => {
+		const es = new EventSource("/api/order/stream");
+		eventSourceRef.current = es;
+		es.addEventListener("order", (e: Event) => {
+			try {
+				const payload = JSON.parse((e as MessageEvent).data);
+				if (payload.type === "orders") {
+					mutate(payload.data, { revalidate: false });
+				}
+			} catch {
+				mutate();
+			}
+		});
+		es.onerror = () => {
+			es.close();
+		};
+		return () => {
+			es.close();
+			eventSourceRef.current = null;
+		};
+	}, [mutate]);
 
 	const { orderRequest, orderActive, orderHistory } =
 		orderData?.reduce?.(
@@ -50,16 +73,21 @@ export const AdminProvider = ({ children }: TAdminProviderProps) => {
 
 	[orderRequest, orderActive, orderHistory].forEach((arr) => arr?.sort?.(sortByDate));
 
-	const orderAction = async (orderID: string, action: TOrderAction) => {
-		if (orderActionLoading) return;
-		setOrderActionLoading(true);
-		const req = await fetch("/api/admin/order/action", { method: "POST", body: JSON.stringify({ orderID, action }) });
-		const res = await req.json();
-
-		if (!req.ok) toast.error(res?.message);
-		await mutate();
-		setOrderActionLoading(false);
-	};
+	const orderAction = useCallback(
+		async (orderID: string, action: TOrderAction) => {
+			if (orderActionLoading) return;
+			setOrderActionLoading(true);
+			try {
+				const req = await fetch("/api/admin/order/action", { method: "POST", body: JSON.stringify({ orderID, action }) });
+				const res = await req.json();
+				if (!req.ok) toast.error(res?.message);
+				await mutate();
+			} finally {
+				setOrderActionLoading(false);
+			}
+		},
+		[orderActionLoading, mutate],
+	);
 
 	useEffect(() => {
 		mutate();

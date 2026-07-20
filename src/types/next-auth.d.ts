@@ -7,22 +7,24 @@ import type { TTable } from "#utils/database/models/table";
 
 type AuthUser = Partial<
 	Omit<TAccount, "profile"> & {
-		role: "admin" | "kitchen" | "customer";
+		role: "owner" | "manager" | "captain" | "waiter" | "chef" | "kitchen" | "customer" | "admin";
 		customer: Partial<TCustomer>;
-		themeColor: TProfile.themeColor;
+		themeColor: TProfile["themeColor"];
+		outletId: string;
+		permissions: string[];
 		restaurant: Partial<{
-			username: TProfile.username;
-			table: TTable.username;
-			name: TProfile.name;
-			avatar: TProfile.avatar;
+			username: string;
+			table: string;
+			name: string;
+			avatar: string;
 		}>;
 	}
 >;
 
 declare module "next-auth" {
 	interface User {
-		role: "admin" | "kitchen" | "customer";
-		themeColor: TProfile.themeColor;
+		role: "owner" | "manager" | "captain" | "waiter" | "chef" | "kitchen" | "customer" | "admin";
+		themeColor: TProfile["themeColor"];
 		_doc: AuthUser;
 	}
 

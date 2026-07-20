@@ -18,11 +18,39 @@ const PRESET_COLORS = [
 	{ name: "Slate", value: "#64748b" },
 ];
 
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+	const r = parseInt(hex.slice(1, 3), 16) / 255;
+	const g = parseInt(hex.slice(3, 5), 16) / 255;
+	const b = parseInt(hex.slice(5, 7), 16) / 255;
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+	const l = (max + min) / 2;
+	let h = 0;
+	let s = 0;
+	if (max !== min) {
+		const d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		switch (max) {
+			case r:
+				h = (g - b) / d + (g < b ? 6 : 0);
+				break;
+			case g:
+				h = (b - r) / d + 2;
+				break;
+			case b:
+				h = (r - g) / d + 4;
+				break;
+		}
+		h *= 60;
+	}
+	return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
 export default function ThemeSettings() {
 	const { profile, profileMutate } = useAdmin();
 	const [themeColor, setThemeColor] = useState<string>((profile?.themeColor as unknown as string) ?? PRESET_COLORS[0].value);
 	const [loading, setLoading] = useState(false);
-	const [_customColor, setCustomColor] = useState("");
+	const [customColor, setCustomColor] = useState("");
 
 	const hasChanged = themeColor !== (profile?.themeColor as unknown as string);
 
@@ -33,9 +61,11 @@ export default function ThemeSettings() {
 
 	const onSave = async () => {
 		setLoading(true);
+		const hsl = hexToHsl(themeColor);
 		const req = await fetch("/api/admin/theme", {
 			method: "POST",
-			body: JSON.stringify({ themeColor }),
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ themeColor: hsl }),
 		});
 		const res = await req.json();
 		if (res?.status !== 200) toast.error(res?.message);

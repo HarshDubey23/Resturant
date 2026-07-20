@@ -15,10 +15,25 @@ const MenuSchema = new mongoose.Schema<TMenu>(
 		foodType: { type: String, trim: true, lowercase: true, enum: FoodType },
 		veg: { type: String, trim: true, lowercase: true, required: true, enum: Veg },
 		image: { type: String, trim: true },
+		slug: { type: String, trim: true, lowercase: true, index: true },
+		modelUrl: { type: String, trim: true, default: null },
+		trackStock: { type: Boolean, default: false },
+		stockCount: { type: Number, default: null },
+		costPrice: { type: Number, default: 0 },
+		sku: { type: String, trim: true, index: true },
 		hidden: { type: Boolean, default: true },
 	},
 	{ timestamps: true },
 );
+
+MenuSchema.pre("validate", async function () {
+	if (!this.slug && this.name) {
+		this.slug = this.name
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-|-$/g, "");
+	}
+});
 
 MenuSchema.pre("save", async function () {
 	const account = await Accounts.findOne({ username: this.restaurantID }).populate("profile");
@@ -43,6 +58,12 @@ export type TMenu = HydratedDocument<{
 	foodType: TFoodType;
 	veg: TVeg;
 	image: string;
+	slug: string;
+	modelUrl: string | null;
+	trackStock: boolean;
+	stockCount: number | null;
+	costPrice: number;
+	sku: string;
 	hidden: boolean;
 }>;
 

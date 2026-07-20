@@ -9,12 +9,16 @@ const ProfileSchema = new mongoose.Schema<TProfile>(
 		restaurantID: { type: String, trim: true, lowercase: true, unique: true, required: true, sparse: true, index: { unique: true } },
 		description: { type: String, trim: true },
 		address: { type: String, trim: true },
+		phone: { type: String, trim: true },
 		themeColor: {
 			h: { type: Number, trim: true, min: 0, max: 360 },
 			s: { type: Number, trim: true, min: 0, max: 100 },
 			l: { type: Number, trim: true, min: 0, max: 100 },
 		},
 		gstInclusive: { type: Boolean, default: false },
+		gstNumber: { type: String, trim: true, uppercase: true },
+		brandColor: { type: String, trim: true },
+		logoUrl: { type: String, trim: true },
 		categories: [{ type: String, trim: true, lowercase: true, match: /^[^,]*$/ }],
 		avatar: { type: String, trim: true },
 		cover: { type: String, trim: true },
@@ -39,10 +43,14 @@ export type TProfile = HydratedDocument<{
 	restaurantID: string;
 	description: string;
 	address: string;
+	phone: string;
 	avatar: string;
 	cover: string;
 	photos: Array<string>;
 	themeColor: TThemeColor;
 	gstInclusive: boolean;
+	gstNumber: string;
+	brandColor: string;
+	logoUrl: string;
 	categories: Array<string>;
 }>;
