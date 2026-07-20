@@ -78,12 +78,10 @@
 		"typescript": "5.9.3",
 		"ultracite": "7.1.1"
 	},
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@parcel/watcher",
-			"bcrypt",
-			"es5-ext",
-			"sharp"
-		]
-	}
+	"onlyBuiltDependencies": [
+		"@parcel/watcher",
+		"bcrypt",
+		"es5-ext",
+		"sharp"
+	]
 }
