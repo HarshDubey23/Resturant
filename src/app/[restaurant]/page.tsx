@@ -21,12 +21,19 @@ const navItems = [
 	{ label: "sign out", value: "signout", icon: <LogOut className="h-5 w-5" /> },
 ];
 
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: IRestaurantProps): Promise<Metadata> {
 	const { restaurant } = await params;
-	const profile = await getRestaurantProfile(restaurant);
-	const name = profile?.name ?? capitalize(restaurant);
+	let profile: Record<string, unknown> | null = null;
+	try {
+		profile = await getRestaurantProfile(restaurant);
+	} catch {
+		// DB unavailable during build
+	}
+	const name = (profile?.name as string) ?? capitalize(restaurant);
 	const description =
-		profile?.description ?? `Order food online from ${name}. Browse the menu, customize your order, and enjoy contactless dining powered by ${SITE_NAME}.`;
+		(profile?.description as string) ?? `Order food online from ${name}. Browse the menu, customize your order, and enjoy contactless dining powered by ${SITE_NAME}.`;
 
 	return buildMetadata({
 		title: `${name} — Order Online`,
@@ -37,12 +44,18 @@ export async function generateMetadata({ params }: IRestaurantProps): Promise<Me
 
 const Restaurant = async ({ params }: IRestaurantProps) => {
 	const { restaurant } = await params;
-	const profile = await getRestaurantProfile(restaurant);
+	let p: Record<string, unknown> | null = null;
+	try {
+		p = await getRestaurantProfile(restaurant);
+	} catch {
+		// DB unavailable during build
+	}
 
-	if (!profile) {
+	if (!p) {
 		notFound();
 	}
 
+	const profile = p as { name?: string; description?: string; address?: string; cover?: string; categories?: string[] } | null;
 	const name = profile?.name ?? capitalize(restaurant);
 
 	return (

@@ -7,16 +7,22 @@ import { OG_IMAGE_SIZE, SITE_NAME } from "#utils/seo/constants";
 
 export const size = OG_IMAGE_SIZE;
 export const contentType = "image/png";
+export const dynamic = "force-dynamic";
 
 export default async function OgImage({ params }: { params: Promise<{ restaurant: string }> }) {
 	const { restaurant } = await params;
-	const p = await getRestaurantProfile(restaurant);
-	const name = p?.name ?? capitalize(restaurant);
-	const desc = p?.description ?? `Order online from ${name}`;
-	const avatar = p?.avatar;
+	let p: Record<string, unknown> | null = null;
+	try {
+		p = await getRestaurantProfile(restaurant);
+	} catch {
+		// DB unavailable during build — use fallback
+	}
+	const name = (p?.name as string) ?? capitalize(restaurant);
+	const desc = (p?.description as string) ?? `Order online from ${name}`;
+	const avatar = p?.avatar as string | undefined;
 
 	return new ImageResponse(
-		<OgBackground themeColor={p?.themeColor}>
+		<OgBackground themeColor={p?.themeColor as { h: number; s: number; l: number } | undefined}>
 			<div style={{ display: "flex", flexDirection: "column", alignItems: "center", paddingBottom: "80px" }}>
 				<div
 					style={{
