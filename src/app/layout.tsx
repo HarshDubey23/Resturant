@@ -7,8 +7,16 @@ import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL } from "#utils/seo
 import "./tailwind.css";
 import "./globals.scss";
 
+function getMetadataBase(): URL {
+	try {
+		return new URL(SITE_URL);
+	} catch {
+		return new URL("http://localhost:3000");
+	}
+}
+
 export const metadata: Metadata = {
-	metadataBase: new URL(SITE_URL),
+	metadataBase: getMetadataBase(),
 	title: {
 		template: `%s | ${SITE_NAME}`,
 		default: `${SITE_NAME} — Contactless Restaurant Ordering & AI-Powered Dining`,

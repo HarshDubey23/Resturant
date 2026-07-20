@@ -16,9 +16,8 @@ const parsed = EnvSchema.safeParse({
 	N8N_INBOUND_ALLOWED_IPS: process.env.N8N_INBOUND_ALLOWED_IPS,
 });
 
-export const env = parsed.success ? parsed.data : {} as z.infer<typeof EnvSchema>;
+export const env = parsed.success ? parsed.data : ({} as z.infer<typeof EnvSchema>);
 
 export function isN8nConfigured(): boolean {
 	return !!(env.N8N_WEBHOOK_URL && env.N8N_WEBHOOK_SECRET);
 }
-

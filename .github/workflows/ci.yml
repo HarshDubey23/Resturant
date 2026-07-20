@@ -36,19 +36,13 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build
-        run: pnpm build
-        env:
-          MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-
       - name: Build (no-env test - lazy connect)
         run: pnpm build
         env:
           MONGODB_URI: "mongodb://dummy:dummy@dummy.mongodb.net/dummy?retryWrites=true&w=majority"
           NEXTAUTH_URL: "https://dummy.local"
           NEXTAUTH_SECRET: "dummy-secret-for-build-only-do-not-use-in-runtime"
+          NEXT_PUBLIC_SITE_URL: "https://orderworder.ritik.me"
 
   deploy:
     needs: lint-test-build

@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: IRestaurantProps): Promise<Me
 	}
 	const name = (profile?.name as string) ?? capitalize(restaurant);
 	const description =
-		(profile?.description as string) ?? `Order food online from ${name}. Browse the menu, customize your order, and enjoy contactless dining powered by ${SITE_NAME}.`;
+		(profile?.description as string) ??
+		`Order food online from ${name}. Browse the menu, customize your order, and enjoy contactless dining powered by ${SITE_NAME}.`;
 
 	return buildMetadata({
 		title: `${name} — Order Online`,
