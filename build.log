@@ -1,7 +1,0 @@
-﻿node.exe : $ next build
-At C:\Users\dell\AppData\Roaming\npm\pnpm.ps1:24 char:5
-+     & "node$exe"  "$basedir/node_modules/pnpm/bin/pnpm.mjs" $args
-+     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ($ next build:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 

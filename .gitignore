@@ -30,6 +30,7 @@ yarn-error.log*
 
 # dev logs
 dev*.log
+*.log
 
 # vercel
 .vercel
