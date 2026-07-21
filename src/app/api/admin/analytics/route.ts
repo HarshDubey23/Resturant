@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { smartGenerateText } from "#utils/ai/switcher";
 import connectDB from "#utils/database/connect";
+import { Customers } from "#utils/database/models/customer";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
@@ -70,6 +71,75 @@ export async function GET(req: Request) {
 			{ $group: { _id: null, total: { $sum: 1 }, repeat: { $sum: { $cond: [{ $gte: ["$count", 2] }, 1, 0] } } } },
 		]);
 
+		const peakHoursAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart } } },
+			{ $group: { _id: { $hour: "$createdAt" }, count: { $sum: 1 } } },
+			{ $sort: { _id: 1 } },
+			{ $project: { _id: 0, hour: "$_id", count: 1 } },
+		]);
+
+		const topCustomersAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart }, customer: { $exists: true, $ne: null } } },
+			{ $group: { _id: "$customer", orders: { $sum: 1 }, total: { $sum: { $add: ["$orderTotal", "$taxTotal"] } } } },
+			{ $sort: { total: -1 } },
+			{ $limit: 10 },
+		]);
+
+		const customerIds = topCustomersAgg.map((c) => c._id).filter(Boolean);
+		const customerMap: Record<string, { fname: string; lname: string }> = {};
+		if (customerIds.length > 0) {
+			const customers = await Customers.find({ _id: { $in: customerIds } }, "fname lname").lean();
+			for (const c of customers) {
+				customerMap[(c as { _id: string })._id.toString()] = c as { fname: string; lname: string };
+			}
+		}
+
+		const topCustomers = topCustomersAgg.map((c) => {
+			const cust = customerMap[c._id.toString()];
+			return {
+				name: cust ? `${cust.fname} ${cust.lname}`.trim() : "Unknown",
+				orders: c.orders,
+				total: c.total,
+			};
+		});
+
+		const thirtyDaysAgo = new Date(todayStart.getTime() - 30 * 86400000);
+		const ninetyDaysAgo = new Date(todayStart.getTime() - 90 * 86400000);
+
+		const recentCustomerIds = await Orders.distinct("customer", {
+			restaurantID,
+			customer: { $exists: true, $ne: null },
+			createdAt: { $gte: thirtyDaysAgo },
+		});
+
+		const allCustomerIds = await Orders.distinct("customer", {
+			restaurantID,
+			customer: { $exists: true, $ne: null },
+			createdAt: { $gte: ninetyDaysAgo },
+		});
+
+		const churnedIds = allCustomerIds.filter((id) => !recentCustomerIds.some((rid) => rid?.toString() === id?.toString()));
+		const churnedCustomers = await Customers.find({ _id: { $in: churnedIds } }, "fname lname phone")
+			.limit(10)
+			.lean();
+		const churned = churnedCustomers.map((c) => ({
+			name: `${(c as { fname: string }).fname} ${(c as { lname: string }).lname}`.trim(),
+			phone: (c as { phone: string }).phone,
+		}));
+
+		const dailyRevenueAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart, $lte: now } } },
+			{
+				$group: {
+					_id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+					revenue: { $sum: { $add: ["$orderTotal", "$taxTotal"] } },
+					orders: { $sum: 1 },
+				},
+			},
+			{ $sort: { _id: 1 } },
+			{ $project: { _id: 0, date: "$_id", revenue: 1, orders: 1 } },
+		]);
+
 		const todayData = todayAgg[0] || { revenue: 0, count: 0, gst: 0 };
 		const weekData = weekAgg[0] || { revenue: 0, count: 0 };
 		const monthData = monthAgg[0] || { revenue: 0, count: 0, gst: 0 };
@@ -104,9 +174,10 @@ export async function GET(req: Request) {
 				gstCollected: Math.round(monthData.gst * 100) / 100,
 			},
 			topDishes: topDishesAgg,
-			peakHours: [],
-			topCustomers: [],
-			churnedCustomers: [],
+			peakHours: peakHoursAgg,
+			topCustomers,
+			churnedCustomers: churned,
+			dailyRevenue: dailyRevenueAgg,
 			aiCommentary,
 		});
 	} catch (err) {

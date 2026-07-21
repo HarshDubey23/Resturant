@@ -33,13 +33,13 @@ export async function POST(req: Request) {
 		const sessionRestaurant = session.restaurant?.username || session.username;
 		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
 
+		order.state = "active";
 		order.paymentStatus = "paid";
 		order.paymentId = razorpayPaymentId;
 		await order.save();
 
 		return NextResponse.json({ status: 200, message: "Payment verified successfully" });
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }

@@ -51,7 +51,6 @@ export async function POST(req: Request) {
 			key: process.env.RAZORPAY_KEY_ID,
 		});
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }

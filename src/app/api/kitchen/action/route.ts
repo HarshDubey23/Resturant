@@ -5,6 +5,8 @@ import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { captureError } from "#utils/helper/sentryWrapper";
+import { sendOrderReadyNotification, sendProductReadyNotification } from "#utils/whatsapp/notifications";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -50,9 +52,17 @@ export async function POST(req: Request) {
 
 		await order.save();
 
+		if (action === "ready" && order.restaurantID) {
+			const productName = (product as unknown as { name?: string }).name || "Item";
+			sendProductReadyNotification(orderId, order.restaurantID, productName).catch((e: unknown) => captureError(e, { context: "sendProductReadyNotification" }));
+		}
+
+		if (allFulfilled && order.restaurantID) {
+			sendOrderReadyNotification(orderId, order.restaurantID).catch((e: unknown) => captureError(e, { context: "sendOrderReadyNotification" }));
+		}
+
 		return NextResponse.json({ status: 200, message: `Product marked as ${action}` });
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }

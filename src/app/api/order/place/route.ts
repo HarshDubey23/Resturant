@@ -13,6 +13,7 @@ import { CatchNextResponse } from "#utils/helper/common";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 import { captureError } from "#utils/helper/sentryWrapper";
 import { orderPlaceSchema } from "#utils/helper/validation";
+import { sendOrderConfirmation } from "#utils/whatsapp/notifications";
 
 export async function POST(req: Request) {
 	try {
@@ -127,6 +128,10 @@ export async function POST(req: Request) {
 			deductInventoryForOrder(restaurantID, inventoryProducts).catch((e: unknown) =>
 				captureError(e, { context: "inventory deduction failed", orderId: newOrder._id.toString() }),
 			);
+		}
+
+		if (restaurantID && customer) {
+			sendOrderConfirmation(newOrder._id.toString(), restaurantID).catch((e: unknown) => captureError(e, { context: "WhatsApp order confirmation failed" }));
 		}
 
 		return NextResponse.json({ status: 200, message: "Order placed successfully", orderId: newOrder._id });

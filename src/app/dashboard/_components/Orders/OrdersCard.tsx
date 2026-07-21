@@ -2,9 +2,11 @@
 
 import { Check, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { useAdmin } from "#components/context/useContext";
 import type { TOrder } from "#utils/database/models/order";
 import { formatCurrency } from "#utils/helper/currency";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +24,13 @@ interface OrdersCardProps {
 	activate: (id: string) => void;
 }
 
+const PAYMENT_STATUS_COLORS: Record<string, string> = {
+	pending: "bg-yellow-900/30 text-yellow-400",
+	paid: "bg-green-900/30 text-green-400",
+	failed: "bg-red-900/30 text-red-400",
+	refunded: "bg-purple-900/30 text-purple-400",
+};
+
 export default function OrdersCard({ data, actions, history, active, reject, setReject, busy, action, activate }: OrdersCardProps) {
 	const queryParams = useSearchParams();
 	const subTab = queryParams.get("subTab") ?? "";
@@ -29,6 +38,17 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 	const currency = profile?.currency || "INR";
 	const tableName = data.table;
 	const customerName = `${data?.customer?.fname ?? ""} ${data?.customer?.lname ?? ""}`.trim();
+	const itemCount = data?.products?.length ?? 0;
+	const productNames = useMemo(() => {
+		if (!data?.products?.length) return "";
+		return (
+			data.products
+				.map((p) => (p as unknown as { name?: string }).name || "Item")
+				.filter(Boolean)
+				.slice(0, 3)
+				.join(", ") + (data.products.length > 3 ? ` +${data.products.length - 3} more` : "")
+		);
+	}, [data?.products]);
 
 	const handleAction = () => {
 		if (!action) return;
@@ -62,12 +82,30 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 				isRejectActive && "ring-1 ring-destructive",
 				busy && "opacity-60 pointer-events-none",
 			)}>
-			<div className="flex items-center justify-between gap-2">
-				<div className="min-w-0 flex-1">
-					<p className="font-medium truncate">{isRejectActive ? "Are you sure?" : `Table: ${tableName}`}</p>
+			<div className="flex items-start justify-between gap-2">
+				<div className="min-w-0 flex-1 space-y-1">
+					<p className="font-medium truncate">{isRejectActive ? "Are you sure?" : `Table ${tableName}`}</p>
 					<p className="text-xs text-muted-foreground truncate">{isRejectActive ? `Table: ${tableName}` : customerName || "Guest"}</p>
-					{data?.products?.length ? (
-						<p className="text-xs font-semibold mt-1">{formatCurrency(data?.orderTotal ?? 0, currency)}</p>
+					{!isRejectActive && data?.products?.length ? (
+						<>
+							<p className="text-[10px] text-muted-foreground truncate leading-relaxed">{productNames}</p>
+							<div className="flex items-center gap-2 pt-0.5">
+								<p className="text-xs font-semibold">{formatCurrency((data?.orderTotal ?? 0) + (data?.taxTotal ?? 0), currency)}</p>
+								<span className="text-[10px] text-muted-foreground">
+									{itemCount} item{itemCount !== 1 ? "s" : ""}
+								</span>
+							</div>
+							<div className="flex items-center gap-1.5 pt-0.5">
+								{data.paymentStatus && (
+									<Badge className={`text-[9px] px-1.5 py-0 h-auto ${PAYMENT_STATUS_COLORS[data.paymentStatus] ?? "bg-muted text-muted-foreground"}`}>
+										{data.paymentStatus}
+									</Badge>
+								)}
+								{data.products.some((p) => p.kitchenStatus === "preparing") && (
+									<Badge className="text-[9px] px-1.5 py-0 h-auto bg-yellow-900/30 text-yellow-400">preparing</Badge>
+								)}
+							</div>
+						</>
 					) : (
 						<p className="text-xs text-muted-foreground mt-1">No orders yet</p>
 					)}

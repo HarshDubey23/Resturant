@@ -5,16 +5,18 @@ import { type UIEvent, useEffect, useState } from "react";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 import Analytics from "./Analytics/Analytics";
 import Campaigns from "./Campaigns/Campaigns";
+import Invoices from "./Invoices/Invoices";
 import Loyalty from "./Loyalty/Loyalty";
 import NavTopBar from "./Orders/NavTopBar";
 import Orders from "./Orders/Orders";
+import Overview from "./Overview/Overview";
 import Settings from "./Settings/Settings";
 
 export default function PageContainer() {
 	const session = useSession();
 	const [floatHeader, setFloatHeader] = useState(false);
 	const queryParams = useQueryParams();
-	const tab = queryParams.get("tab") ?? "orders";
+	const tab = queryParams.get("tab") ?? "overview";
 	const _subTab = queryParams.get("subTab") ?? "";
 
 	const onScroll = (event: UIEvent<HTMLDivElement>) => {
@@ -41,9 +43,11 @@ export default function PageContainer() {
 
 			<div className="flex-1 overflow-auto" onScroll={onScroll}>
 				<div className="p-4 sm:p-6">
+					{tab === "overview" && <Overview />}
 					{tab === "orders" && <Orders onScroll={onScroll} />}
 					{tab === "analytics" && <Analytics />}
 					{tab === "campaigns" && <Campaigns />}
+					{tab === "invoices" && <Invoices />}
 					{tab === "loyalty" && <Loyalty />}
 					{tab === "settings" && <Settings onScroll={onScroll} />}
 				</div>

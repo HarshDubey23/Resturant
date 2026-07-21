@@ -1,7 +1,8 @@
 "use client";
 
-import { type UIEvent, useEffect, useState } from "react";
+import { type UIEvent, useEffect, useMemo, useState } from "react";
 import { useAdmin } from "#components/context/useContext";
+import type { TOrder } from "#utils/database/models/order";
 import { formatCurrency } from "#utils/helper/currency";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,8 +31,9 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 		}
 	}, [activeCardID, orderHistory]);
 
-	// biome-ignore lint/suspicious/noExplicitAny: activeData has MongoDB timestamps not in TOrder type
-	const activeData = orderHistory.find((o) => String(o._id) === activeCardID) as any;
+	const activeData = useMemo(() => orderHistory.find((o) => String(o._id) === activeCardID), [orderHistory, activeCardID]) as
+		| (TOrder & { createdAt?: Date; updatedAt?: Date })
+		| undefined;
 
 	return (
 		<div className="flex gap-4 h-full">

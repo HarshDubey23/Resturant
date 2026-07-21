@@ -61,7 +61,6 @@ export async function POST(req: Request) {
 			splitAmount: splitAmount / 100,
 		});
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }

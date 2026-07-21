@@ -15,40 +15,58 @@ export async function GET(req: Request) {
 		const session = await getServerSession(authOptions);
 		if (!session) throw { status: 401, message: "Authentication Required" };
 
-		const { searchParams } = new URL(req.url);
-		const orderId = searchParams.get("orderId");
-
-		if (!orderId) throw { status: 400, message: "orderId query parameter is required" };
-
 		await connectDB();
 
-		if (session.role === "admin") {
-			const restaurantID = session.restaurant?.username || session.username;
+		const { searchParams } = new URL(req.url);
+		const orderId = searchParams.get("orderId");
+		const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+		const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+		const search = searchParams.get("search") || "";
 
-			const invoices = await Invoices.find({ restaurantID, order: orderId }).populate("order").sort({ generatedAt: -1 }).lean();
+		const restaurantID = session.restaurant?.username || session.username;
 
-			if (!invoices || invoices.length === 0) throw { status: 404, message: "No invoices found for this order" };
+		if (orderId) {
+			if (session.role === "admin") {
+				const invoices = await Invoices.find({ restaurantID, order: orderId }).populate("order").sort({ generatedAt: -1 }).lean();
+				if (!invoices || invoices.length === 0) throw { status: 404, message: "No invoices found for this order" };
+				return NextResponse.json(invoices);
+			}
 
-			return NextResponse.json(invoices);
+			if (session.role === "customer") {
+				const customerId = session.customer?._id;
+				const order = await Orders.findOne({ _id: orderId, restaurantID, customer: customerId }).lean();
+				if (!order) throw { status: 403, message: "Access denied" };
+				const invoices = await Invoices.find({ order: orderId }).populate("order").lean();
+				if (!invoices || invoices.length === 0) throw { status: 404, message: "No invoices found for this order" };
+				return NextResponse.json(invoices);
+			}
+
+			throw { status: 403, message: "Access denied" };
 		}
 
-		if (session.role === "customer") {
-			const restaurantID = session.restaurant?.username || session.username;
-			const customerId = session.customer?._id;
+		if (session.role !== "admin") throw { status: 403, message: "Admin access required" };
 
-			const order = await Orders.findOne({ _id: orderId, restaurantID, customer: customerId }).lean();
-			if (!order) throw { status: 403, message: "Access denied" };
+		const skip = (page - 1) * limit;
+		const query: Record<string, unknown> = { restaurantID };
 
-			const invoices = await Invoices.find({ order: orderId }).populate("order").lean();
-
-			if (!invoices || invoices.length === 0) throw { status: 404, message: "No invoices found for this order" };
-
-			return NextResponse.json(invoices);
+		if (search) {
+			query.$or = [
+				{ invoiceNumber: { $regex: search, $options: "i" } },
+				{ customerName: { $regex: search, $options: "i" } },
+				{ customerPhone: { $regex: search, $options: "i" } },
+			];
 		}
 
-		throw { status: 403, message: "Access denied" };
+		const [invoices, total] = await Promise.all([
+			Invoices.find(query).sort({ generatedAt: -1 }).skip(skip).limit(limit).populate("order").lean(),
+			Invoices.countDocuments(query),
+		]);
+
+		return NextResponse.json({
+			invoices,
+			pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+		});
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }

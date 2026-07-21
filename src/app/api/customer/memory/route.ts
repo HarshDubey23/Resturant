@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
+import { Customers } from "#utils/database/models/customer";
 import { Loyalties } from "#utils/database/models/loyalty";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
@@ -22,6 +23,7 @@ export async function GET() {
 			return NextResponse.json({ memory: null });
 		}
 
+		const customer = await Customers.findById(customerId).select("whatsappOptIn").lean();
 		const loyalty = await Loyalties.findOne({ restaurantID, customer: customerId }).populate("preferences.favoriteDishes").lean();
 
 		if (!loyalty) {
@@ -31,6 +33,7 @@ export async function GET() {
 		const memory = {
 			name: session.customer?.fname || "Guest",
 			phone: session.customer?.phone,
+			whatsappOptIn: (customer as { whatsappOptIn?: boolean } | null)?.whatsappOptIn ?? false,
 			isReturning: (loyalty.visitCount || 0) > 1,
 			visitCount: loyalty.visitCount || 0,
 			lastVisit: loyalty.lastVisit,

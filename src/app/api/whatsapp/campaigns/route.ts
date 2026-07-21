@@ -3,28 +3,36 @@ import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
 import { Campaigns } from "#utils/database/models/campaign";
-import { Customers } from "#utils/database/models/customer";
-import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
-import { sendWhatsAppText } from "#utils/whatsapp/index";
+import { sendCampaign } from "#utils/whatsapp/campaign";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(req: Request) {
 	try {
 		const session = await getServerSession(authOptions);
 		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 
 		await connectDB();
-		const restaurantID = session.username;
+		const restaurantID = session.username as string;
 
-		const campaigns = await Campaigns.find({ restaurantID }).sort({ createdAt: -1 }).limit(50).lean();
+		const { searchParams } = new URL(req.url);
+		const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+		const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+		const skip = (page - 1) * limit;
 
-		return NextResponse.json(campaigns);
+		const [campaigns, total] = await Promise.all([
+			Campaigns.find({ restaurantID }).sort({ createdAt: -1 }).skip(skip).limit(limit).lean(),
+			Campaigns.countDocuments({ restaurantID }),
+		]);
+
+		return NextResponse.json({
+			campaigns,
+			pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+		});
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }
@@ -51,48 +59,11 @@ export async function POST(req: Request) {
 		});
 
 		if (!body.scheduledAt) {
-			sendCampaign(campaign._id.toString(), restaurantID, msg);
+			sendCampaign(campaign._id.toString(), restaurantID, msg).catch(() => {});
 		}
 
 		return NextResponse.json({ status: 200, message: "Campaign created", campaign });
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
-	}
-}
-
-async function sendCampaign(campaignId: string, restaurantID: string, msg: string) {
-	try {
-		await connectDB();
-
-		const orders = await Orders.find({ restaurantID }).distinct("customer");
-		const optedIn = await Customers.find({
-			_id: { $in: orders },
-			whatsappOptIn: true,
-			phone: { $exists: true, $ne: "" },
-		}).lean();
-
-		const phones = Array.from(new Set(optedIn.map((c) => c.phone)));
-		let sent = 0;
-		let failed = 0;
-
-		await Campaigns.updateOne({ _id: campaignId }, { totalCount: phones.length });
-
-		for (const phone of phones) {
-			try {
-				await sendWhatsAppText(phone, msg);
-				sent++;
-			} catch {
-				failed++;
-			}
-		}
-
-		await Campaigns.updateOne(
-			{ _id: campaignId },
-			{ status: failed === phones.length ? "failed" : "sent", sentCount: sent, failedCount: failed, sentAt: new Date() },
-		);
-	} catch (err) {
-		console.log("Campaign send error:", err);
-		await Campaigns.updateOne({ _id: campaignId }, { status: "failed" });
 	}
 }

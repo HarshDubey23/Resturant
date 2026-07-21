@@ -32,7 +32,6 @@ export async function POST(req: Request) {
 
 		return NextResponse.json({ status: 200, message: "Refund initiated", refund });
 	} catch (err) {
-		console.log(err);
 		return CatchNextResponse(err);
 	}
 }

@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import connectDB from "#utils/database/connect";
 import { getRedis } from "#utils/database/redis";
 import { CatchNextResponse } from "#utils/helper/common";
+import { sendWhatsAppText } from "#utils/whatsapp/index";
 
 export async function POST(req: Request) {
 	try {
@@ -18,20 +19,18 @@ export async function POST(req: Request) {
 		const redis = getRedis();
 		await redis.setex(`otp:${restaurant}:${phone}`, 300, otp);
 
-		const whatsappToken = process.env.WHATSAPP_ACCESS_TOKEN;
 		const isDev = process.env.NODE_ENV === "development" || process.env.DEMO_MODE === "true";
+		let delivered = false;
 
-		if (whatsappToken) {
-			try {
-				const { sendWhatsAppText } = await import("#utils/whatsapp/index");
-				await sendWhatsAppText(phone, `Your OrderWorder OTP is: ${otp}. Valid for 5 minutes.`);
-			} catch {
-				console.warn("[send-otp] WhatsApp send failed, falling back to debug display");
-			}
+		try {
+			await sendWhatsAppText(phone, `Your OrderWorder OTP is: ${otp}. Valid for 5 minutes.`);
+			delivered = true;
+		} catch {
+			if (isDev) console.warn("[send-otp] WhatsApp send failed, showing debug OTP");
 		}
 
 		return NextResponse.json({
-			delivered: !!whatsappToken,
+			delivered,
 			...(isDev && { debugOtp: otp }),
 		});
 	} catch (err) {

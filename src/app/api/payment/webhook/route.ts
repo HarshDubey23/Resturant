@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
+
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
+import { Invoices } from "#utils/database/models/invoice";
 import { Orders } from "#utils/database/models/order";
+import { generateInvoiceNumber } from "#utils/helper/invoiceHelper";
 import { captureError } from "#utils/helper/sentryWrapper";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +42,45 @@ export async function POST(req: Request) {
 						paymentStatus: "paid",
 						paymentId: payment.id,
 					});
-					triggerN8nWorkflow("payment.succeeded", { orderId, gateway: "razorpay" }).catch((e: unknown) => captureError(e, { context: "n8n trigger failed" }));
+
+					const order = await Orders.findById(orderId).populate("customer").lean();
+					if (order) {
+						const items = ((order.cartSnapshot?.items || []) as Array<{ name: string; quantity: number; price: number; tax: number }>).map((item) => ({
+							name: item.name,
+							quantity: item.quantity,
+							price: item.price,
+							taxPercent: item.tax && item.price ? Math.round((item.tax / item.price) * 100) : 0,
+							taxAmount: item.tax || 0,
+							total: (item.price || 0) * (item.quantity || 1),
+						}));
+
+						const taxTotal = order.taxTotal || 0;
+						const invoice = await Invoices.create({
+							restaurantID: order.restaurantID,
+							order: order._id,
+							invoiceNumber: await generateInvoiceNumber(order.restaurantID),
+							customerName: order.customer
+								? `${(order.customer as { fname?: string; lname?: string }).fname || ""} ${(order.customer as { fname?: string; lname?: string }).lname || ""}`.trim()
+								: undefined,
+							customerPhone: (order.customer as { phone?: string } | null)?.phone,
+							items,
+							subtotal: order.orderTotal || 0,
+							cgst: taxTotal / 2,
+							sgst: taxTotal / 2,
+							igst: 0,
+							grandTotal: (order.orderTotal || 0) + taxTotal,
+							paymentMethod: "razorpay",
+						});
+
+						await Orders.findByIdAndUpdate(orderId, { invoiceNumber: invoice.invoiceNumber });
+
+						triggerN8nWorkflow("payment.succeeded", {
+							orderId: order._id.toString(),
+							invoiceId: invoice._id.toString(),
+							invoiceNumber: invoice.invoiceNumber,
+							restaurantID: order.restaurantID,
+						}).catch((e: unknown) => captureError(e, { context: "n8n trigger failed" }));
+					}
 				}
 				break;
 			}

@@ -27,11 +27,7 @@ export const CustomerProvider = ({ children }: ProviderProps) => {
 };
 
 export const DashboardProvider = ({ children }: ProviderProps) => {
-	return (
-		<AdminProvider>
-			{children}
-		</AdminProvider>
-	);
+	return <AdminProvider>{children}</AdminProvider>;
 };
 interface ProviderProps {
 	children?: ReactNode;

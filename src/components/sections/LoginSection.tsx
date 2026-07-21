@@ -86,8 +86,7 @@ export default function LoginSection() {
 						whileInView={{ opacity: 1, x: 0 }}
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ duration: 0.5, ease: "easeOut" }}
-						className="hidden lg:flex flex-col items-center justify-center text-center"
-					>
+						className="hidden lg:flex flex-col items-center justify-center text-center">
 						<div className="w-64 h-80 rounded-3xl bg-gradient-to-br from-orange-100 to-amber-200 border border-orange-200/50 flex items-center justify-center text-8xl shadow-xl mb-6">
 							🧑‍🤝‍🧑
 						</div>
@@ -99,8 +98,7 @@ export default function LoginSection() {
 						initial={{ opacity: 0, x: 24 }}
 						whileInView={{ opacity: 1, x: 0 }}
 						viewport={{ once: true, margin: "-100px" }}
-						transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-					>
+						transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}>
 						<Card>
 							<CardHeader className="text-center">
 								{profile || loggedIn ? (
@@ -148,8 +146,7 @@ export default function LoginSection() {
 										<div className="space-y-4">
 											<button
 												onClick={() => setProfile(undefined)}
-												className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-											>
+												className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
 												<ChevronLeft className="h-4 w-4" />
 												Change email
 											</button>

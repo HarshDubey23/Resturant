@@ -3,6 +3,7 @@ import type { UIEvent } from "react";
 import AIKeysSettings from "./AIKeysSettings";
 import MenuEditor from "./MenuEditor/MenuEditor";
 import SettingsAccount from "./SettingsAccount";
+import SettingsBusiness from "./SettingsBusiness";
 import SettingsTables from "./SettingsTables";
 
 interface SettingsProps {
@@ -16,6 +17,7 @@ export default function Settings({ onScroll }: SettingsProps) {
 	return (
 		<div className="h-full" onScroll={onScroll}>
 			{subTab === "account" && <SettingsAccount />}
+			{subTab === "business" && <SettingsBusiness />}
 			{subTab === "menu" && <MenuEditor />}
 			{subTab === "ai-keys" && <AIKeysSettings />}
 			{subTab === "tables" && <SettingsTables />}

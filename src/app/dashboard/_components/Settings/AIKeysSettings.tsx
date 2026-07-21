@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const PROVIDERS = [
 	{ key: "groq", label: "Groq", placeholder: "gsk_your_groq_api_key" },

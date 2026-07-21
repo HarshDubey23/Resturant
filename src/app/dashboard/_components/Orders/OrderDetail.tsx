@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-type TMenuCustom = TMenu & { quantity: number };
+type TMenuCustom = TMenu & { quantity: number; kitchenStatus?: string; veg?: string };
 
 interface OrderDetailProps {
 	data: TOrder;
@@ -21,6 +21,20 @@ interface OrderDetailProps {
 	reject: boolean;
 	setReject: (props: { _id: string | null; details: boolean }) => void;
 }
+
+const KITCHEN_STATUS_BADGES: Record<string, { label: string; className: string }> = {
+	pending: { label: "Pending", className: "bg-red-900/30 text-red-400" },
+	preparing: { label: "Preparing", className: "bg-yellow-900/30 text-yellow-400" },
+	ready: { label: "Ready", className: "bg-green-900/30 text-green-400" },
+	served: { label: "Served", className: "bg-blue-900/30 text-blue-400" },
+};
+
+const PAYMENT_STATUS_BADGES: Record<string, { label: string; className: string }> = {
+	pending: { label: "Pending", className: "bg-yellow-900/30 text-yellow-400" },
+	paid: { label: "Paid", className: "bg-green-900/30 text-green-400" },
+	failed: { label: "Failed", className: "bg-red-900/30 text-red-400" },
+	refunded: { label: "Refunded", className: "bg-purple-900/30 text-purple-400" },
+};
 
 export default function OrderDetail({ data, actions, busy, reject, setReject, action }: OrderDetailProps) {
 	const queryParams = useSearchParams();
@@ -36,12 +50,18 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 		[data.products],
 	);
 
+	const totalWithTax = (data.orderTotal ?? 0) + (data.taxTotal ?? 0);
+	const paymentBadge = PAYMENT_STATUS_BADGES[data.paymentStatus ?? "pending"];
+
 	return (
 		<div className="space-y-4">
 			<div className={reject ? "opacity-60" : ""}>
 				<div className="flex items-start justify-between gap-4">
 					<div className="space-y-1">
-						<h3 className="text-lg font-semibold">{reject ? "Are you sure?" : `Table: ${data.table}`}</h3>
+						<div className="flex items-center gap-2">
+							<h3 className="text-lg font-semibold">{reject ? "Are you sure?" : `Table ${data.table}`}</h3>
+							{paymentBadge && <Badge className={`text-[10px] px-1.5 py-0.5 h-auto ${paymentBadge.className}`}>{paymentBadge.label}</Badge>}
+						</div>
 						<div className="flex items-center gap-2 text-sm text-muted-foreground">
 							<User className="h-3 w-3" />
 							{data?.customer?.fname} {data?.customer?.lname}
@@ -55,7 +75,10 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 						{data?.orderTotal != null && (
 							<div className="flex items-center gap-2 text-sm font-semibold">
 								<DollarSign className="h-3 w-3" />
-								{formatCurrency(data.orderTotal, currency)}
+								{formatCurrency(totalWithTax, currency)}
+								{data.taxTotal != null && data.taxTotal > 0 && (
+									<span className="text-[10px] text-muted-foreground font-normal">(incl. GST {formatCurrency(data.taxTotal, currency)})</span>
+								)}
 							</div>
 						)}
 					</div>
@@ -110,13 +133,19 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 
 function OrderItemCard({ item }: { item: TMenuCustom }) {
 	const currency = "INR";
+	const kitchenBadge = KITCHEN_STATUS_BADGES[item.kitchenStatus ?? "pending"];
+	const vegType = item.veg === "veg" ? "🟢" : item.veg === "non-veg" ? "🔴" : "🟡";
 	return (
 		<div className="flex items-center justify-between rounded-lg border bg-card/50 p-3">
-			<div className="min-w-0 flex-1">
-				<p className="text-sm font-medium truncate">{item.name}</p>
+			<div className="min-w-0 flex-1 space-y-0.5">
+				<div className="flex items-center gap-1.5">
+					<span className="text-[10px]">{vegType}</span>
+					<p className="text-sm font-medium truncate">{item.name}</p>
+				</div>
 				<p className="text-xs text-muted-foreground">
 					{formatCurrency(item.price, currency)} × {item.quantity}
 				</p>
+				{kitchenBadge && <Badge className={`text-[9px] px-1.5 py-0 h-auto ${kitchenBadge.className}`}>{kitchenBadge.label}</Badge>}
 			</div>
 			<div className="text-sm font-semibold shrink-0 ml-2">{formatCurrency(item.price * item.quantity, currency)}</div>
 		</div>
