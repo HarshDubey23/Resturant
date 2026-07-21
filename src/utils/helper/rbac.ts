@@ -44,23 +44,35 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 
 type SessionWithRole = Session & { role?: string; permissions?: string[] };
 
+export async function requirePermission(permission: Permission): Promise<SessionWithRole> {
+	const session = (await getServerSession(authOptions)) as SessionWithRole | null;
+	if (!session) {
+		throw { status: 401, message: "Unauthorized" };
+	}
+
+	if (session.role === "admin") {
+		return session;
+	}
+
+	const allowed = ROLE_PERMISSIONS[session.role ?? ""] || [];
+	const userPermissions = session.permissions?.length ? session.permissions : allowed;
+	if (!userPermissions.includes(permission)) {
+		throw { status: 403, message: `Forbidden: missing permission '${permission}'` };
+	}
+
+	return session;
+}
+
 export function withPermission<T>(permission: Permission, handler: (req: Request, session: SessionWithRole) => Promise<T>) {
 	return async (req: Request): Promise<T | Response> => {
-		const session = (await getServerSession(authOptions)) as SessionWithRole | null;
-		if (!session) {
-			return new Response("Unauthorized", { status: 401 });
+		try {
+			const session = await requirePermission(permission);
+			return await handler(req, session);
+		} catch (err) {
+			if (err && typeof err === "object" && "status" in err) {
+				return new Response((err as { message?: string }).message ?? "Forbidden", { status: (err as { status: number }).status });
+			}
+			return new Response("Forbidden", { status: 403 });
 		}
-
-		if (session.role === "admin") {
-			return handler(req, session);
-		}
-
-		const allowed = ROLE_PERMISSIONS[session.role ?? ""] || [];
-		const userPermissions = session.permissions?.length ? session.permissions : allowed;
-		if (!userPermissions.includes(permission)) {
-			return new Response(`Forbidden: missing permission '${permission}'`, { status: 403 });
-		}
-
-		return handler(req, session);
 	};
 }

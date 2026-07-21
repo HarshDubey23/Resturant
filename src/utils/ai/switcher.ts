@@ -10,6 +10,7 @@ const PROVIDER_URLS: Record<string, string> = {
 	cerebras: "https://api.cerebras.ai/v1",
 	google: "https://generativelanguage.googleapis.com/v1beta/openai",
 	siliconflow: "https://api.siliconflow.com/v1",
+	huggingface: "https://api-inference.huggingface.co/v1",
 };
 
 const PROVIDER_MODELS: Record<string, string> = {};

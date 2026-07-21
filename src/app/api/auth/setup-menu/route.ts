@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
+import { invalidateRestaurantCache } from "#utils/database/helper/account";
 import { Accounts } from "#utils/database/models/account";
 import { Menus } from "#utils/database/models/menu";
 import { authOptions } from "#utils/helper/authHelper";
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
 			veg: "veg",
 			hidden: false,
 		});
+
+		await invalidateRestaurantCache(restaurantID);
 
 		return Response.json({ menuItem });
 	} catch (error) {

@@ -7,6 +7,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
+import FoodViewer3D from "@/components/features/FoodViewer3DDynamic";
+import { MobileNav } from "@/components/layout/MobileNav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -43,6 +45,8 @@ interface MenuItem {
 	veg: "veg" | "non-veg" | "contains-egg";
 	image: string;
 	foodType: string;
+	modelUrl?: string;
+	model3d?: { url: string };
 	isAvailable?: boolean;
 	isBestseller?: boolean;
 }
@@ -137,17 +141,23 @@ export default function TableMenuPage() {
 		setCart((prev) => prev.map((i) => (i._id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i)).filter((i) => i.quantity > 0));
 	}, []);
 
-	const applyCoupon = useCallback(() => {
-		if (couponCode === "FIRST20") {
-			setCouponDiscount(Math.min(cartTotal.subtotal * 0.2, 500));
-			toast.success("Coupon applied! 20% off up to ₹500");
-		} else if (couponCode === "FLAT100") {
-			setCouponDiscount(100);
-			toast.success("Coupon applied! ₹100 off");
-		} else {
-			toast.error("Invalid coupon code");
+	const applyCoupon = useCallback(async () => {
+		if (!couponCode) return;
+		try {
+			const res = await fetch("/api/coupon/validate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ code: couponCode, cartTotal: cartTotal.subtotal, restaurantID: restaurant }),
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || "Invalid coupon");
+			setCouponDiscount(data.discount);
+			toast.success(`Coupon applied! ${data.discountType === "percentage" ? `${data.discountValue}% off` : `₹${data.discountValue} off`}`);
+		} catch (err) {
+			setCouponDiscount(0);
+			toast.error(err instanceof Error ? err.message : "Invalid coupon code");
 		}
-	}, [couponCode, cartTotal.subtotal]);
+	}, [couponCode, cartTotal.subtotal, restaurant]);
 
 	const placeOrder = async () => {
 		if (cart.length === 0) return toast.error("Cart is empty");
@@ -163,6 +173,7 @@ export default function TableMenuPage() {
 						quantity: item.quantity,
 					})),
 					paymentMethod,
+					couponCode: couponCode || undefined,
 				}),
 			});
 
@@ -222,7 +233,7 @@ export default function TableMenuPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-background">
+		<div className="min-h-screen bg-background pb-24 md:pb-0">
 			<header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border/50">
 				<div className="max-w-7xl mx-auto px-4 sm:px-6">
 					<div className="flex items-center justify-between h-16 gap-4">
@@ -391,6 +402,8 @@ export default function TableMenuPage() {
 					/>
 				</SheetContent>
 			</Sheet>
+
+			<MobileNav restaurant={restaurant} tableId={tableId} onOpenCart={() => setCartOpen(true)} />
 		</div>
 	);
 }
@@ -400,6 +413,7 @@ function MenuItemCard({ item, index, onAddToCart }: { item: MenuItem; index: num
 	const [notes, setNotes] = useState("");
 	const [showDetails, setShowDetails] = useState(false);
 	const [qty, setQty] = useState(0);
+	const [previewOpen, setPreviewOpen] = useState(false);
 
 	const handleAdd = () => {
 		onAddToCart(item, spiceLevel, notes);
@@ -434,6 +448,23 @@ function MenuItemCard({ item, index, onAddToCart }: { item: MenuItem; index: num
 						className={`text-[10px] px-1.5 py-0.5 h-auto ${item.veg === "veg" ? "bg-green-600" : "bg-red-600"}`}>
 						{item.veg === "veg" ? "🟢 Veg" : item.veg === "non-veg" ? "🔴 Non-Veg" : "🟡 Egg"}
 					</Badge>
+					{(item.model3d?.url || item.modelUrl) && (
+						<>
+							<Badge
+								variant="secondary"
+								className="text-[10px] px-1.5 py-0.5 h-auto cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
+								onClick={() => setPreviewOpen(true)}>
+								3D
+							</Badge>
+							<FoodViewer3D
+								open={previewOpen}
+								onOpenChange={setPreviewOpen}
+								modelUrl={item.model3d?.url || item.modelUrl || undefined}
+								itemName={item.name}
+								fallbackImages={item.image ? [item.image] : []}
+							/>
+						</>
+					)}
 				</div>
 				<div className="absolute bottom-2 left-2 right-2">
 					<h3 className="text-white font-bold text-sm drop-shadow-md truncate">{item.name}</h3>

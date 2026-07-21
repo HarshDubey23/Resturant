@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
+import { invalidateRestaurantCache } from "#utils/database/helper/account";
 import { Accounts, type TAccount } from "#utils/database/models/account";
 import { Profiles } from "#utils/database/models/profile";
-import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { withPermission } from "#utils/helper/rbac";
 
-export async function GET() {
+export const GET = withPermission("settings.manage", async (_req, session) => {
 	try {
 		await connectDB();
-		const session = await getServerSession(authOptions);
-		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 
 		const account = await Accounts.findOne<TAccount>({ username: session?.username }).populate("profile").populate("tables").populate("menus").lean();
 
@@ -25,14 +23,11 @@ export async function GET() {
 	} catch (err) {
 		return CatchNextResponse(err);
 	}
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withPermission("settings.manage", async (req, session) => {
 	try {
 		await connectDB();
-		const session = await getServerSession(authOptions);
-		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
-
 		const body = await req.json();
 		const account = await Accounts.findOne<TAccount>({ username: session?.username }).populate("profile");
 		if (!account) throw { status: 404, message: "Account not found" };
@@ -52,13 +47,14 @@ export async function POST(req: Request) {
 
 		if (Object.keys(updateFields).length > 0) {
 			await Profiles.findByIdAndUpdate(profileData._id, { $set: updateFields });
+			await invalidateRestaurantCache(session.username as string);
 		}
 
 		return NextResponse.json({ status: 200, message: "Profile updated" });
 	} catch (err) {
 		return CatchNextResponse(err);
 	}
-}
+});
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

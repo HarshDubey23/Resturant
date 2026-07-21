@@ -2,17 +2,28 @@
 
 import { SessionProvider } from "next-auth/react";
 import { type ReactNode, Suspense } from "react";
+import { SWRConfig } from "swr";
 import { XProvider } from "xtreme-ui";
 
 import { AdminProvider } from "./Admin";
 import { OrderProvider } from "./Order";
 import { RestaurantProvider } from "./Restaurant";
 
+const swrConfig = {
+	refreshInterval: 0,
+	revalidateOnFocus: true,
+	dedupingInterval: 5000,
+	errorRetryCount: 3,
+	fetcher: (url: string) => fetch(url).then((r) => r.json()),
+};
+
 export const GlobalProvider = ({ children }: ProviderProps) => {
 	return (
 		<XProvider>
 			<SessionProvider>
-				<Suspense>{children}</Suspense>
+				<SWRConfig value={swrConfig}>
+					<Suspense>{children}</Suspense>
+				</SWRConfig>
 			</SessionProvider>
 		</XProvider>
 	);

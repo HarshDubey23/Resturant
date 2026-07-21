@@ -1,8 +1,10 @@
 import type mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
+import { validateAndRedeemCoupon } from "#utils/database/helper/coupon";
 import { deductInventoryForOrder } from "#utils/database/helper/deductInventory";
 import { Accounts } from "#utils/database/models/account";
 import { computePoints, computeTier, Loyalties } from "#utils/database/models/loyalty";
@@ -56,6 +58,19 @@ export async function POST(req: Request) {
 			}),
 		);
 
+		const subtotal = products.reduce((s, p) => s + p.price * p.quantity, 0);
+		const taxTotal = products.reduce((s, p) => s + p.tax * p.quantity, 0);
+
+		let couponCode: string | undefined;
+		let discountAmount = 0;
+		if (body.couponCode && restaurantID) {
+			const coupon = await validateAndRedeemCoupon(body.couponCode, restaurantID, subtotal + taxTotal);
+			if (coupon) {
+				couponCode = coupon.code;
+				discountAmount = coupon.discountAmount;
+			}
+		}
+
 		const order = await Orders.findOne<TOrder>({ restaurantID, customer, state: "active" });
 
 		if (order) {
@@ -72,6 +87,8 @@ export async function POST(req: Request) {
 			paymentGateway: paymentMethod,
 			state: paymentMethod === "cash" ? "active" : undefined,
 			products,
+			couponCode,
+			discountAmount,
 			cartSnapshot: {
 				items: products.map((p) => ({
 					name: p.name || "Menu Item",
@@ -80,12 +97,12 @@ export async function POST(req: Request) {
 					quantity: p.quantity,
 					veg: p.veg || "veg",
 				})),
-				subtotal: products.reduce((s, p) => s + p.price * p.quantity, 0),
-				taxTotal: products.reduce((s, p) => s + p.tax * p.quantity, 0),
+				subtotal,
+				taxTotal,
 				grandTotal: 0,
 			},
 		});
-		newOrder.cartSnapshot.grandTotal = newOrder.cartSnapshot.subtotal + newOrder.cartSnapshot.taxTotal;
+		newOrder.cartSnapshot.grandTotal = subtotal + taxTotal - discountAmount;
 		await newOrder.save();
 
 		if (customer) {
@@ -117,7 +134,7 @@ export async function POST(req: Request) {
 			restaurantID,
 			table,
 			items: products.map((p) => ({ name: p.name || "Item", quantity: p.quantity, price: p.price })),
-			total: (newOrder.orderTotal || 0) + (newOrder.taxTotal || 0),
+			total: (newOrder.orderTotal || 0) + (newOrder.taxTotal || 0) - (newOrder.discountAmount || 0),
 		}).catch(() => {});
 
 		if (restaurantID) {

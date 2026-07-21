@@ -17,6 +17,9 @@ const MenuSchema = new mongoose.Schema<TMenu>(
 		image: { type: String, trim: true },
 		slug: { type: String, trim: true, lowercase: true, index: true },
 		modelUrl: { type: String, trim: true, default: null },
+		model3d: {
+			url: { type: String, trim: true, default: null },
+		},
 		trackStock: { type: Boolean, default: false },
 		stockCount: { type: Number, default: null },
 		costPrice: { type: Number, default: 0 },
@@ -62,6 +65,7 @@ export type TMenu = HydratedDocument<{
 	image: string;
 	slug: string;
 	modelUrl: string | null;
+	model3d?: { url: string };
 	trackStock: boolean;
 	stockCount: number | null;
 	costPrice: number;

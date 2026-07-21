@@ -1,19 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
 import { Accounts, type TAccount } from "#utils/database/models/account";
-import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import { verifyPassword } from "#utils/helper/passwordHelper";
+import { withPermission } from "#utils/helper/rbac";
 
-export async function POST(req: Request) {
+export const POST = withPermission("settings.manage", async (req, session) => {
 	try {
 		await connectDB();
-		const session = await getServerSession(authOptions);
 		const { password } = await req.json();
 
-		if (!session) throw { status: 401, message: "Authentication Required" };
 		if (!password) throw { status: 400, message: "Password Required" };
 
 		const account = await Accounts.findOne<TAccount>({ username: session?.username });
@@ -27,7 +24,7 @@ export async function POST(req: Request) {
 		console.log(err);
 		return CatchNextResponse(err);
 	}
-}
+});
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

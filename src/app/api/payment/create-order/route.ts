@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
 		const currency = await getRestaurantCurrency(order.restaurantID);
 
-		const amountInPaise = Math.round((order.orderTotal + order.taxTotal) * 100);
+		const amountInPaise = Math.round((order.orderTotal + order.taxTotal - (order.discountAmount || 0)) * 100);
 		const receipt = `order_${order._id?.toString()?.slice(-12)}`;
 
 		const razorpayOrder = await createRazorpayOrder({

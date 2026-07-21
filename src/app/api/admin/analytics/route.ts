@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
+
 import { smartGenerateText } from "#utils/ai/switcher";
 import connectDB from "#utils/database/connect";
 import { Customers } from "#utils/database/models/customer";
 import { Orders } from "#utils/database/models/order";
-import { authOptions } from "#utils/helper/authHelper";
+import { cacheGet, cacheSet } from "#utils/database/redis";
 import { CatchNextResponse } from "#utils/helper/common";
 import { currencySymbol } from "#utils/helper/currency";
 import { getRestaurantCurrency } from "#utils/helper/currency-server";
+import { withPermission } from "#utils/helper/rbac";
 import { captureError } from "#utils/helper/sentryWrapper";
 
 type AnalyticsData = {
@@ -20,19 +21,23 @@ type AnalyticsData = {
 	gstCollected: number;
 };
 
-export async function GET(req: Request) {
+export const GET = withPermission("analytics.view", async (req, session) => {
 	try {
-		const session = await getServerSession(authOptions);
-		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
-
 		await connectDB();
 		const restaurantID = session.username;
 		if (!restaurantID) throw { status: 400, message: "Restaurant ID required" };
 
-		const currency = await getRestaurantCurrency(restaurantID);
-
 		const { searchParams } = new URL(req.url);
 		const range = searchParams.get("range") || "30d";
+		const refresh = searchParams.get("refresh") === "true";
+
+		const cacheKey = `analytics:${restaurantID}:${range}`;
+		if (!refresh) {
+			const cached = await cacheGet<Record<string, unknown>>(cacheKey);
+			if (cached) return NextResponse.json(cached);
+		}
+
+		const currency = await getRestaurantCurrency(restaurantID);
 
 		const now = new Date();
 		const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -162,7 +167,7 @@ export async function GET(req: Request) {
 
 		const aiCommentary = await generateAICommentary(analyticsData, restaurantID, currency);
 
-		return NextResponse.json({
+		const response = {
 			live: {
 				todayRevenue: todayData.revenue,
 				todayOrders: todayData.count,
@@ -179,12 +184,16 @@ export async function GET(req: Request) {
 			churnedCustomers: churned,
 			dailyRevenue: dailyRevenueAgg,
 			aiCommentary,
-		});
+		};
+
+		await cacheSet(cacheKey, response, 900);
+
+		return NextResponse.json(response);
 	} catch (err) {
 		captureError(err, { route: "/api/admin/analytics" });
 		return CatchNextResponse(err);
 	}
-}
+});
 
 async function generateAICommentary(data: AnalyticsData, restaurantID: string, currency: string): Promise<string[]> {
 	const prompt = `You are a restaurant business analyst. Given these metrics, return 3-5 actionable insights as a JSON array of strings.

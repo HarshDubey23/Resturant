@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import CsrfProvider from "#components/base/CsrfProvider";
 import PWARegister from "#components/base/PWARegister";
 import { GlobalProvider } from "#components/context";
 import { inter, montserrat } from "#utils/helper/fontHelper";
@@ -42,7 +43,10 @@ export default function RootLayout({ children }: IRootProps) {
 	return (
 		<html lang="en" className={`${inter.variable} ${montserrat.variable}`} suppressHydrationWarning>
 			<body>
-				<GlobalProvider>{children}</GlobalProvider>
+				<GlobalProvider>
+					{children}
+					<CsrfProvider />
+				</GlobalProvider>
 				<Toaster />
 				<PWARegister />
 			</body>

@@ -38,19 +38,20 @@ export default function Overview() {
 			try {
 				const [analyticsRes, ordersRes] = await Promise.all([fetch("/api/admin/analytics?range=7d"), fetch("/api/admin/order")]);
 				const analytics = await analyticsRes.json();
-				const orders = await ordersRes.json();
+				const ordersJson = await ordersRes.json();
+				const orders = ordersJson?.orders ?? [];
 
 				setData({
 					todayRevenue: analytics?.live?.todayRevenue ?? 0,
 					todayOrders: analytics?.live?.todayOrders ?? 0,
-					activeOrders: (orders ?? []).filter((o: { state: string }) => o.state === "active").length,
+					activeOrders: orders.filter((o: { state: string }) => o.state === "active").length,
 					weekRevenue: analytics?.live?.weekRevenue ?? 0,
 					monthRevenue: analytics?.live?.monthRevenue ?? 0,
 					repeatRate: analytics?.live?.repeatRate ?? 0,
 					avgTicket: analytics?.live?.avgTicket ?? 0,
 					gstCollected: analytics?.live?.gstCollected ?? 0,
 					dailyRevenue: analytics?.dailyRevenue ?? [],
-					recentOrders: (orders ?? []).slice(0, 5),
+					recentOrders: orders.slice(0, 5),
 				});
 			} catch {
 				/* ignore */

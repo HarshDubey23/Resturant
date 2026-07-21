@@ -9,6 +9,7 @@ export interface IAIConfig {
 		cerebras?: string;
 		google?: string;
 		siliconflow?: string;
+		huggingface?: string;
 		updatedAt?: Date;
 	};
 }
@@ -36,6 +37,7 @@ const aiConfigSchema = new Schema<IAIConfig>(
 			cerebras: { type: String },
 			google: { type: String },
 			siliconflow: { type: String },
+			huggingface: { type: String },
 			updatedAt: { type: Date },
 		},
 	},

@@ -21,6 +21,11 @@ const configs = [
 		url: "https://api.siliconflow.com/v1",
 		model: "deepseek-ai/DeepSeek-V3.2-Exp",
 	},
+	{
+		platform: "huggingface",
+		url: "https://api-inference.huggingface.co/v1",
+		model: "mistralai/Mistral-7B-Instruct-v0.2",
+	},
 ] as const;
 
 export { configs };

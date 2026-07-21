@@ -33,7 +33,7 @@ export const AdminProvider = ({ children }: TAdminProviderProps) => {
 	const _tab = params.get("tab");
 	const _subTab = params.get("subTab");
 	const { data: { profile, menus = [], tables = [] } = {}, isLoading: profileLoading, mutate: profileMutate } = useSWR("/api/admin", fetcher);
-	const { data: orderData = [], isLoading: orderLoading, mutate } = useSWR("/api/admin/order", fetcher, { refreshInterval: 60000 });
+	const { data: orderData = { orders: [] }, isLoading: orderLoading, mutate } = useSWR("/api/admin/order", fetcher, { refreshInterval: 60000 });
 	const [orderActionLoading, setOrderActionLoading] = useState(false);
 	const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -59,8 +59,9 @@ export const AdminProvider = ({ children }: TAdminProviderProps) => {
 		};
 	}, [mutate]);
 
+	const orders = orderData?.orders ?? [];
 	const { orderRequest, orderActive, orderHistory } =
-		orderData?.reduce?.(
+		orders.reduce?.(
 			(acc: { orderRequest: TOrder[]; orderActive: TOrder[]; orderHistory: TOrder[] }, order: TOrder) => {
 				if (order.state === "active") {
 					if (order.products.some(({ adminApproved }) => adminApproved)) acc.orderActive.push(order);

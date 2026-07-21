@@ -4,6 +4,7 @@ import connectDB from "#utils/database/connect";
 import { Customers } from "#utils/database/models/customer";
 import { getRedis } from "#utils/database/redis";
 import { CatchNextResponse } from "#utils/helper/common";
+import { generateVerificationToken } from "#utils/helper/otp";
 
 export async function POST(req: Request) {
 	try {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
 			});
 		}
 
-		const verificationToken = `${customer._id.toString()}:${Date.now() + 60000}`;
+		const verificationToken = generateVerificationToken(customer._id.toString());
 
 		return NextResponse.json({
 			status: 200,

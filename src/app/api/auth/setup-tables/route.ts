@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import QRCode from "qrcode";
 
 import connectDB from "#utils/database/connect";
+import { invalidateRestaurantCache } from "#utils/database/helper/account";
 import { Accounts } from "#utils/database/models/account";
 import { Tables } from "#utils/database/models/table";
 import { authOptions } from "#utils/helper/authHelper";
@@ -54,6 +55,8 @@ export async function POST(req: Request) {
 
 			createdTables.push({ name: tableName, qr });
 		}
+
+		await invalidateRestaurantCache(restaurantID);
 
 		return Response.json({ tables: createdTables });
 	} catch (error) {

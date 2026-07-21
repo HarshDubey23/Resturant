@@ -17,6 +17,8 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 		paymentGateway: { type: String, enum: ["razorpay", "stripe", "cash"], default: "razorpay" },
 		orderTotal: { type: Number },
 		taxTotal: { type: Number },
+		discountAmount: { type: Number, default: 0 },
+		couponCode: { type: String, trim: true },
 		refundedAmount: { type: Number, default: 0 },
 		n8nEventId: { type: String, index: true },
 		invoiceNumber: { type: String },
@@ -80,6 +82,8 @@ export type TOrder = HydratedDocument<{
 	paymentGateway: "razorpay" | "stripe" | "cash";
 	orderTotal: number;
 	taxTotal: number;
+	discountAmount: number;
+	couponCode: string;
 	refundedAmount: number;
 	n8nEventId: string;
 	invoiceNumber: string;

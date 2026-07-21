@@ -1,12 +1,14 @@
 "use client";
 
-import { Circle, Info, Minus, Plus } from "lucide-react";
+import { Box, Circle, Info, Minus, Plus } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import type { TMenu } from "#utils/database/models/menu";
 import { formatCurrency } from "#utils/helper/currency";
+import FoodViewer3D from "@/components/features/FoodViewer3DDynamic";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +33,7 @@ export type TMenuCustom = TMenu & { quantity: number };
 export default function MenuCard({ item, quantity, restrictOrder, showInfo, setShowInfo, increaseQuantity, decreaseQuantity }: MenuCardProps) {
 	const [cardRef, inView] = useInView({ threshold: 0 });
 	const [isFlashing, setFlashing] = useState(false);
+	const [viewerOpen, setViewerOpen] = useState(false);
 	const flashTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
 	useEffect(() => {
@@ -86,6 +89,19 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 								<span className={cn("text-[10px] font-medium", vegStyle.color)}>{vegStyle.label}</span>
 							</div>
 						)}
+						{(item.model3d?.url || item.modelUrl) && (
+							<Badge variant="secondary" className="shrink-0 cursor-pointer hover:bg-primary/20" onClick={() => setViewerOpen(true)}>
+								<Box className="h-3 w-3 mr-1" />
+								3D
+							</Badge>
+						)}
+						<FoodViewer3D
+							open={viewerOpen}
+							onOpenChange={setViewerOpen}
+							modelUrl={item.model3d?.url || item.modelUrl || undefined}
+							itemName={item.name}
+							fallbackImages={item.image ? [item.image] : []}
+						/>
 					</div>
 
 					{item.image && item.description && (

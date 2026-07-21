@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
+import { invalidateRestaurantCache } from "#utils/database/helper/account";
 import { Menus, type TMenu } from "#utils/database/models/menu";
-import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { withPermission } from "#utils/helper/rbac";
 
-export async function POST(req: Request) {
+export const POST = withPermission("menu.write", async (req, session) => {
 	try {
 		await connectDB();
-		const session = await getServerSession(authOptions);
 		const { itemId, hidden } = await req.json();
 
-		if (!session || session.role !== "admin") throw { status: 401, message: "Admin access required" };
 		if (!itemId) throw { status: 400, message: "Menu item id is required" };
 		if (hidden === undefined) throw { status: 400, message: "Hidden value required" };
 
@@ -24,13 +22,14 @@ export async function POST(req: Request) {
 		menuItem.hidden = hidden;
 
 		await menuItem.save();
+		await invalidateRestaurantCache(session.username as string);
 
 		return NextResponse.json({ status: 200, message: hidden ? "Menu item is now hidden" : "Menu item is now visible to customers" });
 	} catch (err) {
 		console.log(err);
 		return CatchNextResponse(err);
 	}
-}
+});
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

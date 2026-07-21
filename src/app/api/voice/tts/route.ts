@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
 		const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
 		if (!elevenLabsKey) {
-			throw { status: 400, message: "ElevenLabs TTS not configured. Use browser SpeechSynthesis instead." };
+			throw { status: 503, message: "ElevenLabs TTS not configured. Use browser SpeechSynthesis instead." };
 		}
 
 		const isHindi = /[\u0900-\u097F]/.test(text);

@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import omit from "lodash/omit";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
@@ -21,11 +23,25 @@ export async function GET(req: Request) {
 		const account = await getRestaurantData(username);
 		if (!account) throw { status: 404, message: `Account with restaurant id: ${username} is not found` };
 
-		return NextResponse.json({
+		const payload = {
 			...omit(account, ["__v", "_id", "kitchens", "password", "profile", "menus", "tables"]),
 			profile: omit(account?.profile, ["__v", "_id"]),
 			menus: account?.menus.map((v: TMenu) => omit(v, ["__v"])),
 			tables: account?.tables.map((v: TTable) => omit(v, ["__v", "_id"])),
+		};
+
+		const body = JSON.stringify(payload);
+		const etag = `"${crypto.createHash("md5").update(body).digest("hex")}"`;
+		const ifNoneMatch = req.headers.get("if-none-match");
+		if (ifNoneMatch === etag) {
+			return new NextResponse(null, { status: 304, headers: { ETag: etag } });
+		}
+
+		return NextResponse.json(payload, {
+			headers: {
+				"Cache-Control": "public, max-age=300, s-maxage=600",
+				ETag: etag,
+			},
 		});
 	} catch (err) {
 		console.log(err);

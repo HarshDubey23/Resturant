@@ -1,5 +1,5 @@
 import pick from "lodash/pick";
-import type { AuthOptions } from "next-auth";
+import type { AuthOptions, Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import connectDB from "#utils/database/connect";
@@ -7,7 +7,12 @@ import { Accounts, type TAccount } from "#utils/database/models/account";
 import { Customers } from "#utils/database/models/customer";
 
 import { isEmailValid } from "./common";
+import { verifyVerificationToken } from "./otp";
 import { verifyPassword } from "./passwordHelper";
+
+export function verifyOtpToken(token: string) {
+	verifyVerificationToken(token);
+}
 
 export const authOptions: AuthOptions = {
 	secret: process.env.NEXTAUTH_SECRET,
@@ -74,9 +79,7 @@ export const authOptions: AuthOptions = {
 
 				if (!isDemo) {
 					if (!cred?.verificationToken) throw new Error("OTP verification is required. Please complete the OTP flow first.");
-					const tokenParts = cred.verificationToken.split(":");
-					const tokenTime = Number(tokenParts[1]);
-					if (Date.now() > tokenTime) throw new Error("Verification token expired. Please verify again.");
+					verifyOtpToken(cred.verificationToken);
 				}
 
 				await connectDB();
@@ -124,9 +127,12 @@ export const authOptions: AuthOptions = {
 			},
 		}),
 	],
-	session: { strategy: "jwt" },
+	session: { strategy: "jwt", maxAge: 24 * 60 * 60 },
 	callbacks: {
 		async session({ session, token }) {
+			if (token.expiresAt && Date.now() > (token.expiresAt as number)) {
+				return {} as Session;
+			}
 			session = {
 				...session,
 				...token?.user,
@@ -135,6 +141,11 @@ export const authOptions: AuthOptions = {
 			return session;
 		},
 		async jwt({ token, user, account }) {
+			if (user) {
+				const maxAge = (user as { role?: string }).role === "customer" ? 24 * 60 * 60 : 8 * 60 * 60;
+				token.expiresAt = Date.now() + maxAge * 1000;
+			}
+
 			if (account?.provider === "restaurant") {
 				if (user) {
 					token.user = {

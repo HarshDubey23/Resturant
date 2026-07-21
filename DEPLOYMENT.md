@@ -47,6 +47,7 @@ Copy `.env.example` to `.env.local` and fill in the values.
 | Variable          | Where to get it                                                            | Where it's used                     |
 |-------------------|----------------------------------------------------------------------------|-------------------------------------|
 | `NEXTAUTH_SECRET` | Run `openssl rand -base64 32` on your terminal                             | `src/app/api/auth/[...nextauth]/`   |
+| `OTP_SECRET`      | Run `openssl rand -hex 32` on your terminal (optional, falls back to `NEXTAUTH_SECRET`) | HMAC-signed OTP verification tokens |
 
 No external provider config needed — the app uses email/password via MongoDB adapter.
 
@@ -89,6 +90,7 @@ No external provider config needed — the app uses email/password via MongoDB a
 | `AI_CEREBRAS_KEY`     | https://cloud.cerebras.ai/ → API Keys                                | AI chat (alternative)      |
 | `AI_GOOGLE_KEY`       | https://aistudio.google.com/apikey → Create API Key                  | AI chat (Gemini model)     |
 | `AI_SILICONFLOW_KEY`  | https://cloud.siliconflow.com/ → API Keys                            | AI chat (alternative)      |
+| `AI_HUGGINGFACE_KEY`  | https://huggingface.co/settings/tokens → Create token                | AI chat (HuggingFace)      |
 
 **Recommendation:** Start with Groq (fastest, generous free tier).
 
@@ -143,8 +145,9 @@ No external provider config needed — the app uses email/password via MongoDB a
 
 | Variable                     | Where to get it                                                         | Usage                             |
 |------------------------------|-------------------------------------------------------------------------|-----------------------------------|
-| `WHATSAPP_PHONE_NUMBER_ID`   | Meta Business Suite → WhatsApp → API Setup                              | `src/app/api/whatsapp/send/`      |
+| `WHATSAPP_PHONE_NUMBER_ID` | Meta Business Suite → WhatsApp → API Setup                              | `src/app/api/whatsapp/send/`      |
 | `WHATSAPP_ACCESS_TOKEN`      | Same page (generate permanent token)                                    | Authentication for Meta API       |
+| `OPENWA_API_URL`             | Your self-hosted OpenWA instance URL (e.g. `http://localhost:8080`)    | Free WhatsApp alternative         |
 
 ### J. Optional — Cloudflare R2 (Images & 3D Models)
 
@@ -159,7 +162,22 @@ No external provider config needed — the app uses email/password via MongoDB a
 
 ---
 
-## 3. Vercel Deployment (recommended)
+## 3. Free / Local Alternatives
+
+You can run most integrations for free or self-hosted:
+
+| Integration | Free/local option | How to configure |
+|-------------|-------------------|------------------|
+| Redis | Self-hosted Docker: `docker run -p 6379:6379 redis:alpine` or Upstash free tier | Set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` |
+| Error monitoring | GlitchTip self-hosted | Set `SENTRY_DSN` to your GlitchTip project DSN |
+| TTS | Browser `speechSynthesis` | Leave `ELEVENLABS_API_KEY` empty; client falls back automatically |
+| AI | Ollama local (`http://localhost:11434`) | Add an OpenAI-compatible provider entry in `src/utils/ai/config.ts` |
+| WhatsApp | OpenWA self-hosted | Set `OPENWA_API_URL` to your OpenWA instance |
+| Payments | Cash / UPI QR | Cash is enabled by default; set `upiId` in restaurant profile for UPI QR |
+
+---
+
+## 4. Vercel Deployment (recommended)
 
 ### Step 1: Push to GitHub
 
@@ -197,7 +215,8 @@ In the Vercel project dashboard → Settings → Environment Variables, add:
 | `STRIPE_WEBHOOK_SECRET` | Production | Stripe webhook signing secret |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Production | Stripe publishable key |
 | `AI_GROQ_KEY` | Production | At least one AI key required |
-| `ELEVENLABS_API_KEY` | Production | For voice features |
+| `AI_HUGGINGFACE_KEY` | Production | HuggingFace Inference API (free tier) |
+| `ELEVENLABS_API_KEY` | Production | For voice features (optional) |
 | `UPSTASH_REDIS_REST_URL` | Production | Rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN` | Production | Redis auth |
 | `SENTRY_DSN` | Production | Error tracking |
@@ -222,22 +241,34 @@ After deployment:
 4. Copy the signing secret → add as `STRIPE_WEBHOOK_SECRET` in Vercel env vars
 5. Redeploy
 
-### Step 6: Set up Cron Jobs (for daily settlements)
+### Step 6: Set up Cron Jobs
 
-In Vercel → Settings → Cron Jobs:
-- **Path**: `/api/cron/settle`
-- **Schedule**: Custom → `0 0 * * *` (daily midnight)
-- **Headers**: `Authorization: Bearer YOUR_CRON_SECRET`
+The project includes `vercel.json` with two cron jobs:
 
-OR use an external cron service (https://cron-job.org, https://healthchecks.io) to call:
+| Path | Schedule | Purpose |
+|------|----------|---------|
+| `/api/cron/settle` | `0 0 * * *` | Daily payout settlements |
+| `/api/cron/birthday` | `0 9 * * *` | Birthday / anniversary WhatsApp greetings |
+
+Vercel will read these automatically. Each cron endpoint requires:
 ```
-https://your-project.vercel.app/api/cron/settle
-Header: Authorization: Bearer YOUR_CRON_SECRET
+Authorization: Bearer YOUR_CRON_SECRET
 ```
+
+You can also use an external cron service (https://cron-job.org, https://healthchecks.io) to call the same endpoints with the same header.
+
+### Step 7: Security Headers
+
+`Content-Security-Policy` and `Permissions-Policy` are set per-request by `proxy.ts` (the Next.js 16 proxy convention):
+- A unique CSP nonce is generated for every request.
+- `Permissions-Policy` allows microphone, geolocation, and payment APIs for voice ordering and payments.
+- CORS headers, CSRF tokens, and rate limiting are also handled by the proxy.
+
+Do not add CSP/Permissions-Policy in `next.config.ts` headers — the proxy now owns them.
 
 ---
 
-## 4. Docker Deployment (Recommended for Self-Hosting)
+## 5. Docker Deployment (Recommended for Self-Hosting)
 
 The repo includes a `Dockerfile` and `docker-compose.yml`:
 
@@ -268,7 +299,7 @@ Demo credentials:
 - Admin: `demo@orderworder.com` / `Demo@12345`
 - Customer: Visit `http://localhost:3050/demo?table=T1`
 
-## 5. Render Deployment (One-Click)
+## 6. Render Deployment (One-Click)
 
 The repo includes a `render.yaml` Blueprint for one-click deployment on Render:
 
@@ -283,28 +314,28 @@ Render will:
 - Deploy with health checks at `/api/health`
 - Auto-deploy on push
 
-## 6. Self-hosted GlitchTip (Error Monitoring)
+## 7. Self-hosted GlitchTip (Error Monitoring)
 
 For zero-cost self-hosted error monitoring:
 1. Deploy GlitchTip using their Docker Compose: https://glitchtip.com
 2. Set `SENTRY_DSN` to your GlitchTip project DSN
 3. The Sentry SDK speaks the same protocol — no code changes needed
 
-## 7. OpenWA (Self-hosted WhatsApp)
+## 8. OpenWA (Self-hosted WhatsApp)
 
 For free self-hosted WhatsApp messaging:
 1. Deploy OpenWA: https://github.com/open-wa/wa-automate
 2. Set `OPENWA_API_URL` to your OpenWA instance URL
 3. Optionally set `WHATSAPP_ACCESS_TOKEN` and `WHATSAPP_PHONE_NUMBER_ID` for Meta Cloud API instead
 
-## 8. BYOK (Bring Your Own AI Keys)
+## 9. BYOK (Bring Your Own AI Keys)
 
 Each restaurant can override the global AI provider keys from the dashboard:
 1. Go to Settings → AI Keys
 2. Paste provider-specific API keys
 3. Keys are stored per-tenant and are write-only (never returned in GET responses)
 
-## 9. MongoDB Change Streams
+## 10. MongoDB Change Streams
 
 For production, run MongoDB as a replica set:
 - Atlas free tier is already a replica set — Change Streams work out of the box
@@ -313,14 +344,15 @@ For production, run MongoDB as a replica set:
 
 ---
 
-## 5. Post-Deployment Checklist
+## 11. Post-Deployment Checklist
 
 - [ ] Visit `https://your-domain/setup` — create the first restaurant profile
 - [ ] Visit `https://your-domain/signup` — create your admin account
 - [ ] Configure menu items at `https://your-domain/dashboard`
 - [ ] Set up Razorpay/Stripe test keys → run a test payment
 - [ ] Configure Stripe webhook in Stripe Dashboard
-- [ ] Set up Vercel Cron Jobs for daily payout settlement
+- [ ] Set up Vercel Cron Jobs (`vercel.json` already includes `/api/cron/settle` and `/api/cron/birthday`)
+- [ ] Generate and set `OTP_SECRET` for HMAC-signed OTP tokens
 - [ ] (Optional) Configure n8n webhook URL for workflow automation
 - [ ] (Optional) Set up WhatsApp Cloud API for order notifications
 - [ ] Point your custom domain in Vercel → Domains
@@ -329,7 +361,7 @@ For production, run MongoDB as a replica set:
 
 ---
 
-## 6. CI/CD (GitHub Actions)
+## 12. CI/CD (GitHub Actions)
 
 The repository includes `.github/workflows/ci.yml` that runs:
 
@@ -356,6 +388,7 @@ To enable deployments on push, uncomment the `deploy` job in `.github/workflows/
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/orderworder
 NEXTAUTH_URL=https://yourdomain.com
 NEXTAUTH_SECRET=<openssl rand -base64 32>
+OTP_SECRET=<openssl rand -hex 32>
 NEXT_PUBLIC_URL=https://yourdomain.com
 
 # ─── Payments (pick one or both) ─────────────────────
@@ -371,6 +404,7 @@ AI_GROQ_KEY=gsk_xxx
 # AI_CEREBRAS_KEY=xxx
 # AI_GOOGLE_KEY=xxx
 # AI_SILICONFLOW_KEY=xxx
+# AI_HUGGINGFACE_KEY=hf_xxx
 
 # ─── Voice ─────────────────────────────────────────
 ELEVENLABS_API_KEY=xxx
