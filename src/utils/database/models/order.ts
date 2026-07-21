@@ -66,7 +66,9 @@ OrderSchema.pre("save", function () {
 		this.taxTotal = 0;
 		this?.products?.forEach(({ quantity, price, tax }) => {
 			this.orderTotal += price * quantity;
-			this.taxTotal += tax;
+			// tax is stored per unit — multiply by quantity or the taxTotal
+			// under-counts every multi-quantity line.
+			this.taxTotal += tax * quantity;
 		});
 	}
 });

@@ -2,6 +2,7 @@
 
 import { ArrowRight, Play } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -68,18 +69,31 @@ export default function HeroSection() {
 								animate={{ y: [0, -8, 0] }}
 								transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
 								className="absolute top-0 left-0 w-56 h-72 md:w-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-orange-100 to-amber-200 border border-orange-200/50 z-10">
-								<div className="w-full h-full flex items-center justify-center text-6xl select-none">🧑‍🍳</div>
-								<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-3">
-									<p className="text-white text-xs font-medium">[placeholder: girl-eating-burger.png]</p>
+								<Image
+									src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop"
+									alt="Customer enjoying a gourmet burger"
+									fill
+									sizes="(max-width: 768px) 224px, 256px"
+									className="object-cover"
+									priority
+								/>
+								<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3">
+									<p className="text-white text-xs font-medium">Order at the table, no waiting</p>
 								</div>
 							</motion.div>
 							<motion.div
 								animate={{ y: [0, 6, 0] }}
 								transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
 								className="absolute bottom-0 right-0 w-48 h-60 md:w-56 md:h-72 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-100 to-orange-200 border border-amber-200/50 z-20">
-								<div className="w-full h-full flex items-center justify-center text-6xl select-none">🧑</div>
-								<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/40 to-transparent p-3">
-									<p className="text-white text-xs font-medium">[placeholder: boy-eating-pizza.png]</p>
+								<Image
+									src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop"
+									alt="Freshly baked pizza served to a happy diner"
+									fill
+									sizes="(max-width: 768px) 192px, 224px"
+									className="object-cover"
+								/>
+								<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3">
+									<p className="text-white text-xs font-medium">Hot from the kitchen to you</p>
 								</div>
 							</motion.div>
 						</div>

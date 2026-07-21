@@ -9,18 +9,29 @@ services:
       - "3050:3050"
     env_file: .env
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - orderworder-net
     restart: unless-stopped
 
   mongodb:
     image: mongo:7
+    command: ["mongod", "--auth"]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-changeme}
     volumes:
       - mongo-data:/data/db
     networks:
       - orderworder-net
     restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet
+      interval: 15s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
 
   redis:
     image: redis:7-alpine

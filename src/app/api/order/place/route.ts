@@ -6,8 +6,8 @@ import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
 import { validateAndRedeemCoupon } from "#utils/database/helper/coupon";
 import { deductInventoryForOrder } from "#utils/database/helper/deductInventory";
+import { awardPointsAtomic } from "#utils/database/helper/loyalty";
 import { Accounts } from "#utils/database/models/account";
-import { computePoints, computeTier, Loyalties } from "#utils/database/models/loyalty";
 import { Menus, type TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
@@ -105,25 +105,17 @@ export async function POST(req: Request) {
 		newOrder.cartSnapshot.grandTotal = subtotal + taxTotal - discountAmount;
 		await newOrder.save();
 
-		if (customer) {
+		if (restaurantID && customer) {
 			try {
-				let loyalty = await Loyalties.findOne({ restaurantID, customer });
-				if (!loyalty) loyalty = await Loyalties.create({ restaurantID, customer });
-				const earnedPoints = computePoints(newOrder.orderTotal || 0, loyalty.tier);
-				loyalty.points += earnedPoints;
-				loyalty.lifetimePoints += earnedPoints;
-				loyalty.lastVisit = new Date();
-				loyalty.visitCount += 1;
-				const newTier = computeTier(loyalty.lifetimePoints);
-				if (newTier !== loyalty.tier) {
-					loyalty.tier = newTier;
+				// Atomic award: concurrent orders can never double-read a balance.
+				const award = await awardPointsAtomic(restaurantID, customer, newOrder.orderTotal || 0);
+				if (award?.tierUpgraded) {
 					triggerN8nWorkflow("loyalty.tier_upgraded", {
 						customerId: customer,
 						restaurantID,
-						newTier,
+						newTier: award.newTier,
 					}).catch(() => {});
 				}
-				await loyalty.save();
 			} catch {
 				captureError(new Error("Failed to award loyalty points"), { route: "order/place/loyalty" });
 			}

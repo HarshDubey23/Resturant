@@ -4,6 +4,15 @@ export interface IAIConfig {
 	restaurantID: string;
 	exhaustedProviders: string[];
 	cooldownUntil: Date | null;
+	dailyBudget: {
+		tokenLimit: number;
+		costLimit: number;
+		tokensUsed: number;
+		costUsed: number;
+		lastReset: Date;
+	};
+	dailyTtsChars: number;
+	lastTtsReset: Date;
 	providerKeys?: {
 		groq?: string;
 		cerebras?: string;
@@ -32,6 +41,15 @@ const aiConfigSchema = new Schema<IAIConfig>(
 			type: Date,
 			default: null,
 		},
+		dailyBudget: {
+			tokenLimit: { type: Number, default: 100000 },
+			costLimit: { type: Number, default: 2.0 },
+			tokensUsed: { type: Number, default: 0 },
+			costUsed: { type: Number, default: 0 },
+			lastReset: { type: Date, default: Date.now },
+		},
+		dailyTtsChars: { type: Number, default: 0 },
+		lastTtsReset: { type: Date, default: Date.now },
 		providerKeys: {
 			groq: { type: String },
 			cerebras: { type: String },

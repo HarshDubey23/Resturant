@@ -1,11 +1,11 @@
-"use client";
+﻿"use client";
 
 import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAdmin } from "#components/context/useContext";
-import { formatCurrency } from "#utils/helper/currency";
+import { currencySymbol, formatCurrency } from "#utils/helper/currency";
 
 type OverviewData = {
 	todayRevenue: number;
@@ -114,7 +114,7 @@ export default function Overview() {
 								<YAxis
 									tick={{ fontSize: 10 }}
 									stroke="hsl(var(--muted-foreground))"
-									tickFormatter={(v) => `${currency === "INR" ? "₹" : "$"}${(v / 1000).toFixed(0)}k`}
+									tickFormatter={(v) => `${currencySymbol(currency)}${(v / 1000).toFixed(0)}k`}
 								/>
 								<Tooltip
 									contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}

@@ -1,69 +1,21 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import Image from "next/image";
+import { motion } from "motion/react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import useSWR from "swr";
-import FoodViewer3D from "@/components/features/FoodViewer3DDynamic";
+import { CartSidebar } from "@/components/features/table/CartSidebar";
+import { CategoryNav } from "@/components/features/table/CategoryNav";
+import { MenuGrid } from "@/components/features/table/MenuGrid";
+import type { CartItem, MenuItem, RestaurantData } from "@/components/features/table/types";
 import { MobileNav } from "@/components/layout/MobileNav";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRazorpay } from "@/hooks/useRazorpay";
-
-const SPICE_LEVELS = [
-	{ value: "mild", label: "Mild", emoji: "🟢" },
-	{ value: "medium", label: "Medium", emoji: "🟡" },
-	{ value: "hot", label: "Hot", emoji: "🟠" },
-	{ value: "extra-hot", label: "Extra Hot", emoji: "🔴" },
-] as const;
-
-const CATEGORY_ICONS: Record<string, string> = {
-	starters: "🥗",
-	"main course": "🍛",
-	biryani: "🍚",
-	breads: "🫓",
-	pizza: "🍕",
-	chinese: "🥡",
-	desserts: "🍰",
-	beverages: "🥤",
-};
-
-interface MenuItem {
-	_id: string;
-	name: string;
-	description: string;
-	price: number;
-	taxPercent: number;
-	category: string;
-	veg: "veg" | "non-veg" | "contains-egg";
-	image: string;
-	foodType: string;
-	modelUrl?: string;
-	model3d?: { url: string };
-	isAvailable?: boolean;
-	isBestseller?: boolean;
-}
-
-interface CartItem extends MenuItem {
-	quantity: number;
-	spiceLevel: string;
-	specialInstructions: string;
-	selectedCustomizations: { name: string; price: number }[];
-}
-
-interface RestaurantData {
-	name: string;
-	username: string;
-	profile: { categories: string[]; address?: string };
-	menus: MenuItem[];
-}
+import { formatCurrency } from "@/utils/helper/currency";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -86,6 +38,7 @@ export default function TableMenuPage() {
 	const categoryScrollRef = useRef<HTMLDivElement>(null);
 
 	const { data: restaurantData, error, isLoading } = useSWR<RestaurantData>(`/api/menu?id=${restaurant}`, fetcher);
+	const currency = restaurantData?.profile?.currency || "INR";
 
 	const filteredItems = useMemo(() => {
 		if (!restaurantData?.menus) return [];
@@ -112,12 +65,18 @@ export default function TableMenuPage() {
 		return Array.from(cats);
 	}, [restaurantData]);
 
+	// Tax is computed per item from its own taxPercent — matching the
+	// server-side calculation — instead of a flat 5% that drifted from the
+	// amount actually charged.
 	const cartTotal = useMemo(() => {
 		const subtotal = cart.reduce((sum, item) => {
 			const customizationsTotal = item.selectedCustomizations.reduce((s, c) => s + c.price, 0);
 			return sum + (item.price + customizationsTotal) * item.quantity;
 		}, 0);
-		const tax = (subtotal - couponDiscount) * 0.05;
+		const tax = cart.reduce((sum, item) => {
+			const customizationsTotal = item.selectedCustomizations.reduce((s, c) => s + c.price, 0);
+			return sum + (((item.price + customizationsTotal) * (item.taxPercent || 0)) / 100) * item.quantity;
+		}, 0);
 		return { subtotal, tax, discount: couponDiscount, total: subtotal - couponDiscount + tax };
 	}, [cart, couponDiscount]);
 
@@ -152,12 +111,14 @@ export default function TableMenuPage() {
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || "Invalid coupon");
 			setCouponDiscount(data.discount);
-			toast.success(`Coupon applied! ${data.discountType === "percentage" ? `${data.discountValue}% off` : `₹${data.discountValue} off`}`);
+			toast.success(
+				`Coupon applied! ${data.discountType === "percentage" ? `${data.discountValue}% off` : `${formatCurrency(data.discountValue, currency)} off`}`,
+			);
 		} catch (err) {
 			setCouponDiscount(0);
 			toast.error(err instanceof Error ? err.message : "Invalid coupon code");
 		}
-	}, [couponCode, cartTotal.subtotal, restaurant]);
+	}, [couponCode, cartTotal.subtotal, restaurant, currency]);
 
 	const placeOrder = async () => {
 		if (cart.length === 0) return toast.error("Cart is empty");
@@ -249,6 +210,7 @@ export default function TableMenuPage() {
 						<div className="flex items-center gap-1 sm:gap-3">
 							<button
 								onClick={() => searchInputRef.current?.focus()}
+								aria-label="Search menu"
 								className="p-2 text-muted-foreground hover:text-foreground transition-colors lg:hidden">
 								<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 									<title>Search</title>
@@ -268,7 +230,10 @@ export default function TableMenuPage() {
 									/>
 								</svg>
 							</Link>
-							<button onClick={() => setCartOpen(true)} className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
+							<button
+								onClick={() => setCartOpen(true)}
+								aria-label={`Open cart, ${cart.length} items`}
+								className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
 								<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 									<title>Cart</title>
 									<path
@@ -294,49 +259,15 @@ export default function TableMenuPage() {
 				</div>
 			</header>
 
-			{/* Category Tabs */}
-			<div ref={categoryScrollRef} className="sticky top-16 lg:top-[88px] z-20 bg-background border-b border-border/50">
-				<div className="max-w-7xl mx-auto px-4 sm:px-6">
-					<div className="py-3 overflow-x-auto scrollbar-none">
-						<div className="flex gap-2">
-							{categories.map((cat) => (
-								<button
-									key={cat}
-									onClick={() => setActiveCategory(cat)}
-									className={`relative shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-										activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
-									}`}>
-									{CATEGORY_ICONS[cat] && <span className="mr-1.5">{CATEGORY_ICONS[cat]}</span>}
-									{cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
-								</button>
-							))}
-						</div>
-					</div>
-				</div>
-			</div>
+			<CategoryNav categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} scrollRef={categoryScrollRef} />
 
 			{/* Search bar mobile */}
 			<div className="lg:hidden px-4 sm:px-6 pt-3">
 				<Input placeholder="Search menu..." value={search} onChange={(e) => setSearch(e.target.value)} />
 			</div>
 
-			{/* Menu Grid */}
 			<main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-				{filteredItems.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-20 text-center">
-						<div className="text-6xl mb-4">🔍</div>
-						<h3 className="text-xl font-semibold text-foreground">No items found</h3>
-						<p className="text-muted-foreground mt-2">Try a different search or category.</p>
-					</div>
-				) : (
-					<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-						<AnimatePresence mode="popLayout">
-							{filteredItems.map((item, index) => (
-								<MenuItemCard key={item._id} item={item} index={index} onAddToCart={addToCart} />
-							))}
-						</AnimatePresence>
-					</div>
-				)}
+				<MenuGrid items={filteredItems} onAddToCart={addToCart} currency={currency} />
 			</main>
 
 			{/* Desktop Cart Sidebar */}
@@ -354,6 +285,7 @@ export default function TableMenuPage() {
 						paymentMethod={paymentMethod}
 						setPaymentMethod={setPaymentMethod}
 						isPlacingOrder={isPlacingOrder}
+						currency={currency}
 					/>
 				</div>
 			)}
@@ -377,7 +309,7 @@ export default function TableMenuPage() {
 						{cart.length} item{cart.length > 1 ? "s" : ""}
 					</span>
 					<span>•</span>
-					<span>₹{cartTotal.subtotal}</span>
+					<span>{formatCurrency(cartTotal.subtotal, currency)}</span>
 				</motion.button>
 			)}
 
@@ -399,309 +331,12 @@ export default function TableMenuPage() {
 						paymentMethod={paymentMethod}
 						setPaymentMethod={setPaymentMethod}
 						isPlacingOrder={isPlacingOrder}
+						currency={currency}
 					/>
 				</SheetContent>
 			</Sheet>
 
 			<MobileNav restaurant={restaurant} tableId={tableId} onOpenCart={() => setCartOpen(true)} />
 		</div>
-	);
-}
-
-function MenuItemCard({ item, index, onAddToCart }: { item: MenuItem; index: number; onAddToCart: (item: MenuItem, spiceLevel: string, notes: string) => void }) {
-	const [spiceLevel, setSpiceLevel] = useState("medium");
-	const [notes, setNotes] = useState("");
-	const [showDetails, setShowDetails] = useState(false);
-	const [qty, setQty] = useState(0);
-	const [previewOpen, setPreviewOpen] = useState(false);
-
-	const handleAdd = () => {
-		onAddToCart(item, spiceLevel, notes);
-		setQty((prev) => prev + 1);
-	};
-
-	return (
-		<motion.div
-			layout
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			exit={{ opacity: 0, scale: 0.9 }}
-			transition={{ duration: 0.3, delay: index * 0.03 }}
-			whileHover={{ y: -4 }}
-			className="group relative overflow-hidden rounded-2xl bg-card border border-border/50 shadow-sm hover:shadow-lg transition-all duration-300">
-			<div className="relative aspect-[4/3] overflow-hidden bg-muted">
-				{item.image ? (
-					<Image
-						src={item.image}
-						alt={item.name}
-						fill
-						className="object-cover group-hover:scale-105 transition-transform duration-500"
-						sizes="(max-width:768px) 50vw, 25vw"
-					/>
-				) : (
-					<div className="w-full h-full flex items-center justify-center text-4xl text-muted-foreground/30">🍽️</div>
-				)}
-				<div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-				<div className="absolute top-2 left-2 flex gap-1.5">
-					<Badge
-						variant={item.veg === "veg" ? "default" : "destructive"}
-						className={`text-[10px] px-1.5 py-0.5 h-auto ${item.veg === "veg" ? "bg-green-600" : "bg-red-600"}`}>
-						{item.veg === "veg" ? "🟢 Veg" : item.veg === "non-veg" ? "🔴 Non-Veg" : "🟡 Egg"}
-					</Badge>
-					{(item.model3d?.url || item.modelUrl) && (
-						<>
-							<Badge
-								variant="secondary"
-								className="text-[10px] px-1.5 py-0.5 h-auto cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
-								onClick={() => setPreviewOpen(true)}>
-								3D
-							</Badge>
-							<FoodViewer3D
-								open={previewOpen}
-								onOpenChange={setPreviewOpen}
-								modelUrl={item.model3d?.url || item.modelUrl || undefined}
-								itemName={item.name}
-								fallbackImages={item.image ? [item.image] : []}
-							/>
-						</>
-					)}
-				</div>
-				<div className="absolute bottom-2 left-2 right-2">
-					<h3 className="text-white font-bold text-sm drop-shadow-md truncate">{item.name}</h3>
-					<p className="text-white/80 text-xs font-bold drop-shadow-md">₹{item.price}</p>
-				</div>
-			</div>
-
-			<div className="p-3 space-y-2">
-				{showDetails && item.description && (
-					<motion.p initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="text-xs text-muted-foreground leading-relaxed">
-						{item.description}
-					</motion.p>
-				)}
-
-				{/* Spice Level */}
-				<div>
-					<p className="text-[10px] font-medium text-muted-foreground mb-1">🌶️ Spice Level</p>
-					<div className="flex gap-1">
-						{SPICE_LEVELS.map((level) => (
-							<button
-								key={level.value}
-								onClick={() => setSpiceLevel(level.value)}
-								className={`flex-1 py-1 rounded-md text-[10px] font-medium transition-all ${
-									spiceLevel === level.value ? "bg-primary/10 text-primary ring-1 ring-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-								}`}>
-								{level.emoji} {level.label}
-							</button>
-						))}
-					</div>
-				</div>
-
-				{/* Special Instructions */}
-				<textarea
-					placeholder="Special instructions... (e.g., extra spicy, no onions)"
-					value={notes}
-					onChange={(e) => setNotes(e.target.value)}
-					className="w-full text-xs border rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 bg-muted/30"
-					rows={1}
-				/>
-
-				{/* Add to Cart */}
-				<div className="flex gap-2 pt-1">
-					{qty > 0 ? (
-						<div className="flex items-center gap-2 w-full">
-							<button
-								onClick={() => {
-									setQty((prev) => prev - 1);
-								}}
-								className="flex-1 py-2 rounded-xl bg-muted text-muted-foreground text-sm font-medium hover:bg-muted/80 transition-colors">
-								−
-							</button>
-							<span className="w-6 text-center text-sm font-bold">{qty}</span>
-							<button
-								onClick={handleAdd}
-								className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-								+
-							</button>
-						</div>
-					) : (
-						<button
-							onClick={handleAdd}
-							className="w-full py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-							Add · ₹{item.price}
-						</button>
-					)}
-				</div>
-
-				<button onClick={() => setShowDetails((v) => !v)} className="w-full text-[10px] text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-					{showDetails ? "▲ Less" : "▼ More"}
-				</button>
-			</div>
-		</motion.div>
-	);
-}
-
-function CartSidebar({
-	cart,
-	cartTotal,
-	couponCode,
-	setCouponCode,
-	applyCoupon,
-	updateQuantity,
-	removeFromCart,
-	placeOrder,
-	paymentMethod,
-	setPaymentMethod,
-	isPlacingOrder,
-}: {
-	cart: CartItem[];
-	cartTotal: { subtotal: number; tax: number; discount: number; total: number };
-	couponCode: string;
-	setCouponCode: (code: string) => void;
-	applyCoupon: () => void;
-	updateQuantity: (id: string, delta: number) => void;
-	removeFromCart: (id: string) => void;
-	placeOrder: () => void;
-	paymentMethod: "razorpay" | "cash";
-	setPaymentMethod: (method: "razorpay" | "cash") => void;
-	isPlacingOrder: boolean;
-}) {
-	return (
-		<Card className="p-4 space-y-4 border-border/50 shadow-lg">
-			<div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
-				{cart.length === 0 ? (
-					<div className="text-center py-8 text-muted-foreground">
-						<div className="text-4xl mb-2">🛒</div>
-						<p className="text-sm">Your cart is empty</p>
-					</div>
-				) : (
-					cart.map((item) => {
-						const customizationsTotal = item.selectedCustomizations.reduce((s, c) => s + c.price, 0);
-						const unitTotal = item.price + customizationsTotal;
-						return (
-							<motion.div
-								key={`${item._id}-${item.spiceLevel}-${item.specialInstructions}`}
-								initial={{ opacity: 0, x: 20 }}
-								animate={{ opacity: 1, x: 0 }}
-								exit={{ opacity: 0, x: -20 }}
-								className="flex items-start gap-3 p-2 rounded-xl bg-muted/30">
-								<div className="flex-1 min-w-0">
-									<div className="flex items-center gap-1">
-										<Badge
-											variant={item.veg === "veg" ? "default" : "destructive"}
-											className={`w-2 h-2 p-0 rounded-full ${item.veg === "veg" ? "bg-green-600" : "bg-red-600"}`}
-										/>
-										<p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-									</div>
-									<div className="flex flex-wrap gap-1 mt-0.5">
-										{(() => {
-											const level = SPICE_LEVELS.find((l) => l.value === item.spiceLevel);
-											return level ? (
-												<span className="text-[10px] text-muted-foreground">
-													{level.emoji} {level.label}
-												</span>
-											) : null;
-										})()}
-									</div>
-									{item.specialInstructions && (
-										<p className="text-[10px] text-muted-foreground/70 italic mt-0.5">&ldquo;{item.specialInstructions}&rdquo;</p>
-									)}
-									{item.selectedCustomizations.length > 0 && (
-										<p className="text-[10px] text-muted-foreground/70">+{item.selectedCustomizations.map((c) => c.name).join(", ")}</p>
-									)}
-									<p className="text-xs font-medium text-foreground mt-1">
-										₹{unitTotal} × {item.quantity} = ₹{unitTotal * item.quantity}
-									</p>
-								</div>
-								<div className="flex items-center gap-1 shrink-0">
-									<button
-										onClick={() => updateQuantity(item._id, -1)}
-										className="w-7 h-7 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors">
-										−
-									</button>
-									<span className="w-5 text-center text-xs font-bold">{item.quantity}</span>
-									<button
-										onClick={() => updateQuantity(item._id, 1)}
-										className="w-7 h-7 rounded-lg bg-muted text-muted-foreground text-xs font-medium hover:bg-muted/80 transition-colors">
-										+
-									</button>
-									<button
-										onClick={() => removeFromCart(item._id)}
-										className="w-7 h-7 rounded-lg text-muted-foreground/50 hover:text-destructive text-xs transition-colors">
-										✕
-									</button>
-								</div>
-							</motion.div>
-						);
-					})
-				)}
-			</div>
-
-			{cart.length > 0 && (
-				<>
-					<div className="space-y-2">
-						<div className="flex gap-2">
-							<Input placeholder="Coupon code" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="text-sm" />
-							<Button variant="outline" size="sm" onClick={applyCoupon} className="shrink-0">
-								Apply
-							</Button>
-						</div>
-					</div>
-
-					<div className="space-y-1 text-sm">
-						<div className="flex justify-between text-muted-foreground">
-							<span>Subtotal</span>
-							<span>₹{cartTotal.subtotal}</span>
-						</div>
-						{cartTotal.discount > 0 && (
-							<div className="flex justify-between text-green-600">
-								<span>Discount</span>
-								<span>-₹{cartTotal.discount}</span>
-							</div>
-						)}
-						<div className="flex justify-between text-muted-foreground">
-							<span>GST (5%)</span>
-							<span>₹{cartTotal.tax}</span>
-						</div>
-						<div className="border-t pt-1 flex justify-between font-bold text-foreground">
-							<span>Total</span>
-							<span>₹{cartTotal.total}</span>
-						</div>
-					</div>
-
-					<div className="space-y-2">
-						<p className="text-xs font-medium text-muted-foreground">Payment Method</p>
-						<div className="flex gap-2">
-							<button
-								onClick={() => setPaymentMethod("razorpay")}
-								className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-									paymentMethod === "razorpay" ? "bg-primary/10 text-primary ring-1 ring-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-								}`}>
-								💳 Razorpay
-							</button>
-							<button
-								onClick={() => setPaymentMethod("cash")}
-								className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-									paymentMethod === "cash" ? "bg-primary/10 text-primary ring-1 ring-primary" : "bg-muted text-muted-foreground hover:bg-muted/80"
-								}`}>
-								💵 Cash
-							</button>
-						</div>
-					</div>
-
-					<Button className="w-full" size="lg" onClick={placeOrder} disabled={isPlacingOrder}>
-						{isPlacingOrder ? (
-							<span className="flex items-center gap-2">
-								<span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-								Processing...
-							</span>
-						) : paymentMethod === "cash" ? (
-							`Place Order · ₹${cartTotal.total}`
-						) : (
-							`Pay · ₹${cartTotal.total}`
-						)}
-					</Button>
-				</>
-			)}
-		</Card>
 	);
 }

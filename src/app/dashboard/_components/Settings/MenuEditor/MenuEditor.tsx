@@ -7,11 +7,12 @@ import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
 import { cn } from "@/lib/utils";
 import MenuEditorItem from "./MenuEditorItem";
+import MenuItemEditModal from "./MenuItemEditModal";
 
 export default function MenuEditor() {
 	const { profile, menus, profileLoading, profileMutate } = useAdmin();
-	const [_modalState, setModalState] = useState("");
-	const [_editItem, setEditItem] = useState<TMenu>();
+	const [modalOpen, setModalOpen] = useState(false);
+	const [editItem, setEditItem] = useState<TMenu>();
 	const [hideSettingsLoading, setHideSettingsLoading] = useState<string[]>([]);
 	const [category, setCategory] = useState(0);
 	const categoriesRef = useRef<HTMLDivElement>(null);
@@ -37,6 +38,7 @@ export default function MenuEditor() {
 		setHideSettingsLoading((v) => [...v, itemId]);
 		const req = await fetch("/api/admin/menu/hidden", {
 			method: "POST",
+			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({ itemId, hidden }),
 		});
 		const res = await req.json();
@@ -47,7 +49,7 @@ export default function MenuEditor() {
 
 	const onEdit = (item: TMenu) => {
 		setEditItem(item);
-		setModalState("menuItemEditState");
+		setModalOpen(true);
 	};
 
 	if (profileLoading) {
@@ -102,11 +104,25 @@ export default function MenuEditor() {
 					<h2 className="text-base font-semibold">Menu Items</h2>
 				</div>
 				<div className="space-y-2">
-					{menus.map((item, id) => (
-						<MenuEditorItem key={id} item={item} onEdit={onEdit} onHide={onHide} hideSettingsLoading={hideSettingsLoading.includes(item._id.toString())} />
+					{menus.map((item) => (
+						<MenuEditorItem
+							key={item._id.toString()}
+							item={item}
+							onEdit={onEdit}
+							onHide={onHide}
+							hideSettingsLoading={hideSettingsLoading.includes(item._id.toString())}
+						/>
 					))}
 				</div>
 			</div>
+
+			<MenuItemEditModal
+				item={editItem}
+				categories={profile?.categories ?? []}
+				open={modalOpen}
+				onOpenChange={setModalOpen}
+				onSaved={profileMutate}
+			/>
 		</div>
 	);
 }

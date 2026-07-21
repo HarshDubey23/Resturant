@@ -4,6 +4,8 @@ import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
 import { Invoices } from "#utils/database/models/invoice";
 import { Orders } from "#utils/database/models/order";
+import { SplitPayments } from "#utils/database/models/splitPayment";
+import { timingSafeStringEqual } from "#utils/helper/crypto";
 import { generateInvoiceNumber } from "#utils/helper/invoiceHelper";
 import { captureError } from "#utils/helper/sentryWrapper";
 
@@ -27,7 +29,9 @@ export async function POST(req: Request) {
 			return new Response("Missing webhook signature or secret", { status: 400 });
 		}
 		const expectedSignature = crypto.createHmac("sha256", webhookSecret).update(rawBody).digest("hex");
-		if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+		// Length-normalizing constant-time compare: a raw timingSafeEqual throws
+		// when the attacker supplies a signature of a different length.
+		if (!timingSafeStringEqual(signature, expectedSignature)) {
 			return new Response("Invalid webhook signature", { status: 401 });
 		}
 
@@ -37,6 +41,27 @@ export async function POST(req: Request) {
 			case "payment.captured": {
 				const payment = payload.payment?.entity;
 				const orderId = payment?.notes?.orderId;
+
+				// Split payment capture: mark the individual split paid and settle
+				// the order once every split has been collected.
+				if (payment?.notes?.type === "split_payment" && orderId) {
+					const splitIndex = Number(payment.notes.splitIndex ?? "-1");
+					const splitPayment = await SplitPayments.findOne({ order: orderId, status: "open" });
+					if (splitPayment && splitIndex >= 0 && splitPayment.splits[splitIndex]) {
+						splitPayment.splits[splitIndex].status = "paid";
+						splitPayment.splits[splitIndex].paymentId = payment.id;
+						splitPayment.splits[splitIndex].paidAt = new Date();
+
+						const allPaid = splitPayment.splits.every((s: { status: string }) => s.status === "paid");
+						if (allPaid) {
+							splitPayment.status = "settled";
+							await Orders.findByIdAndUpdate(orderId, { paymentStatus: "paid", paymentId: payment.id });
+						}
+						await splitPayment.save();
+					}
+					break;
+				}
+
 				if (orderId) {
 					await Orders.findByIdAndUpdate(orderId, {
 						paymentStatus: "paid",

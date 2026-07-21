@@ -1,9 +1,21 @@
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
+import { Profiles } from "#utils/database/models/profile";
+import { formatCurrency } from "#utils/helper/currency";
 import { captureError } from "#utils/helper/sentryWrapper";
 import { sendWhatsAppText } from "./index";
 
 type CustomerInfo = { phone?: string; fname?: string };
+
+async function getCurrency(restaurantID: string): Promise<string> {
+	try {
+		await connectDB();
+		const profile = await Profiles.findOne({ restaurantID }).lean().select("currency");
+		return profile?.currency ?? "INR";
+	} catch {
+		return "INR";
+	}
+}
 
 type OrderInfo = {
 	_id?: string;
@@ -35,10 +47,11 @@ export async function sendOrderConfirmation(orderId: string, restaurantID: strin
 
 		const table = order.table || "—";
 		const itemCount = (order.products || []).reduce((s, p) => s + (p.quantity || 1), 0);
-		const total = ((order.orderTotal || 0) + (order.taxTotal || 0)).toFixed(2);
+		const total = (order.orderTotal || 0) + (order.taxTotal || 0);
+		const currency = await getCurrency(restaurantID);
 
 		const name = customer.fname || "Guest";
-		const message = `Hi ${name}! 🙏\n\nYour order at Table ${table} has been received.\n\nItems: ${itemCount} item(s)\nTotal: ₹${total}\n\nWe'll notify you when it's ready!\n\n— Team`;
+		const message = `Hi ${name}! 🙏\n\nYour order at Table ${table} has been received.\n\nItems: ${itemCount} item(s)\nTotal: ${formatCurrency(total, currency)}\n\nWe'll notify you when it's ready!\n\n— Team`;
 
 		await sendWhatsAppText(customer.phone, message);
 	} catch (err) {
@@ -72,8 +85,9 @@ export async function sendOrderReadyNotification(orderId: string, restaurantID: 
 		if (!customer.phone || !customer.whatsappOptIn) return;
 
 		const name = customer.fname || "Guest";
-		const total = ((order.orderTotal || 0) + (order.taxTotal || 0)).toFixed(2);
-		const message = `Hi ${name}! 🎉\n\nYour entire order is ready at Table ${order.table}!\n\nTotal: ₹${total}\n\nPlease collect from the counter.\n\nThank you for dining with us!\n— Team`;
+		const total = (order.orderTotal || 0) + (order.taxTotal || 0);
+		const currency = await getCurrency(restaurantID);
+		const message = `Hi ${name}! 🎉\n\nYour entire order is ready at Table ${order.table}!\n\nTotal: ${formatCurrency(total, currency)}\n\nPlease collect from the counter.\n\nThank you for dining with us!\n— Team`;
 
 		await sendWhatsAppText(customer.phone, message);
 	} catch (err) {

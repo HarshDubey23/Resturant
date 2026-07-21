@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDB from "#utils/database/connect";
 import AIConfig from "#utils/database/models/aiConfig";
 import { CatchNextResponse } from "#utils/helper/common";
+import { encryptSecret } from "#utils/helper/crypto";
 import { withPermission } from "#utils/helper/rbac";
 
 export const GET = withPermission("settings.manage", async (_req, session) => {
@@ -35,12 +36,14 @@ export const POST = withPermission("settings.manage", async (req, session) => {
 
 		await connectDB();
 
+		// Keys are encrypted with AES-256-GCM before persistence so a database
+		// compromise does not expose provider credentials in plaintext.
 		const update: Record<string, unknown> = {};
-		if (groq !== undefined) update["providerKeys.groq"] = groq || "";
-		if (cerebras !== undefined) update["providerKeys.cerebras"] = cerebras || "";
-		if (google !== undefined) update["providerKeys.google"] = google || "";
-		if (siliconflow !== undefined) update["providerKeys.siliconflow"] = siliconflow || "";
-		if (huggingface !== undefined) update["providerKeys.huggingface"] = huggingface || "";
+		if (groq !== undefined) update["providerKeys.groq"] = groq ? encryptSecret(groq) : "";
+		if (cerebras !== undefined) update["providerKeys.cerebras"] = cerebras ? encryptSecret(cerebras) : "";
+		if (google !== undefined) update["providerKeys.google"] = google ? encryptSecret(google) : "";
+		if (siliconflow !== undefined) update["providerKeys.siliconflow"] = siliconflow ? encryptSecret(siliconflow) : "";
+		if (huggingface !== undefined) update["providerKeys.huggingface"] = huggingface ? encryptSecret(huggingface) : "";
 		update["providerKeys.updatedAt"] = new Date();
 
 		await AIConfig.updateOne({ restaurantID }, { $set: update }, { upsert: true });

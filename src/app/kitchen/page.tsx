@@ -4,6 +4,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import useSWR from "swr";
+import { formatCurrency } from "@/utils/helper/currency";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 type ProductData = {
 	_id?: string;
@@ -91,9 +95,13 @@ function getUrgency(seconds: number): { color: string; bg: string; pulse: boolea
 export default function KitchenPage() {
 	const { status } = useSession();
 	const [orders, setOrders] = useState<KitchenOrder[]>([]);
+	const restaurantID = orders[0]?.restaurantID;
+	const { data: restaurantData } = useSWR<{ profile?: { currency?: string } }>(restaurantID ? `/api/menu?id=${restaurantID}` : null, fetcher);
+	const currency = restaurantData?.profile?.currency || "INR";
 	const [statusFilter, setStatusFilter] = useState("all");
 	const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
 	const [isFullscreen, setIsFullscreen] = useState(false);
+	const [connectionState, setConnectionState] = useState<"connected" | "connecting" | "reconnecting">("connecting");
 	const [_tick, setTick] = useState(0);
 	const eventSourceRef = useRef<EventSource | null>(null);
 	const previousOrderIdsRef = useRef<Set<string>>(new Set());
@@ -105,44 +113,70 @@ export default function KitchenPage() {
 		return () => clearInterval(timer);
 	}, []);
 
-	// SSE stream
+	// SSE stream with automatic reconnection (exponential backoff, max 30s).
+	// Restaurant Wi-Fi is unreliable; previously a dropped connection silently
+	// stopped order updates until someone noticed and refreshed. The stream
+	// resends a full snapshot on connect, so a reconnect recovers everything.
 	useEffect(() => {
 		if (status !== "authenticated") return;
 
-		const es = new EventSource("/api/order/stream");
-		eventSourceRef.current = es;
+		let retryCount = 0;
+		let retryTimer: ReturnType<typeof setTimeout> | null = null;
+		let disposed = false;
 
-		es.addEventListener("order", (event) => {
-			try {
-				const { data } = JSON.parse(event.data) as { data?: { type: string; data: KitchenOrder[] } };
-				if (data?.type === "orders" && Array.isArray(data?.data)) {
-					const activeOrders = data.data.filter((o) => o.state === "active");
-					setOrders(activeOrders);
+		const connect = () => {
+			if (disposed) return;
+			const es = new EventSource("/api/order/stream");
+			eventSourceRef.current = es;
 
-					const currentIds = new Set(activeOrders.map((o) => o._id));
-					if (prevOrdersLength.current > 0 && currentIds.size > previousOrderIdsRef.current.size) {
-						playNewOrderSound();
-						const newIds = new Set<string>();
-						currentIds.forEach((id) => {
-							if (!previousOrderIdsRef.current.has(id)) newIds.add(id);
-						});
-						setNewOrderIds(newIds);
-						setTimeout(() => setNewOrderIds(new Set()), 5000);
+			es.onopen = () => {
+				retryCount = 0;
+				setConnectionState("connected");
+			};
+
+			es.addEventListener("order", (event) => {
+				try {
+					const { data } = JSON.parse(event.data) as { data?: { type: string; data: KitchenOrder[] } };
+					if (data?.type === "orders" && Array.isArray(data?.data)) {
+						const activeOrders = data.data.filter((o) => o.state === "active");
+						setOrders(activeOrders);
+
+						const currentIds = new Set(activeOrders.map((o) => o._id));
+						if (prevOrdersLength.current > 0 && currentIds.size > previousOrderIdsRef.current.size) {
+							playNewOrderSound();
+							const newIds = new Set<string>();
+							currentIds.forEach((id) => {
+								if (!previousOrderIdsRef.current.has(id)) newIds.add(id);
+							});
+							setNewOrderIds(newIds);
+							setTimeout(() => setNewOrderIds(new Set()), 5000);
+						}
+						previousOrderIdsRef.current = currentIds;
+						prevOrdersLength.current = activeOrders.length;
 					}
-					previousOrderIdsRef.current = currentIds;
-					prevOrdersLength.current = activeOrders.length;
+				} catch {
+					// parse error
 				}
-			} catch {
-				// parse error
-			}
-		});
+			});
 
-		es.onerror = () => {
-			es.close();
+			es.onerror = () => {
+				es.close();
+				eventSourceRef.current = null;
+				if (disposed) return;
+				setConnectionState("reconnecting");
+				const delay = Math.min(1000 * 2 ** retryCount, 30000);
+				retryCount += 1;
+				retryTimer = setTimeout(connect, delay);
+			};
 		};
 
+		connect();
+
 		return () => {
-			es.close();
+			disposed = true;
+			if (retryTimer) clearTimeout(retryTimer);
+			eventSourceRef.current?.close();
+			eventSourceRef.current = null;
 		};
 	}, [status]);
 
@@ -227,7 +261,17 @@ export default function KitchenPage() {
 						<button onClick={toggleFullscreen} className="px-3 py-1.5 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
 							{isFullscreen ? "⛶ Exit" : "⛶ Fullscreen"}
 						</button>
-						<span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" title="Live" />
+						{connectionState === "connected" ? (
+							<span className="flex items-center gap-1.5" title="Live">
+								<span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+								<span className="text-[10px] text-green-500 hidden sm:inline">Live</span>
+							</span>
+						) : (
+							<span className="flex items-center gap-1.5" title="Connection lost">
+								<span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+								<span className="text-[10px] text-red-400 hidden sm:inline">Connection Lost — Reconnecting…</span>
+							</span>
+						)}
 					</div>
 				</div>
 
@@ -309,7 +353,7 @@ export default function KitchenPage() {
 																<span className="text-sm font-medium truncate">{product.name || "Item"}</span>
 																<span className="text-xs text-gray-500 shrink-0">x{product.quantity}</span>
 															</div>
-															<span className="text-xs text-gray-500 shrink-0">₹{product.price}</span>
+															<span className="text-xs text-gray-500 shrink-0">{formatCurrency(product.price, currency)}</span>
 														</div>
 
 														{product.foodType && SPICE_EMOJIS[product.foodType] && (

@@ -18,7 +18,12 @@ interface ResizeReturn {
 export const useResize = (options: ResizeOptions = {}): ResizeReturn => {
 	const { initialWidth = 400, initialHeight = 600, minWidth = 320, minHeight = 400, maxWidth = 800, maxHeight = 900 } = options;
 
-	const [dimensions, setDimensions] = useState({ width: initialWidth, height: initialHeight });
+	const getClampedInitial = () => ({
+		width: Math.min(initialWidth, (typeof window !== "undefined" ? window.innerWidth : 9999) - 32),
+		height: Math.min(initialHeight, (typeof window !== "undefined" ? window.innerHeight : 9999) - 32),
+	});
+
+	const [dimensions, setDimensions] = useState(getClampedInitial);
 	const [isResizing, setIsResizing] = useState(false);
 	const resizeStartRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 

@@ -1,6 +1,8 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { generateText } from "ai";
 import AIConfig from "#utils/database/models/aiConfig";
+import { decryptSecret, isEncrypted } from "#utils/helper/crypto";
+import { captureError } from "#utils/helper/sentryWrapper";
 import { configs, models } from "./config";
 
 const PROVIDER_ORDER = Object.keys(models) as (keyof typeof models)[];
@@ -66,8 +68,17 @@ async function resolveKey(platform: string, restaurantID: string): Promise<strin
 	try {
 		const config = await AIConfig.findOne({ restaurantID }).lean();
 		const keys = (config as Record<string, unknown> | null)?.providerKeys as Record<string, string> | undefined;
-		if (keys?.[platform]) return keys[platform];
-	} catch {}
+		const stored = keys?.[platform];
+		if (stored) {
+			// Values written after the encryption hardening are AES-256-GCM
+			// payloads; legacy plaintext values are used as-is and migrated to
+			// encrypted form on the next save from the dashboard.
+			if (isEncrypted(stored)) return decryptSecret(stored);
+			return stored;
+		}
+	} catch (e) {
+		captureError(e, { context: "ai-key-decrypt", platform, restaurantID });
+	}
 	return process.env[`AI_${platform.toUpperCase()}_KEY`];
 }
 

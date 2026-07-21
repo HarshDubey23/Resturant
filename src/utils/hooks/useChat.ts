@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "../../types/chat";
 import { createMessage, sendChatMessage } from "../ai/chat";
+import { sanitizeAiHtml } from "../helper/sanitizeHtml";
 
 interface UseChatProps {
 	restaurantId: string;
@@ -34,11 +35,9 @@ export const useChat = ({ restaurantId, isAuthenticated, initialMessages = [] }:
 		try {
 			const historyToUse = options?.overrideHistory ?? messages;
 			const data = await sendChatMessage([...historyToUse, userMessage], restaurantId);
-			const assistantMessage = createMessage(
-				"assistant",
-				(data.text || "").replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "").replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, ""),
-				data.toolResults,
-			);
+			// Server sanitizes AI HTML as the primary defense; this client-side
+			// pass is defense-in-depth for any content path that bypasses the API.
+			const assistantMessage = createMessage("assistant", sanitizeAiHtml(data.text || ""), data.toolResults);
 			setMessages((prev) => [...prev, assistantMessage]);
 		} catch {
 			const errorMessage = createMessage("assistant", "Sorry, I encountered an error. Please try again.");

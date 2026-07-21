@@ -16,6 +16,17 @@ export async function POST(req: Request) {
 		const session = await getServerSession(authOptions);
 		if (!session) throw { status: 401, message: "Authentication Required" };
 
+		// Broken access control fix: only staff-level roles may transition
+		// kitchen order states. Customers must receive 403, not silent success.
+		const staffRoles = ["admin", "kitchen"];
+		if (!staffRoles.includes(session.role as string)) {
+			captureError(new Error(`Forbidden kitchen action attempt by role '${session.role}'`), {
+				route: "/api/kitchen/action",
+				role: session.role as string,
+			});
+			throw { status: 403, message: "Forbidden: staff access required" };
+		}
+
 		const body = await req.json();
 		const { orderId, productId, action } = body;
 

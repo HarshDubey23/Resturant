@@ -75,7 +75,10 @@ export const authOptions: AuthOptions = {
 				if (!cred?.table) throw new Error("Table id is required");
 				if (!cred?.phone) throw new Error("Phone number is required");
 
-				const isDemo = cred?.restaurant === "demo" && process.env.DEMO_MODE === "true";
+				// Demo mode is a development-only convenience. It is hard-disabled in
+				// production builds regardless of how DEMO_MODE is configured, so a
+				// misconfigured environment variable can never bypass authentication.
+				const isDemo = cred?.restaurant === "demo" && process.env.NODE_ENV !== "production" && process.env.DEMO_MODE === "true";
 
 				if (!isDemo) {
 					if (!cred?.verificationToken) throw new Error("OTP verification is required. Please complete the OTP flow first.");

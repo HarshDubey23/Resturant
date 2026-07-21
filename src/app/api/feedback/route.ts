@@ -51,12 +51,50 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
 	try {
+		const { searchParams } = new URL(req.url);
+
+		// Public reviews for a restaurant's page — ratings and reviews are
+		// meant to be read by prospective diners (Swiggy/Zomato pattern).
+		// Only non-sensitive fields are exposed.
+		if (searchParams.get("public") === "true") {
+			const restaurantID = searchParams.get("restaurant")?.toLowerCase();
+			if (!restaurantID) throw { status: 400, message: "restaurant is required" };
+
+			await connectDB();
+
+			const [feedbacks, stats] = await Promise.all([
+				Feedbacks.find({ restaurantID })
+					.sort({ createdAt: -1 })
+					.limit(30)
+					.populate("customer", "fname")
+					.select("rating review foodQuality serviceSpeed taste createdAt customer")
+					.lean(),
+				Feedbacks.aggregate([
+					{ $match: { restaurantID } },
+					{
+						$group: {
+							_id: null,
+							averageRating: { $avg: "$rating" },
+							totalReviews: { $sum: 1 },
+							five: { $sum: { $cond: [{ $eq: ["$rating", 5] }, 1, 0] } },
+							four: { $sum: { $cond: [{ $eq: ["$rating", 4] }, 1, 0] } },
+							three: { $sum: { $cond: [{ $eq: ["$rating", 3] }, 1, 0] } },
+							two: { $sum: { $cond: [{ $eq: ["$rating", 2] }, 1, 0] } },
+							one: { $sum: { $cond: [{ $eq: ["$rating", 1] }, 1, 0] } },
+						},
+					},
+				]),
+			]);
+
+			const summary = stats[0] ?? { averageRating: 0, totalReviews: 0, five: 0, four: 0, three: 0, two: 0, one: 0 };
+			return NextResponse.json({ feedbacks, summary });
+		}
+
 		const session = await getServerSession(authOptions);
 		if (!session) throw { status: 401, message: "Authentication Required" };
 
 		await connectDB();
 
-		const { searchParams } = new URL(req.url);
 		const orderId = searchParams.get("orderId");
 		const restaurantID = session.restaurant?.username || session.username;
 

@@ -51,7 +51,7 @@ export const ChatInterface = () => {
 					isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none",
 					isAuthenticated ? "" : "w-auto h-auto",
 				)}
-				style={isAuthenticated ? { width: `${dimensions.width}px`, height: `${dimensions.height}px` } : undefined}>
+				style={isAuthenticated ? { width: `${dimensions.width}px`, height: `${dimensions.height}px`, maxWidth: "calc(100vw - 32px)" } : undefined}>
 				{isAuthenticated ? (
 					<>
 						<div className="flex items-center gap-3 border-b px-4 py-3 shrink-0">

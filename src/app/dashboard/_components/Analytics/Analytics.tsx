@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 
 import { Bot, DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAdmin } from "#components/context/useContext";
-import { formatCurrency } from "#utils/helper/currency";
+import { currencySymbol, formatCurrency } from "#utils/helper/currency";
 
 interface AnalyticsData {
 	live: {
@@ -148,7 +148,7 @@ export default function Analytics() {
 								<YAxis
 									tick={{ fontSize: 10 }}
 									stroke="hsl(var(--muted-foreground))"
-									tickFormatter={(v) => `${currency === "INR" ? "₹" : "$"}${(v / 1000).toFixed(0)}k`}
+									tickFormatter={(v) => `${currencySymbol(currency)}${(v / 1000).toFixed(0)}k`}
 								/>
 								<Tooltip
 									contentStyle={{

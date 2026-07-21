@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { type UIEvent, useEffect, useState } from "react";
+import { useAdmin } from "#components/context/useContext";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 import Analytics from "./Analytics/Analytics";
 import Campaigns from "./Campaigns/Campaigns";
@@ -14,6 +15,7 @@ import Settings from "./Settings/Settings";
 
 export default function PageContainer() {
 	const session = useSession();
+	const { sseStatus } = useAdmin();
 	const [floatHeader, setFloatHeader] = useState(false);
 	const queryParams = useQueryParams();
 	const tab = queryParams.get("tab") ?? "overview";
@@ -40,6 +42,15 @@ export default function PageContainer() {
 					<NavTopBar />
 				</div>
 			</header>
+
+			{/* Live-order feed health — staff must know immediately if real-time
+			    updates have stopped instead of silently missing orders. */}
+			{sseStatus === "reconnecting" && (
+				<div role="alert" className="flex items-center gap-2 bg-amber-500/15 px-4 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+					<span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+					Connection lost — reconnecting to live orders…
+				</div>
+			)}
 
 			<div className="flex-1 overflow-auto" onScroll={onScroll}>
 				<div className="p-4 sm:p-6">

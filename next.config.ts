@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
 	output: "standalone",
+	// Keep Three.js / React Three Fiber out of the server bundle — they are
+	// only ever used by the lazily-imported 3D viewer on the client.
+	serverExternalPackages: ["three", "@react-three/fiber", "@react-three/drei", "@google/model-viewer"],
 	async headers() {
 		return [
 			{
@@ -50,7 +53,9 @@ const nextConfig: NextConfig = {
 				hostname: "images.unsplash.com",
 			},
 		],
-		unoptimized: true,
+		// Image optimization enabled: automatic WebP/AVIF conversion, responsive
+		// srcsets and lazy loading for menu photography on mobile networks.
+		formats: ["image/avif", "image/webp"],
 	},
 	experimental: {
 		serverActions: { bodySizeLimit: "2mb" },

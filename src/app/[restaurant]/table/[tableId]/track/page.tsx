@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/utils/helper/currency";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -38,6 +39,9 @@ export default function TrackPage() {
 	const { data: pastData, error: pastError, mutate: mutatePast } = useSWR(`/api/order?past=true&page=${pastPage}`, fetcher);
 
 	const { data: loyaltyData } = useSWR("/api/loyalty", fetcher);
+
+	const { data: restaurantData } = useSWR<{ profile?: { currency?: string } }>(`/api/menu?id=${restaurant}`, fetcher);
+	const currency = restaurantData?.profile?.currency || "INR";
 
 	const { data: memoryData, mutate: mutateMemory } = useSWR("/api/customer/memory", fetcher);
 	const whatsappOptIn = memoryData?.memory?.whatsappOptIn ?? false;
@@ -260,7 +264,7 @@ export default function TrackPage() {
 								</div>
 								<div className="flex items-center justify-between pt-2 border-t text-sm">
 									<span className="text-muted-foreground">Total</span>
-									<span className="font-bold">₹{((activeOrder.orderTotal || 0) + (activeOrder.taxTotal || 0)).toFixed(2)}</span>
+									<span className="font-bold">{formatCurrency((activeOrder.orderTotal || 0) + (activeOrder.taxTotal || 0), currency)}</span>
 								</div>
 								<Button variant="outline" size="sm" className="w-full" onClick={markComplete}>
 									✅ I&apos;ve received my order
@@ -317,7 +321,7 @@ export default function TrackPage() {
 													})}
 												</p>
 											</div>
-											<p className="text-sm font-bold">₹{((order.orderTotal || 0) + (order.taxTotal || 0)).toFixed(2)}</p>
+											<p className="text-sm font-bold">{formatCurrency((order.orderTotal || 0) + (order.taxTotal || 0), currency)}</p>
 										</div>
 										<div className="flex flex-wrap gap-1.5">
 											{(order.products || []).slice(0, 5).map((p, i) => (

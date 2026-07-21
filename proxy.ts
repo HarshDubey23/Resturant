@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
 const CSRF_SAFE_METHODS = ["GET", "HEAD", "OPTIONS"];
-const CSRF_EXEMPT_PATHS = ["/api/auth/[...nextauth]", "/api/payment/webhook", "/api/payment/stripe/webhook", "/api/webhooks/n8n"];
+const CSRF_EXEMPT_PATHS = ["/api/auth/", "/api/payment/webhook", "/api/payment/stripe/webhook", "/api/webhooks/n8n"];
 
 function isCsrfExempt(pathname: string): boolean {
-	return CSRF_EXEMPT_PATHS.some((p) => pathname.startsWith(p.replace("[...nextauth]", "")));
+	return CSRF_EXEMPT_PATHS.some((p) => pathname.startsWith(p));
 }
 
 function generateNonce(): string {
@@ -21,18 +21,84 @@ function generateCsrfToken(): string {
 	return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Constant-time string comparison for the edge runtime (no node:crypto). */
+function timingSafeEqual(a: string, b: string): boolean {
+	if (a.length !== b.length) return false;
+	let diff = 0;
+	for (let i = 0; i < a.length; i++) {
+		diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	}
+	return diff === 0;
+}
+
+function buildCsp(nonce: string, isDev: boolean): string {
+	// Development needs eval for HMR/source-maps and inline bootstrap scripts.
+	if (isDev) {
+		return [
+			"default-src 'self'",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+			"style-src 'self' 'unsafe-inline'",
+			"img-src 'self' data: blob: https:",
+			"font-src 'self' data:",
+			"connect-src 'self' https: wss: ws:",
+			"worker-src 'self' blob:",
+			"media-src 'self' blob:",
+			"frame-src 'self' blob: https://checkout.razorpay.com https://api.razorpay.com https://js.stripe.com https://hooks.stripe.com https://maps.google.com https://www.google.com",
+			"object-src 'none'",
+			"base-uri 'self'",
+			"form-action 'self'",
+		].join("; ");
+	}
+
+	// Production: strict nonce-based policy. Next.js reads the nonce from this
+	// header (forwarded on the request below) and applies it to every script it
+	// renders; 'strict-dynamic' then trusts anything those scripts load
+	// (Razorpay checkout.js, Stripe.js). Host entries are a fallback for
+	// browsers without 'strict-dynamic' support.
+	return [
+		"default-src 'self'",
+		`script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https:`,
+		"style-src 'self' 'unsafe-inline'",
+		"img-src 'self' data: blob: https:",
+		"font-src 'self' data:",
+		"connect-src 'self' https: wss:",
+		"worker-src 'self' blob:",
+		"media-src 'self' blob:",
+		"frame-src 'self' blob: https://checkout.razorpay.com https://api.razorpay.com https://js.stripe.com https://hooks.stripe.com https://maps.google.com https://www.google.com",
+		"object-src 'none'",
+		"base-uri 'self'",
+		"form-action 'self'",
+		"frame-ancestors 'none'",
+		"upgrade-insecure-requests",
+	].join("; ");
+}
+
 export async function proxy(req: NextRequest) {
 	const { pathname } = req.nextUrl;
 	const method = req.method;
+	const isDev = process.env.NODE_ENV === "development";
 
-	const response = NextResponse.next();
+	// CSRF protection for state-changing API requests (double-submit cookie).
+	// Runs before NextResponse.next() so rejected requests never hit handlers.
+	if (pathname.startsWith("/api/") && !isCsrfExempt(pathname) && !CSRF_SAFE_METHODS.includes(method)) {
+		const existingToken = req.cookies.get("csrf-token")?.value;
+		const headerToken = req.headers.get("X-CSRF-Token");
 
-	// CSP nonce + security headers
+		if (!existingToken || !headerToken || !timingSafeEqual(existingToken, headerToken)) {
+			return NextResponse.json({ message: "Invalid CSRF token" }, { status: 403 });
+		}
+	}
+
+	// CSP nonce must be forwarded on the REQUEST headers so Next.js can apply
+	// it to the inline scripts it renders, then mirrored on the response.
 	const nonce = generateNonce();
-	response.headers.set(
-		"Content-Security-Policy",
-		`default-src 'self'; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; media-src 'self' blob:; frame-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`,
-	);
+	const csp = buildCsp(nonce, isDev);
+	const requestHeaders = new Headers(req.headers);
+	requestHeaders.set("x-nonce", nonce);
+	requestHeaders.set("Content-Security-Policy", csp);
+
+	const response = NextResponse.next({ request: { headers: requestHeaders } });
+	response.headers.set("Content-Security-Policy", csp);
 	response.headers.set("Permissions-Policy", "camera=(), microphone=(self), geolocation=(self), payment=(self)");
 
 	// CORS for API routes
@@ -43,16 +109,6 @@ export async function proxy(req: NextRequest) {
 		response.headers.set("Access-Control-Max-Age", "86400");
 		if (method === "OPTIONS") {
 			return new NextResponse(null, { status: 204, headers: response.headers });
-		}
-	}
-
-	// CSRF protection for state-changing API requests
-	if (pathname.startsWith("/api/") && !isCsrfExempt(pathname) && !CSRF_SAFE_METHODS.includes(method)) {
-		const existingToken = req.cookies.get("csrf-token")?.value;
-		const headerToken = req.headers.get("X-CSRF-Token");
-
-		if (!existingToken || !headerToken || existingToken !== headerToken) {
-			return NextResponse.json({ message: "Invalid CSRF token" }, { status: 403 });
 		}
 	}
 
@@ -93,5 +149,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-	matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest).*)"],
+	matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icon-192.png|icon-512.png).*)"],
 };

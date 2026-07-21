@@ -3,7 +3,8 @@ import { getServerSession } from "next-auth";
 import z from "zod";
 
 import connectDB from "#utils/database/connect";
-import { computePoints, computeTier, Loyalties } from "#utils/database/models/loyalty";
+import { awardPointsAtomic, redeemPointsAtomic } from "#utils/database/helper/loyalty";
+import { Loyalties } from "#utils/database/models/loyalty";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
@@ -70,35 +71,21 @@ export async function POST(req: Request) {
 			const claimed = await Orders.findOneAndUpdate({ _id: orderId, loyaltyAwarded: { $ne: true } }, { $set: { loyaltyAwarded: true } }, { new: true });
 			if (!claimed) throw { status: 409, message: "Loyalty points already awarded for this order" };
 
-			let loyalty = await Loyalties.findOne({ restaurantID, customer: customerId });
-			if (!loyalty) {
-				loyalty = await Loyalties.create({ restaurantID, customer: customerId });
-			}
+			// Single atomic mutation: upsert + increment, never read-modify-write.
+			const award = await awardPointsAtomic(restaurantID, customerId, order.orderTotal);
+			if (!award) throw { status: 500, message: "Failed to award loyalty points" };
 
-			const points = computePoints(order.orderTotal, loyalty.tier);
-			loyalty.points += points;
-			loyalty.lifetimePoints += points;
-			loyalty.lastVisit = new Date();
-			loyalty.visitCount += 1;
-
-			const newTier = computeTier(loyalty.lifetimePoints);
-			if (newTier !== loyalty.tier) loyalty.tier = newTier;
-
-			await loyalty.save();
-
-			return NextResponse.json({ status: 200, points, total: loyalty.points, tier: loyalty.tier });
+			return NextResponse.json({ status: 200, points: award.pointsEarned, total: award.loyalty.points, tier: award.newTier });
 		}
 
 		if (action === "redeem") {
 			const { points } = body;
 			if (!points || points <= 0) throw { status: 400, message: "Valid positive points value required" };
 
-			const loyalty = await Loyalties.findOne({ restaurantID, customer: customerId });
-			if (!loyalty) throw { status: 404, message: "No loyalty account found" };
-			if (loyalty.points < points) throw { status: 400, message: "Insufficient points" };
-
-			loyalty.points -= points;
-			await loyalty.save();
+			// Balance guard lives inside the atomic query — balance can never
+			// go negative under concurrent redemptions.
+			const loyalty = await redeemPointsAtomic(restaurantID, customerId, points);
+			if (!loyalty) throw { status: 400, message: "Insufficient points or no loyalty account found" };
 
 			return NextResponse.json({ status: 200, remaining: loyalty.points });
 		}

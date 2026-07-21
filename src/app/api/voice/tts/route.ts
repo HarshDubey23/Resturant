@@ -1,11 +1,33 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 
+import connectDB from "#utils/database/connect";
+import AIConfig from "#utils/database/models/aiConfig";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
-const _ELEVENLABS_URL = "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
+const DAILY_TTS_CHAR_LIMIT = 10000;
+
+async function checkTtsDailyBudget(restaurantID: string, textLength: number): Promise<boolean> {
+	try {
+		await connectDB();
+		const now = new Date();
+		const config = await AIConfig.findOneAndUpdate(
+			{ restaurantID },
+			{ $inc: { dailyTtsChars: textLength } },
+			{ new: true, upsert: true },
+		);
+		const lastReset = config?.lastTtsReset ?? new Date(0);
+		if (now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000) {
+			await AIConfig.updateOne({ restaurantID }, { $set: { dailyTtsChars: textLength, lastTtsReset: now } });
+			return textLength <= DAILY_TTS_CHAR_LIMIT;
+		}
+		return (config?.dailyTtsChars ?? 0) <= DAILY_TTS_CHAR_LIMIT;
+	} catch {
+		return true;
+	}
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,12 +37,17 @@ export async function POST(req: Request) {
 		const session = await getServerSession(authOptions);
 		if (!session) throw { status: 401, message: "Authentication Required" };
 
+		const restaurantID = session.username as string;
 		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
 		const rateLimitResponse = await rateLimitMiddleware(`voice-tts:${ip}`, 10, 60000);
 		if (rateLimitResponse) return rateLimitResponse;
 
 		const { text, voice } = await req.json();
 		if (!text || typeof text !== "string") throw { status: 400, message: "Text is required" };
+
+		if (!(await checkTtsDailyBudget(restaurantID, text.length))) {
+			return NextResponse.json({ error: "Daily TTS character limit reached" }, { status: 429 });
+		}
 
 		const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
 		if (!elevenLabsKey) {

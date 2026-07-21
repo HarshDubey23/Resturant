@@ -55,6 +55,60 @@ AccountSchema.pre("save", async function () {
 	if (this.isModified("password")) this.password = await hashPassword(this?.password);
 });
 
+/**
+ * Cascade delete: removing a restaurant account must remove every tenant
+ * record it owns. Previously, deleting a restaurant left orphaned orders,
+ * menus, customers, campaigns, loyalty records, etc. behind — data bloat,
+ * wrong analytics, and a DPDP/data-protection compliance gap on account
+ * termination. Models are resolved lazily via mongoose.model() to avoid
+ * circular-import issues at module load time.
+ */
+const TENANT_MODELS = [
+	"profiles",
+	"kitchens",
+	"tables",
+	"menus",
+	"orders",
+	"customers",
+	"loyalties",
+	"campaigns",
+	"inventory",
+	"recipes",
+	"invoices",
+	"coupons",
+	"aggregatorOrders",
+	"feedbacks",
+	"AIConfig",
+] as const;
+
+async function cascadeDeleteRestaurant(username?: string) {
+	if (!username) return;
+	await Promise.all(
+		TENANT_MODELS.map((name) => {
+			const model = mongoose.models?.[name];
+			if (!model) return Promise.resolve();
+			return model.deleteMany({ restaurantID: username }).exec();
+		}),
+	);
+}
+
+// Document middleware: account.deleteOne()
+AccountSchema.pre("deleteOne", { document: true, query: false }, async function () {
+	await cascadeDeleteRestaurant(this.username);
+});
+
+// Query middleware: Accounts.deleteOne({ ... })
+AccountSchema.pre("deleteOne", { document: false, query: true }, async function () {
+	const doc = await this.model.findOne(this.getFilter()).lean();
+	await cascadeDeleteRestaurant((doc as { username?: string } | null)?.username);
+});
+
+// Query middleware: Accounts.findOneAndDelete({ ... })
+AccountSchema.pre("findOneAndDelete", async function () {
+	const doc = await this.model.findOne(this.getFilter()).lean();
+	await cascadeDeleteRestaurant((doc as { username?: string } | null)?.username);
+});
+
 export const Accounts = mongoose.models?.accounts ?? mongoose.model<TAccount>("accounts", AccountSchema);
 export type TAccount = HydratedDocument<{
 	username: string;

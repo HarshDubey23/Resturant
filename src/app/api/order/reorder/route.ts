@@ -22,20 +22,26 @@ export async function POST(req: Request) {
 		const { orderId } = await req.json();
 		if (!orderId) throw { status: 400, message: "orderId is required" };
 
-		const pastOrder = await Orders.findOne({ _id: orderId, restaurantID, customer, state: "complete" }).populate("products.product", "name price").lean();
+		const pastOrder = await Orders.findOne({ _id: orderId, restaurantID, customer, state: "complete" })
+			.populate("products.product", "name price taxPercent")
+			.lean();
 		if (!pastOrder) throw { status: 404, message: "Past order not found" };
 
-		type RawOrderProduct = { product?: { _id?: string; price?: number }; quantity: number; price: number };
+		type RawOrderProduct = { product?: { _id?: string; price?: number; taxPercent?: number }; quantity: number; price: number };
 
-		const productsToAdd = ((pastOrder.products || []) as unknown as RawOrderProduct[]).map((p: RawOrderProduct) => ({
-			product: p.product?._id,
-			quantity: p.quantity,
-			price: p.price,
-			tax: 0,
-			adminApproved: false,
-			kitchenStatus: "pending",
-			station: "main",
-		}));
+		// Recompute per-unit tax from the menu item's taxPercent — previously
+		// reordered items were persisted with tax: 0, undercharging GST.
+		const productsToAdd = ((pastOrder.products || []) as unknown as RawOrderProduct[])
+			.filter((p: RawOrderProduct) => p.product?._id)
+			.map((p: RawOrderProduct) => ({
+				product: p.product?._id,
+				quantity: p.quantity,
+				price: p.price,
+				tax: Number((((p.price || 0) * (p.product?.taxPercent || 0)) / 100).toFixed(2)),
+				adminApproved: false,
+				kitchenStatus: "pending",
+				station: "main",
+			}));
 
 		const addedTotal = productsToAdd.reduce((s: number, p: { price: number; quantity: number }) => s + (p.price || 0) * (p.quantity || 1), 0);
 
