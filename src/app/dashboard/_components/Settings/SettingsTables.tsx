@@ -1,8 +1,9 @@
 "use client";
 
 import { Download, QrCode } from "lucide-react";
-import { useEffect, useState } from "react";
+import Image from "next/image";
 import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 
 import { useAdmin } from "#components/context/useContext";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,9 @@ export default function SettingsTables() {
 			}
 			if (!cancelled) setQrs(map);
 		})();
-		return () => { cancelled = true; };
+		return () => {
+			cancelled = true;
+		};
 	}, [tables, baseUrl, profile?.restaurantID]);
 
 	if (!tables?.length) {
@@ -47,7 +50,7 @@ export default function SettingsTables() {
 					<div key={t._id?.toString()} className="flex flex-col items-center gap-3 rounded-xl border bg-card p-4">
 						{qrs[t.username] ? (
 							<div className="relative">
-								<img src={qrs[t.username]} alt={`QR for Table ${t.name}`} className="h-40 w-40" />
+								<Image src={qrs[t.username]} alt={`QR for Table ${t.name}`} width={160} height={160} className="h-40 w-40" unoptimized />
 							</div>
 						) : (
 							<div className="flex h-40 w-40 items-center justify-center rounded-lg bg-muted">
@@ -56,7 +59,9 @@ export default function SettingsTables() {
 						)}
 						<div className="text-center">
 							<p className="font-medium text-sm">Table {t.name}</p>
-							<p className="text-xs text-muted-foreground">{baseUrl}/{profile?.restaurantID}?table={t.username}</p>
+							<p className="text-xs text-muted-foreground">
+								{baseUrl}/{profile?.restaurantID}?table={t.username}
+							</p>
 						</div>
 						{qrs[t.username] && (
 							<Button

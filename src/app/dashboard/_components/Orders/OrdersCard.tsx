@@ -50,14 +50,12 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 	const isRejectActive = reject && setReject;
 
 	return (
-		<div
+		<button
+			type="button"
 			onClick={() => {
 				if (!active && !history) setReject?.({ _id: null, details: false });
 				activate(data._id.toString());
 			}}
-			role="button"
-			tabIndex={0}
-			onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(data._id.toString()); } }}
 			className={cn(
 				"w-full rounded-lg border bg-card p-3 text-left transition-all text-sm cursor-pointer",
 				active && "ring-1 ring-primary",
@@ -80,6 +78,7 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 						{subTab === "active" ? (
 							<>
 								<Button
+									render={<span />}
 									size="xs"
 									variant="outline"
 									onClick={(e) => {
@@ -92,6 +91,7 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 								</Button>
 								{!busy && (
 									<Button
+										render={<span />}
 										size="xs"
 										variant="destructive"
 										onClick={(e) => {
@@ -106,6 +106,7 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 						) : (
 							<>
 								<Button
+									render={<span />}
 									size="xs"
 									variant="default"
 									onClick={(e) => {
@@ -118,6 +119,7 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 								</Button>
 								{!busy && (
 									<Button
+										render={<span />}
 										size="xs"
 										variant="destructive"
 										onClick={(e) => {
@@ -133,6 +135,6 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 					</div>
 				)}
 			</div>
-		</div>
+		</button>
 	);
 }
