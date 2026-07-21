@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Avatar, useXTheme } from "xtreme-ui";
 
 import { useAdmin } from "#components/context/useContext";
@@ -80,121 +80,138 @@ export default function LoginSection() {
 	return (
 		<section id="login" className="relative py-24 sm:py-32">
 			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true, margin: "-100px" }}
-					transition={{ duration: 0.5, ease: "easeOut" }}
-					className="max-w-md mx-auto">
-					<Card>
-						<CardHeader className="text-center">
-							{profile || loggedIn ? (
-								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-3">
-										{avatarUrl && <Avatar src={avatarUrl} size="mini" />}
-										<div className="text-left">
-											<CardTitle className="text-base">{name || "OrderWorder"}</CardTitle>
-											{address && <CardDescription>{address}</CardDescription>}
-										</div>
-									</div>
-									<Button variant="ghost" size="icon" onClick={logout} loading={logoutLoading} aria-label="Sign out">
-										<LogOut className="h-4 w-4" />
-									</Button>
-								</div>
-							) : (
-								<>
-									<CardTitle>Sign in</CardTitle>
-									<CardDescription>Enter your credentials to access the dashboard</CardDescription>
-								</>
-							)}
-						</CardHeader>
+				<div className="grid lg:grid-cols-2 gap-12 items-center">
+					<motion.div
+						initial={{ opacity: 0, x: -24 }}
+						whileInView={{ opacity: 1, x: 0 }}
+						viewport={{ once: true, margin: "-100px" }}
+						transition={{ duration: 0.5, ease: "easeOut" }}
+						className="hidden lg:flex flex-col items-center justify-center text-center"
+					>
+						<div className="w-64 h-80 rounded-3xl bg-gradient-to-br from-orange-100 to-amber-200 border border-orange-200/50 flex items-center justify-center text-8xl shadow-xl mb-6">
+							🧑‍🤝‍🧑
+						</div>
+						<h3 className="text-2xl font-bold text-foreground">Welcome back!</h3>
+						<p className="text-muted-foreground mt-2 max-w-sm">Sign in to manage your restaurant, view orders, and access the kitchen display.</p>
+					</motion.div>
 
-						<CardContent>
-							{!loggedIn ? (
-								!profile ? (
-									<div className="space-y-4">
-										<div className="space-y-2">
-											<Label htmlFor="login-email">Email</Label>
-											<Input
-												id="login-email"
-												type="email"
-												placeholder="you@restaurant.com"
-												value={email}
-												onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-												onKeyDown={(e) => e.key === "Enter" && onNext()}
-											/>
+					<motion.div
+						initial={{ opacity: 0, x: 24 }}
+						whileInView={{ opacity: 1, x: 0 }}
+						viewport={{ once: true, margin: "-100px" }}
+						transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+					>
+						<Card>
+							<CardHeader className="text-center">
+								{profile || loggedIn ? (
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-3">
+											{avatarUrl && <Avatar src={avatarUrl} size="mini" />}
+											<div className="text-left">
+												<CardTitle className="text-base">{name || "OrderWorder"}</CardTitle>
+												{address && <CardDescription>{address}</CardDescription>}
+											</div>
 										</div>
-										<Button className="w-full" onClick={onNext} loading={nextLoading}>
-											Next
-											<ArrowRight className="ml-2 h-4 w-4" />
+										<Button variant="ghost" size="icon" onClick={logout} loading={logoutLoading} aria-label="Sign out">
+											<LogOut className="h-4 w-4" />
 										</Button>
 									</div>
 								) : (
-									<div className="space-y-4">
-										<button
-											onClick={() => setProfile(undefined)}
-											className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-											<ChevronLeft className="h-4 w-4" />
-											Change email
-										</button>
+									<>
+										<CardTitle>Sign in</CardTitle>
+										<CardDescription>Enter your credentials to access the dashboard</CardDescription>
+									</>
+								)}
+							</CardHeader>
 
-										{showKitchen && (
+							<CardContent>
+								{!loggedIn ? (
+									!profile ? (
+										<div className="space-y-4">
 											<div className="space-y-2">
-												<Label htmlFor="kitchen-username">Kitchen username</Label>
+												<Label htmlFor="login-email">Email</Label>
 												<Input
-													id="kitchen-username"
-													placeholder="Enter kitchen username"
-													value={kitchenUsername}
-													onChange={(e: ChangeEvent<HTMLInputElement>) => setKitchenUsername(e.target.value)}
+													id="login-email"
+													type="email"
+													placeholder="you@restaurant.com"
+													value={email}
+													onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+													onKeyDown={(e) => e.key === "Enter" && onNext()}
 												/>
 											</div>
-										)}
-
-										<div className="space-y-2">
-											<Label htmlFor="login-password">Password</Label>
-											<Input
-												id="login-password"
-												type="password"
-												placeholder={`Enter ${showKitchen ? "kitchen" : "admin"} password`}
-												value={password}
-												onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-												onKeyDown={(e) => e.key === "Enter" && onNext()}
-											/>
+											<Button className="w-full" onClick={onNext} loading={nextLoading}>
+												Next
+												<ArrowRight className="ml-2 h-4 w-4" />
+											</Button>
 										</div>
+									) : (
+										<div className="space-y-4">
+											<button
+												onClick={() => setProfile(undefined)}
+												className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+											>
+												<ChevronLeft className="h-4 w-4" />
+												Change email
+											</button>
 
-										<Button variant="outline" className="w-full" onClick={() => setShowKitchen((v) => !v)}>
-											<Bot className="mr-2 h-4 w-4" />
-											{showKitchen ? "Sign in as admin" : "Sign in to kitchen"}
-										</Button>
+											{showKitchen && (
+												<div className="space-y-2">
+													<Label htmlFor="kitchen-username">Kitchen username</Label>
+													<Input
+														id="kitchen-username"
+														placeholder="Enter kitchen username"
+														value={kitchenUsername}
+														onChange={(e: ChangeEvent<HTMLInputElement>) => setKitchenUsername(e.target.value)}
+													/>
+												</div>
+											)}
 
-										<Button className="w-full" onClick={onNext} loading={nextLoading}>
-											<KeyRound className="mr-2 h-4 w-4" />
-											Sign In
-										</Button>
+											<div className="space-y-2">
+												<Label htmlFor="login-password">Password</Label>
+												<Input
+													id="login-password"
+													type="password"
+													placeholder={`Enter ${showKitchen ? "kitchen" : "admin"} password`}
+													value={password}
+													onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+													onKeyDown={(e) => e.key === "Enter" && onNext()}
+												/>
+											</div>
+
+											<Button variant="outline" className="w-full" onClick={() => setShowKitchen((v) => !v)}>
+												<Bot className="mr-2 h-4 w-4" />
+												{showKitchen ? "Sign in as admin" : "Sign in to kitchen"}
+											</Button>
+
+											<Button className="w-full" onClick={onNext} loading={nextLoading}>
+												<KeyRound className="mr-2 h-4 w-4" />
+												Sign In
+											</Button>
+										</div>
+									)
+								) : (
+									<div className="space-y-3">
+										{session.data?.role === "admin" && (
+											<Button className="w-full" onClick={() => router.push("/dashboard")}>
+												Open dashboard
+											</Button>
+										)}
+										{(session.data?.role === "admin" || session.data?.role === "kitchen") && (
+											<Button variant="outline" className="w-full" onClick={() => router.push("/kitchen")}>
+												Open kitchen display
+											</Button>
+										)}
+										{session.data?.role === "customer" && (
+											<Button className="w-full" onClick={() => router.push(`/${session.data?.restaurant?.username}`)}>
+												Open restaurant menu
+											</Button>
+										)}
 									</div>
-								)
-							) : (
-								<div className="space-y-3">
-									{session.data?.role === "admin" && (
-										<Button className="w-full" onClick={() => router.push("/dashboard")}>
-											Open dashboard
-										</Button>
-									)}
-									{(session.data?.role === "admin" || session.data?.role === "kitchen") && (
-										<Button variant="outline" className="w-full" onClick={() => router.push("/kitchen")}>
-											Open kitchen display
-										</Button>
-									)}
-									{session.data?.role === "customer" && (
-										<Button className="w-full" onClick={() => router.push(`/${session.data?.restaurant?.username}`)}>
-											Open restaurant menu
-										</Button>
-									)}
-								</div>
-							)}
-						</CardContent>
-					</Card>
-				</motion.div>
+								)}
+							</CardContent>
+						</Card>
+					</motion.div>
+				</div>
 			</div>
 		</section>
 	);

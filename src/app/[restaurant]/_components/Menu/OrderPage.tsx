@@ -12,7 +12,6 @@ import { useQueryParams } from "#utils/hooks/useQueryParams";
 import CartPage from "./CartPage";
 import MenuCard from "./MenuCard";
 import UserLogin from "./UserLogin";
-import "./orderPage.scss";
 
 const OrderPage = () => {
 	const session = useSession();

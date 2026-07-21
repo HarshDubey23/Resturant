@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import type { ChangeEvent } from "react";
 import { useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

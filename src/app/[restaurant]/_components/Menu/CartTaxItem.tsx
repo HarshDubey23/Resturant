@@ -1,7 +1,5 @@
 import clsx from "clsx";
 
-import "./cartTaxItem.scss";
-
 const CartTaxItem = (props: TCartTaxItemProps) => {
 	const { className, name, size = "default", subtitle, taxPercent, amount, onClick } = props;
 	const roundAmount = Math.round(amount * 100) / 100;

@@ -4,8 +4,8 @@ import PWARegister from "#components/base/PWARegister";
 import { GlobalProvider } from "#components/context";
 import { inter, montserrat } from "#utils/helper/fontHelper";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL } from "#utils/seo/constants";
+import { Toaster } from "@/components/ui/sonner";
 import "./tailwind.css";
-import "./globals.scss";
 
 function getMetadataBase(): URL {
 	try {
@@ -43,6 +43,7 @@ export default function RootLayout({ children }: IRootProps) {
 		<html lang="en" className={`${inter.variable} ${montserrat.variable}`} suppressHydrationWarning>
 			<body>
 				<GlobalProvider>{children}</GlobalProvider>
+				<Toaster />
 				<PWARegister />
 			</body>
 		</html>

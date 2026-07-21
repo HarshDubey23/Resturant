@@ -2,7 +2,7 @@
 
 import { Loader2, Megaphone, Send } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 interface Campaign {
 	_id: string;

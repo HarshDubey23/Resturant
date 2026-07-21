@@ -14,7 +14,6 @@ import { formatCurrency } from "#utils/helper/currency";
 import ItemCard from "../../../../components/layout/ItemCard";
 
 import CartTaxItem from "./CartTaxItem";
-import "./cartPage.scss";
 
 const CartPage = (props: TCartPageProps) => {
 	const { selectedProducts, increaseProductQuantity, decreaseProductQuantity, resetSelectedProducts } = props;

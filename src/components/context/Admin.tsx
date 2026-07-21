@@ -1,7 +1,7 @@
 import noop from "lodash/noop";
 import { useSearchParams } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import useSWR from "swr";
 
 import type { TMenu } from "#utils/database/models/menu";

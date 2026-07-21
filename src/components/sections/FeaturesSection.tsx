@@ -1,43 +1,55 @@
 "use client";
 
-import { Bot, CookingPot, LineChart, QrCode, Salad, Smartphone } from "lucide-react";
+import { CookingPot, LineChart, Megaphone, QrCode, Smartphone, Star } from "lucide-react";
 import { motion } from "motion/react";
 
 const features = [
 	{
 		icon: QrCode,
 		title: "QR Ordering",
-		description: "Customers scan, browse, and order from their own device. No app download, no third-party commissions.",
+		description: "Customers scan a table-specific QR, browse your menu, customize items with spice levels & notes, and order — no app download needed.",
+		person: "🧑‍🍳",
+		personAlt: "girl-with-phone",
 		className: "md:col-span-2 md:row-span-1",
-	},
-	{
-		icon: Bot,
-		title: "AI Assistant",
-		description: "Jarvis recommends dishes, answers questions, and learns your menu — powered by multi-model AI.",
-		className: "md:col-span-1 md:row-span-1",
 	},
 	{
 		icon: CookingPot,
 		title: "Kitchen Display",
-		description: "Orders appear in real time. Kitchen staff see what's needed, when it's needed.",
+		description: "Real-time orders with sound alerts, spice-level indicators, and customer notes. Accept, prepare, and mark ready — all with one tap.",
+		person: "👨‍🍳",
+		personAlt: "boy-chef",
+		className: "md:col-span-1 md:row-span-1",
+	},
+	{
+		icon: Smartphone,
+		title: "Digital Payment",
+		description: "Razorpay & Stripe integrated. Customers pay via UPI, cards, or wallets. Digital bill PDF generated automatically.",
+		person: "💳",
+		personAlt: "girl-credit-card",
 		className: "md:col-span-1 md:row-span-1",
 	},
 	{
 		icon: LineChart,
-		title: "Order Analytics",
-		description: "Track popular items, peak hours, and customer preferences.",
+		title: "Analytics & Insights",
+		description: "Revenue breakdown, popular items, peak hours, and customer trends visualized with AI-powered recommendations.",
+		person: "📊",
+		personAlt: "boy-with-chart",
 		className: "md:col-span-1 md:row-span-1",
 	},
 	{
-		icon: Salad,
-		title: "Smart Menu Management",
-		description: "Update items, prices, availability, and categories instantly across all channels.",
+		icon: Star,
+		title: "Loyalty Program",
+		description: "Points, tiers, rewards, and auto-redemption. Keep customers coming back with a built-in loyalty system.",
+		person: "🎂",
+		personAlt: "girl-loyalty",
 		className: "md:col-span-2 md:row-span-1",
 	},
 	{
-		icon: Smartphone,
-		title: "Customer Profile",
-		description: "Returning customers are recognized. Order history and preferences travel with them.",
+		icon: Megaphone,
+		title: "WhatsApp Campaigns",
+		description: "Birthday offers, order updates, and promotional campaigns via WhatsApp Cloud API. Automated and scheduled.",
+		person: "💬",
+		personAlt: "boy-whatsapp",
 		className: "md:col-span-1 md:row-span-1",
 	},
 ];
@@ -52,10 +64,8 @@ export default function FeaturesSection() {
 					viewport={{ once: true, margin: "-100px" }}
 					transition={{ duration: 0.5, ease: "easeOut" }}
 					className="text-center mb-16">
-					<h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground">Everything you need to run your restaurant</h2>
-					<p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-						One platform for contactless ordering, AI recommendations, and kitchen operations.
-					</p>
+					<h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">Everything you need to run your restaurant</h2>
+					<p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">One platform for contactless ordering, kitchen display, payments, and growth.</p>
 				</motion.div>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -68,11 +78,14 @@ export default function FeaturesSection() {
 								whileInView={{ opacity: 1, y: 0 }}
 								viewport={{ once: true, margin: "-50px" }}
 								transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
-								className={`${feature.className} group relative rounded-2xl border bg-card p-6 sm:p-8 hover:shadow-sm transition-shadow`}>
-								<div className="flex h-10 w-10 items-center justify-center rounded-lg border bg-background mb-4">
-									<Icon className="h-5 w-5 text-primary" />
+								className={`${feature.className} group relative overflow-visible rounded-2xl border bg-card p-6 sm:p-8 hover:shadow-lg transition-all duration-300`}>
+								<div className="flex items-start justify-between mb-4">
+									<div className="flex h-12 w-12 items-center justify-center rounded-xl border bg-background">
+										<Icon className="h-6 w-6 text-primary" />
+									</div>
+									<span className="text-3xl select-none opacity-60 group-hover:opacity-100 transition-opacity duration-300">{feature.person}</span>
 								</div>
-								<h3 className="text-base font-medium text-foreground mb-2">{feature.title}</h3>
+								<h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
 								<p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
 							</motion.div>
 						);

@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,12 +30,12 @@ export default function PasswordSettings() {
 			toast.error("Failed to change password");
 			return onClear();
 		}
-		if (!newPassword) return toast.warn("New password is required");
-		if (!newConfPassword) return toast.warn("Confirm new password is required");
+		if (!newPassword) return toast.warning("New password is required");
+		if (!newConfPassword) return toast.warning("Confirm new password is required");
 		if (newPassword !== newConfPassword) {
 			setConfPasswordShake(true);
 			setTimeout(() => setConfPasswordShake(false), 600);
-			return toast.warn("New and Confirm password should match");
+			return toast.warning("New and Confirm password should match");
 		}
 
 		setLoading(true);

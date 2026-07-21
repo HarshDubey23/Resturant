@@ -18,17 +18,19 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 	};
 
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8">
-			<div className="mx-auto max-w-7xl">
+		<header className="fixed top-0 left-0 right-0 z-50 bg-background/70 backdrop-blur-xl border-b border-border/50">
+			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex items-center justify-between h-16 sm:h-20">
-					<button onClick={() => scrollTo("homepage")} className="text-lg font-semibold tracking-tight text-foreground">
-						OrderWorder
+					<button onClick={() => scrollTo("homepage")} className="text-lg font-bold tracking-tight text-foreground">
+						Order<span className="text-primary">Worder</span>
 					</button>
 
 					<nav className="hidden md:flex items-center gap-8">
 						{[
 							{ label: "Features", href: "features" },
-							{ label: "About", href: "about" },
+							{ label: "How It Works", href: "how-it-works" },
+							{ label: "Testimonials", href: "testimonials" },
+							{ label: "Pricing", href: "pricing" },
 						].map((item) => (
 							<button
 								key={item.label}
@@ -58,7 +60,9 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 				<nav className="flex flex-col items-center gap-6 pt-12">
 					{[
 						{ label: "Features", href: "features" },
-						{ label: "About", href: "about" },
+						{ label: "How It Works", href: "how-it-works" },
+						{ label: "Testimonials", href: "testimonials" },
+						{ label: "Pricing", href: "pricing" },
 					].map((item) => (
 						<button key={item.label} onClick={() => scrollTo(item.href)} className="text-lg text-muted-foreground hover:text-foreground transition-colors">
 							{item.label}

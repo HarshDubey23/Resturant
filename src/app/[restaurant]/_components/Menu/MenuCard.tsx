@@ -6,8 +6,6 @@ import { Icon } from "xtreme-ui";
 import QuantityButton from "#components/base/QuantityButton";
 import type { TMenu } from "#utils/database/models/menu";
 
-import "./menuCard.scss";
-
 const vegIcon = {
 	veg: "f4d8",
 	"non-veg": "f6d6",

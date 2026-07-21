@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { type UIEvent, useRef, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
 import { cn } from "@/lib/utils";

@@ -2,10 +2,8 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { Textfield } from "xtreme-ui";
-
-import "./userLogin.scss";
 
 const mobileNumberPattern = /^(\+91[-\s]?)?[6-9]\d{9}$/;
 const RESEND_COOLDOWN = 30;

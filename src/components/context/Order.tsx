@@ -2,7 +2,7 @@ import noop from "lodash/noop";
 import pick from "lodash/pick";
 import { useSession } from "next-auth/react";
 import { createContext, type ReactNode, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import useSWR from "swr";
 
 import type { TMenu } from "#utils/database/models/menu";
