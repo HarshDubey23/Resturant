@@ -4,7 +4,7 @@ export class NoopWhatsAppClient {
 		return { success: true, skipped: true };
 	}
 
-	async sendTemplate(to: string, templateName: string, params: Record<string, string>) {
+	async sendTemplate(to: string, templateName: string, _params: Record<string, string>) {
 		console.debug(`[whatsapp] No-op sendTemplate to ${to}: ${templateName}`);
 		return { success: true, skipped: true };
 	}

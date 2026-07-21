@@ -5,7 +5,7 @@ import { env } from "./env";
 export async function triggerN8nWorkflow<T>(
 	eventType: string,
 	payload: T,
-	opts: { idempotent?: boolean; awaitResponse?: boolean } = { idempotent: true, awaitResponse: false },
+	_opts: { idempotent?: boolean; awaitResponse?: boolean } = { idempotent: true, awaitResponse: false },
 ): Promise<{ ok: boolean; status: number }> {
 	if (!env.N8N_WEBHOOK_URL || !env.N8N_WEBHOOK_SECRET) {
 		return { ok: false, status: 0 };

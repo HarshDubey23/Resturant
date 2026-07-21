@@ -58,7 +58,7 @@ export async function rateLimit(key: string, maxRequests: number, windowMs: numb
 	}
 }
 
-function parseDuration(duration: string): number {
+function _parseDuration(duration: string): number {
 	const match = duration.match(/(\d+)\s*(s|m)/);
 	if (!match) return 60_000;
 	const value = Number.parseInt(match[1], 10);

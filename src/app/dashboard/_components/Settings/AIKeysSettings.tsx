@@ -60,14 +60,14 @@ export default function AIKeysSettings() {
 						<label className="block text-sm font-medium mb-1">
 							{label}
 							{configured[key] && <span className="ml-2 text-xs text-green-600">(configured)</span>}
+							<input
+								type="password"
+								placeholder={configured[key] ? "***** (overwrite)" : placeholder}
+								value={keys[key] || ""}
+								onChange={(e) => setKeys((k) => ({ ...k, [key]: e.target.value }))}
+								className="mt-1 w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+							/>
 						</label>
-						<input
-							type="password"
-							placeholder={configured[key] ? "***** (overwrite)" : placeholder}
-							value={keys[key] || ""}
-							onChange={(e) => setKeys((k) => ({ ...k, [key]: e.target.value }))}
-							className="w-full px-3 py-2 border rounded-lg text-sm bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-						/>
 					</div>
 				))}
 			</div>

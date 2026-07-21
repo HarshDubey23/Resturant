@@ -8,7 +8,7 @@ import { CatchNextResponse } from "#utils/helper/common";
 export async function POST(req: Request) {
 	try {
 		const body = await req.json();
-		const { restaurant, phone, otp, table } = body;
+		const { restaurant, phone, otp } = body;
 
 		if (!restaurant || !phone || !otp) throw { status: 400, message: "restaurant, phone, and otp are required" };
 

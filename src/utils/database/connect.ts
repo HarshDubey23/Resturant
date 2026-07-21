@@ -25,7 +25,9 @@ if (!MONGODB_CACHE.mongoose) {
 }
 
 async function connectDB() {
-	if (MONGODB_CACHE.mongoose!.conn) return MONGODB_CACHE.mongoose!.conn;
+	const mc = MONGODB_CACHE.mongoose;
+	if (!mc) return null;
+	if (mc.conn) return mc.conn;
 
 	if (!process.env.MONGODB_URI) {
 		const err = new Error("MONGODB_URI environment variable is not set. " + "Add it to .env.local (dev) or your hosting provider's env vars (prod).");
@@ -33,28 +35,28 @@ async function connectDB() {
 		throw err;
 	}
 
-	if (!MONGODB_CACHE.mongoose!.promise) {
+	if (!mc.promise) {
 		const options = { autoIndex: false, bufferCommands: false };
-		MONGODB_CACHE.mongoose!.promise = connect(process.env.MONGODB_URI, options)
+		mc.promise = connect(process.env.MONGODB_URI, options)
 			.then((mongoose) => {
 				console.log("🍃 Mongo Connection Established");
 				return mongoose;
 			})
 			.catch((error) => {
 				console.error("🍂 MongoDB Connection Failed: ", error.message);
-				MONGODB_CACHE.mongoose!.promise = null;
+				mc.promise = null;
 				throw error;
 			});
 	}
 
 	try {
-		MONGODB_CACHE.mongoose!.conn = await MONGODB_CACHE.mongoose!.promise;
+		mc.conn = await mc.promise;
 	} catch (e) {
-		MONGODB_CACHE.mongoose!.promise = null;
+		mc.promise = null;
 		throw e;
 	}
 
-	return MONGODB_CACHE.mongoose!.conn;
+	return mc.conn;
 }
 
 export default connectDB;

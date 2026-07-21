@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 			const netAmountInPaise = Math.round(gross * 100) - platformFee;
 
 			await createPayout({
-				accountNumber: process.env.RAZORPAY_ACCOUNT_NUMBER!,
+				accountNumber: process.env.RAZORPAY_ACCOUNT_NUMBER ?? "",
 				fundAccountId: profile.razorpayFundAccountId as string,
 				amount: netAmountInPaise,
 				currency: "INR",

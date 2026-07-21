@@ -91,6 +91,7 @@ export type TOrder = HydratedDocument<{
 				grandTotal: number;
 		  }
 		| undefined;
+	loyaltyAwarded: boolean;
 	settledAt: Date;
 	products: Array<TProduct>;
 }>;

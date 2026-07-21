@@ -25,10 +25,7 @@ export async function GET(req: Request) {
 		if (session.role === "admin") {
 			const restaurantID = session.restaurant?.username || session.username;
 
-			const invoices = await Invoices.find({ restaurantID, order: orderId })
-				.populate("order")
-				.sort({ generatedAt: -1 })
-				.lean();
+			const invoices = await Invoices.find({ restaurantID, order: orderId }).populate("order").sort({ generatedAt: -1 }).lean();
 
 			if (!invoices || invoices.length === 0) throw { status: 404, message: "No invoices found for this order" };
 
@@ -42,9 +39,7 @@ export async function GET(req: Request) {
 			const order = await Orders.findOne({ _id: orderId, restaurantID, customer: customerId }).lean();
 			if (!order) throw { status: 403, message: "Access denied" };
 
-			const invoices = await Invoices.find({ order: orderId })
-				.populate("order")
-				.lean();
+			const invoices = await Invoices.find({ order: orderId }).populate("order").lean();
 
 			if (!invoices || invoices.length === 0) throw { status: 404, message: "No invoices found for this order" };
 

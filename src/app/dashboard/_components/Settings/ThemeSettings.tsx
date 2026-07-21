@@ -50,7 +50,7 @@ export default function ThemeSettings() {
 	const { profile, profileMutate } = useAdmin();
 	const [themeColor, setThemeColor] = useState<string>((profile?.themeColor as unknown as string) ?? PRESET_COLORS[0].value);
 	const [loading, setLoading] = useState(false);
-	const [customColor, setCustomColor] = useState("");
+	const [_customColor, setCustomColor] = useState("");
 
 	const hasChanged = themeColor !== (profile?.themeColor as unknown as string);
 

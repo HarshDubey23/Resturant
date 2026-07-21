@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ID_SUFFIX, REF_SPICEROUTE, TYPE_ACCOUNT, TYPE_KITCHEN, TYPE_PROFILE, TYPE_TABLE } from "../constants";
+import { ID_SUFFIX, REF_SPICEROUTE, TYPE_ACCOUNT, TYPE_PROFILE, TYPE_TABLE } from "../constants";
 import { menus } from "./spicerouteMenu";
 
 const account = {

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { ID_SUFFIX, REF_DEMO, TYPE_ACCOUNT, TYPE_KITCHEN, TYPE_PROFILE, TYPE_TABLE } from "../constants";
+import { ID_SUFFIX, REF_DEMO, TYPE_ACCOUNT, TYPE_PROFILE, TYPE_TABLE } from "../constants";
 import { menus } from "./demoMenu";
 
 const account = {
@@ -14,7 +14,8 @@ const profile = {
 	_id: new mongoose.Types.ObjectId(`${REF_DEMO}${TYPE_PROFILE}${ID_SUFFIX}000001`),
 	name: "The Spice Kitchen",
 	restaurantID: "demo",
-	description: "Authentic Indian restaurant showcasing the rich and diverse flavors of India's culinary heritage — from North Indian classics to South Indian specialties.",
+	description:
+		"Authentic Indian restaurant showcasing the rich and diverse flavors of India's culinary heritage — from North Indian classics to South Indian specialties.",
 	address: "Indiranagar, Bengaluru",
 	themeColor: { h: 25, s: 90, l: 55 },
 	avatar: "https://images.unsplash.com/photo-1585937421612-70a008356fbe?w=200&h=200&fit=crop",

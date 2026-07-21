@@ -118,6 +118,7 @@ export const authOptions: AuthOptions = {
 							name: account?.profile?.name,
 							avatar: account?.profile?.avatar,
 						},
+						// biome-ignore lint/suspicious/noExplicitAny: next-auth authorize return type is complex
 					} as any,
 				};
 			},

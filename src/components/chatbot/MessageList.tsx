@@ -3,8 +3,8 @@
 import DOMPurify from "dompurify";
 import { Bot, Volume2 } from "lucide-react";
 import { memo, type RefObject } from "react";
-import { cn } from "@/lib/utils";
 import { useTTS } from "#utils/hooks/useTTS";
+import { cn } from "@/lib/utils";
 import type { ChatMessage } from "../../types/chat";
 import { MenuCard } from "./MenuCard";
 

@@ -4,7 +4,7 @@ function now() {
 	return Date.now();
 }
 
-function sweep() {
+function _sweep() {
 	const t = now();
 	for (const [key, entry] of store) {
 		if (entry.expiresAt && entry.expiresAt <= t) {
@@ -71,5 +71,20 @@ export class MemoryRedis {
 		if (!entry) return 0;
 		entry.expiresAt = now() + ttlSeconds * 1000;
 		return 1;
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: match @upstash/redis signature
+	async evalsha<TData = unknown>(_sha: string, _keys: string[], _args: any[]): Promise<TData> {
+		return null as TData;
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: match @upstash/redis signature
+	async multi(): Promise<any> {
+		return this;
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: match @upstash/redis signature
+	async exec(): Promise<any[]> {
+		return [];
 	}
 }

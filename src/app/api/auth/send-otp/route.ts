@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { randomInt } from "node:crypto";
+import { NextResponse } from "next/server";
 
 import connectDB from "#utils/database/connect";
 import { getRedis } from "#utils/database/redis";

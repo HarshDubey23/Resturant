@@ -67,11 +67,7 @@ export async function POST(req: Request) {
 			if (order.state !== "complete") throw { status: 400, message: "Order is not completed" };
 			if (order.loyaltyAwarded) throw { status: 409, message: "Loyalty points already awarded for this order" };
 
-			const claimed = await Orders.findOneAndUpdate(
-				{ _id: orderId, loyaltyAwarded: { $ne: true } },
-				{ $set: { loyaltyAwarded: true } },
-				{ new: true },
-			);
+			const claimed = await Orders.findOneAndUpdate({ _id: orderId, loyaltyAwarded: { $ne: true } }, { $set: { loyaltyAwarded: true } }, { new: true });
 			if (!claimed) throw { status: 409, message: "Loyalty points already awarded for this order" };
 
 			let loyalty = await Loyalties.findOne({ restaurantID, customer: customerId });

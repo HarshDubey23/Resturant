@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 		if (!contactId) {
 			const contact = await createRazorpayContact({
 				name: profile.name as string,
-				email: account!.email,
+				email: account?.email,
 				contact: (profile.phone as string) || "",
 				type: "vendor",
 			});
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 		}
 
 		const payout = await createPayout({
-			accountNumber: process.env.RAZORPAY_ACCOUNT_NUMBER!,
+			accountNumber: process.env.RAZORPAY_ACCOUNT_NUMBER ?? "",
 			fundAccountId,
 			amount: Math.round(amount * 100),
 			currency: "INR",

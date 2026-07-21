@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import mongoose from "mongoose";
 import { smartGenerateText } from "#utils/ai/switcher";
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
