@@ -47,7 +47,7 @@ export default function SettingsTables() {
 			</div>
 			<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 				{tables.map((t) => (
-					<div key={t._id?.toString()} className="flex flex-col items-center gap-3 rounded-xl border bg-card p-4">
+					<div key={t.username} className="flex flex-col items-center gap-3 rounded-xl border bg-card p-4">
 						{qrs[t.username] ? (
 							<div className="relative">
 								<Image src={qrs[t.username]} alt={`QR for Table ${t.name}`} width={160} height={160} className="h-40 w-40" unoptimized />
