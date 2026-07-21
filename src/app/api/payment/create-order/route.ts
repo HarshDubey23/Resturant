@@ -5,6 +5,7 @@ import connectDB from "#utils/database/connect";
 import { Orders, type TOrder } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { getRestaurantCurrency } from "#utils/helper/currency-server";
 import { createRazorpayOrder } from "#utils/payment/razorpay";
 
 export const dynamic = "force-dynamic";
@@ -27,12 +28,14 @@ export async function POST(req: Request) {
 		const sessionRestaurant = session.restaurant?.username || session.username;
 		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
 
+		const currency = await getRestaurantCurrency(order.restaurantID);
+
 		const amountInPaise = Math.round((order.orderTotal + order.taxTotal) * 100);
 		const receipt = `order_${order._id?.toString()?.slice(-12)}`;
 
 		const razorpayOrder = await createRazorpayOrder({
 			amount: amountInPaise,
-			currency: "INR",
+			currency,
 			receipt,
 			notes: {
 				restaurantID: order.restaurantID,

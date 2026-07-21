@@ -1,5 +1,6 @@
 "use client";
 import useSWR from "swr";
+import { formatCurrency } from "#utils/helper/currency";
 import { Card } from "@/components/ui/card";
 
 const fetcher = (u: string) => fetch(u).then((r) => r.json());
@@ -15,7 +16,7 @@ export default function AggregatorOrdersPage() {
 					<Card key={o._id as string} className="p-4">
 						<div className="flex justify-between">
 							<span className="font-semibold">{(o.source as string)?.toUpperCase() ?? "AGGREGATOR"}</span>
-							<span>₹{o.totalAmount as number}</span>
+							<span>{formatCurrency(o.totalAmount as number)}</span>
 						</div>
 						<p className="text-sm text-gray-600 mt-1">Customer: {o.customerName as string}</p>
 					</Card>

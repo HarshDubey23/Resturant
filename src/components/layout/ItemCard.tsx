@@ -3,6 +3,7 @@
 import { useInView } from "react-intersection-observer";
 import QuantityButton from "#components/base/QuantityButton";
 import type { TMenu } from "#utils/database/models/menu";
+import { formatCurrency } from "#utils/helper/currency";
 import { cn } from "@/lib/utils";
 
 type TMenuCustom = TMenu & { quantity: number };
@@ -31,12 +32,12 @@ export default function ItemCard({ className, item, staticCard, increaseQuantity
 					<div className="flex-1 min-w-0">
 						<p className="text-sm font-medium truncate">{item.name}</p>
 						<div className="flex items-center justify-between mt-1">
-							<p className="text-xs text-muted-foreground">₹{item.price}</p>
+							<p className="text-xs text-muted-foreground">{formatCurrency(item.price)}</p>
 							{staticCard && item.quantity > 0 && <p className="text-xs text-muted-foreground">× {item.quantity}</p>}
 						</div>
 					</div>
 					{staticCard ? (
-						<div className="text-sm font-semibold shrink-0">₹{total}</div>
+						<div className="text-sm font-semibold shrink-0">{formatCurrency(total)}</div>
 					) : (
 						increaseQuantity &&
 						decreaseQuantity && (

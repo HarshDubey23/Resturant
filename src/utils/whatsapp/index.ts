@@ -1,3 +1,4 @@
+import { formatCurrency } from "#utils/helper/currency";
 import { MetaWhatsAppClient } from "./meta";
 import { NoopWhatsAppClient } from "./noop";
 import { OpenWAClient } from "./openwa";
@@ -61,13 +62,13 @@ export async function sendWhatsAppText(to: string, text: string) {
 	return client.sendText(to, text);
 }
 
-export async function sendWhatsAppOrderReceipt(to: string, order: { table: string; items: string; total: number; points: number }) {
+export async function sendWhatsAppOrderReceipt(to: string, order: { table: string; items: string; total: number; points: number; currency?: string }) {
 	const body = `Thank you for ordering at Table ${order.table}!
 
 Your Order:
 ${order.items}
 
-Total: ₹${order.total}
+Total: ${formatCurrency(order.total, order.currency || "INR")}
 Points Earned: ${order.points} ✨
 
 We'll notify you when it's ready!`;

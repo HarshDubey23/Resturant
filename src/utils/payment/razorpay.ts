@@ -113,13 +113,14 @@ export async function createPaymentLink(params: {
 	amount: number;
 	description: string;
 	customer: { name: string; email: string; contact: string };
+	currency?: string;
 	notes?: Record<string, string>;
 }): Promise<unknown> {
 	return razorpayFetch("/payment_links", {
 		method: "POST",
 		body: JSON.stringify({
 			amount: params.amount,
-			currency: "INR",
+			currency: params.currency || "INR",
 			description: params.description,
 			customer: params.customer,
 			notify: { sms: true, email: true },

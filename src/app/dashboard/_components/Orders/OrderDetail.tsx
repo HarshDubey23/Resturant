@@ -3,8 +3,10 @@
 import { Check, DollarSign, Phone, User, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
 import type { TOrder } from "#utils/database/models/order";
+import { formatCurrency } from "#utils/helper/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +25,8 @@ interface OrderDetailProps {
 export default function OrderDetail({ data, actions, busy, reject, setReject, action }: OrderDetailProps) {
 	const queryParams = useSearchParams();
 	const subTab = queryParams.get("subTab") ?? "";
+	const { profile } = useAdmin();
+	const currency = profile?.currency || "INR";
 
 	const { approvedItems, requestedItems } = useMemo(
 		() => ({
@@ -50,7 +54,8 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 						)}
 						{data?.orderTotal != null && (
 							<div className="flex items-center gap-2 text-sm font-semibold">
-								<DollarSign className="h-3 w-3" />₹{data.orderTotal}
+								<DollarSign className="h-3 w-3" />
+								{formatCurrency(data.orderTotal, currency)}
 							</div>
 						)}
 					</div>
@@ -104,15 +109,16 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 }
 
 function OrderItemCard({ item }: { item: TMenuCustom }) {
+	const currency = "INR";
 	return (
 		<div className="flex items-center justify-between rounded-lg border bg-card/50 p-3">
 			<div className="min-w-0 flex-1">
 				<p className="text-sm font-medium truncate">{item.name}</p>
 				<p className="text-xs text-muted-foreground">
-					₹{item.price} × {item.quantity}
+					{formatCurrency(item.price, currency)} × {item.quantity}
 				</p>
 			</div>
-			<div className="text-sm font-semibold shrink-0 ml-2">₹{item.price * item.quantity}</div>
+			<div className="text-sm font-semibold shrink-0 ml-2">{formatCurrency(item.price * item.quantity, currency)}</div>
 		</div>
 	);
 }

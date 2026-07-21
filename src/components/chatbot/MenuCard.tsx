@@ -1,4 +1,5 @@
 import { CookingPot, Drumstick, Leaf } from "lucide-react";
+import { formatCurrency } from "#utils/helper/currency";
 import { cn } from "@/lib/utils";
 import type { MenuSuggestion } from "../../types/chat";
 
@@ -33,7 +34,7 @@ export function MenuCard({ item }: MenuCardProps) {
 				<h4 className="text-sm font-medium truncate">{item.name}</h4>
 				<p className="flex items-center gap-1 text-xs text-muted-foreground">
 					{VegIcon && <VegIcon className={cn("h-3 w-3", VEG_ICONS[item.veg || "veg"]?.className)} />}
-					<span>₹{item.price}</span>
+					<span>{formatCurrency(item.price)}</span>
 				</p>
 			</div>
 		</button>

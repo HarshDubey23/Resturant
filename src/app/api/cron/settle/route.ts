@@ -41,7 +41,7 @@ export async function GET(req: Request) {
 				accountNumber: process.env.RAZORPAY_ACCOUNT_NUMBER ?? "",
 				fundAccountId: profile.razorpayFundAccountId as string,
 				amount: netAmountInPaise,
-				currency: "INR",
+				currency: (profile?.currency as string) || "INR",
 				mode: "UPI",
 				purpose: "payout",
 				referenceId: `settle_${order._id}`,

@@ -5,7 +5,8 @@ import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { useOrder } from "#components/context/useContext";
+import { useOrder, useRestaurant } from "#components/context/useContext";
+import { formatCurrency } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import type { TMenuCustom } from "./MenuCard";
@@ -20,6 +21,8 @@ interface CartPageProps {
 export default function CartPage({ selectedProducts, increaseProductQuantity, decreaseProductQuantity, resetSelectedProducts }: CartPageProps) {
 	const params = useSearchParams();
 	const table = params.get("table");
+	const { restaurant } = useRestaurant();
+	const currency = restaurant?.profile?.currency || "INR";
 	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder } = useOrder();
 	const [showTaxSummary, setShowTaxSummary] = useState(false);
 
@@ -77,20 +80,21 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 				increaseProductQuantity={increaseProductQuantity}
 				decreaseProductQuantity={decreaseProductQuantity}
 				order={order}
+				currency={currency}
 			/>
 
 			<div className="border-t bg-card p-4 space-y-3">
 				{order?.orderTotal != null && (
 					<div className="flex items-center justify-between text-sm">
 						<span className="text-muted-foreground">Subtotal</span>
-						<span className="font-medium">₹{order.orderTotal}</span>
+						<span className="font-medium">{formatCurrency(order.orderTotal, currency)}</span>
 					</div>
 				)}
 
 				{order?.taxTotal != null && order.taxTotal > 0 && (
 					<button onClick={() => setShowTaxSummary(!showTaxSummary)} className="flex items-center justify-between text-sm w-full">
 						<span className="text-muted-foreground underline underline-offset-2 decoration-dotted">Tax {showTaxSummary ? "(hide)" : "(show)"}</span>
-						<span className="font-medium">₹{order.taxTotal}</span>
+						<span className="font-medium">{formatCurrency(order.taxTotal, currency)}</span>
 					</button>
 				)}
 
@@ -99,13 +103,13 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 						<Separator />
 						<div className="flex items-center justify-between text-sm font-semibold">
 							<span>Total</span>
-							<span>₹{order.orderTotal + order.taxTotal}</span>
+							<span>{formatCurrency(order.orderTotal + order.taxTotal, currency)}</span>
 						</div>
 					</>
 				)}
 
 				<Button className="w-full" size="lg" loading={placingOrder} onClick={onOrderAction} disabled={selectedProducts.length === 0}>
-					{selectedProducts.length > 0 ? `Place Order — ₹${selectionTotal}` : order?.products?.length ? "Order Placed" : "Cart Empty"}
+					{selectedProducts.length > 0 ? `Place Order — ${formatCurrency(selectionTotal, currency)}` : order?.products?.length ? "Order Placed" : "Cart Empty"}
 				</Button>
 			</div>
 		</div>
@@ -117,11 +121,13 @@ function ScrollableCartItems({
 	increaseProductQuantity,
 	decreaseProductQuantity,
 	order,
+	currency,
 }: {
 	selectedProducts: Array<TMenuCustom>;
 	increaseProductQuantity: (p: TMenuCustom) => void;
 	decreaseProductQuantity: (p: TMenuCustom) => void;
 	order?: { products?: Array<TMenuCustom & { adminApproved?: boolean; taxPercent?: number; tax?: number }>; orderTotal?: number; taxTotal?: number };
+	currency: string;
 }) {
 	return (
 		<div className="flex-1 overflow-auto px-4 py-4 space-y-3">
@@ -140,10 +146,10 @@ function ScrollableCartItems({
 								<div className="min-w-0 flex-1">
 									<p className="text-sm font-medium truncate">{String(product.name)}</p>
 									<p className="text-xs text-muted-foreground">
-										₹{product.price} × {product.quantity}
+										{formatCurrency(product.price, currency)} × {product.quantity}
 									</p>
 								</div>
-								<div className="text-sm font-semibold ml-2">₹{product.price * product.quantity}</div>
+								<div className="text-sm font-semibold ml-2">{formatCurrency(product.price * product.quantity, currency)}</div>
 							</motion.div>
 						))}
 				</AnimatePresence>
@@ -175,7 +181,7 @@ function ScrollableCartItems({
 							className="flex items-center justify-between rounded-lg border bg-card p-3">
 							<div className="min-w-0 flex-1">
 								<p className="text-sm font-medium truncate">{String(product.name)}</p>
-								<p className="text-xs text-muted-foreground">₹{product.price} each</p>
+								<p className="text-xs text-muted-foreground">{formatCurrency(product.price, currency)} each</p>
 							</div>
 
 							<div className="flex items-center gap-3 ml-3">
@@ -194,7 +200,7 @@ function ScrollableCartItems({
 										<Plus className="h-3 w-3" />
 									</button>
 								</div>
-								<span className="text-sm font-semibold min-w-[4rem] text-right">₹{product.quantity * product.price}</span>
+								<span className="text-sm font-semibold min-w-[4rem] text-right">{formatCurrency(product.quantity * product.price, currency)}</span>
 							</div>
 						</motion.div>
 					))}

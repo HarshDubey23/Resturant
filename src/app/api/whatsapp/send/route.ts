@@ -5,6 +5,7 @@ import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { formatCurrency } from "#utils/helper/currency";
 import { sendWhatsAppOrderReady, sendWhatsAppOrderReceipt, sendWhatsAppText } from "#utils/whatsapp";
 
 export const dynamic = "force-dynamic";
@@ -26,10 +27,12 @@ export async function POST(req: Request) {
 			const phone = order.customer?.phone;
 			if (!phone) throw { status: 400, message: "Customer phone not found" };
 
+			const orderCurrency = (order as unknown as { currency?: string }).currency || "INR";
 			const result = await sendWhatsAppOrderReceipt(phone, {
 				table: order.table,
-				items: order.products.map((p: { quantity: number; price: number }) => `x${p.quantity} ₹${p.price}`).join(", "),
+				items: order.products.map((p: { quantity: number; price: number }) => `x${p.quantity} ${formatCurrency(p.price, orderCurrency)}`).join(", "),
 				total: order.orderTotal + order.taxTotal,
+				currency: orderCurrency,
 				points: Math.floor((order.orderTotal || 0) / 10),
 			});
 			const skipped = (result as { skipped?: boolean })?.skipped;

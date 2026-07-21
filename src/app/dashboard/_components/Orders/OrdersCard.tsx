@@ -2,7 +2,9 @@
 
 import { Check, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useAdmin } from "#components/context/useContext";
 import type { TOrder } from "#utils/database/models/order";
+import { formatCurrency } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +25,8 @@ interface OrdersCardProps {
 export default function OrdersCard({ data, actions, history, active, reject, setReject, busy, action, activate }: OrdersCardProps) {
 	const queryParams = useSearchParams();
 	const subTab = queryParams.get("subTab") ?? "";
+	const { profile } = useAdmin();
+	const currency = profile?.currency || "INR";
 	const tableName = data.table;
 	const customerName = `${data?.customer?.fname ?? ""} ${data?.customer?.lname ?? ""}`.trim();
 
@@ -62,7 +66,7 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 					<p className="font-medium truncate">{isRejectActive ? "Are you sure?" : `Table: ${tableName}`}</p>
 					<p className="text-xs text-muted-foreground truncate">{isRejectActive ? `Table: ${tableName}` : customerName || "Guest"}</p>
 					{data?.products?.length ? (
-						<p className="text-xs font-semibold mt-1">₹{data?.orderTotal}</p>
+						<p className="text-xs font-semibold mt-1">{formatCurrency(data?.orderTotal ?? 0, currency)}</p>
 					) : (
 						<p className="text-xs text-muted-foreground mt-1">No orders yet</p>
 					)}

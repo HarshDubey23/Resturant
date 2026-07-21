@@ -4,11 +4,12 @@ import { signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { Icon, Lottie } from "xtreme-ui";
 
-import { useOrder } from "#components/context/useContext";
+import { useOrder, useRestaurant } from "#components/context/useContext";
 import Collapsible from "#components/layout/Collapsible";
 import NoContent from "#components/layout/NoContent";
 import { getAnimSrc } from "#utils/constants/common";
 import type { TMenu } from "#utils/database/models/menu.js";
+import { formatCurrency } from "#utils/helper/currency";
 
 import ItemCard from "../../../../components/layout/ItemCard";
 
@@ -20,6 +21,8 @@ const CartPage = (props: TCartPageProps) => {
 	const params = useSearchParams();
 	const table = params.get("table");
 	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder } = useOrder();
+	const { restaurant } = useRestaurant();
+	const currency = restaurant?.profile?.currency || "INR";
 	const [showOrderHistory, setShowOrderHistory] = useState(false);
 	const [selectionTotal, setSelectionTotal] = useState(0);
 	const [bottomBarActive, setBottomBarActive] = useState(false);
@@ -144,7 +147,7 @@ const CartPage = (props: TCartPageProps) => {
 								<>
 									<p>Sub Total</p>
 									<span className="totalValue rupee">{order?.orderTotal} </span>
-									{order?.orderTotal && <span className="plusTaxes"> + ₹{order?.taxTotal} Tax</span>}
+									{order?.orderTotal && <span className="plusTaxes"> + {formatCurrency(order?.taxTotal ?? 0, currency)} Tax</span>}
 								</>
 							)}
 						</div>

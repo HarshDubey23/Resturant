@@ -20,12 +20,13 @@ export async function createStripeCheckoutSession(params: {
 	items: Array<{ name: string; quantity: number; price: number; tax: number }>;
 	successUrl: string;
 	cancelUrl: string;
+	currency?: string;
 }): Promise<Stripe.Checkout.Session> {
 	const stripe = getStripe();
 
 	const lineItems = params.items.map((item) => ({
 		price_data: {
-			currency: "inr",
+			currency: params.currency?.toLowerCase() || "inr",
 			product_data: {
 				name: item.name,
 			},

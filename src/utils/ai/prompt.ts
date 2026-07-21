@@ -1,4 +1,5 @@
 import type { TMenu } from "#utils/database/models/menu";
+import { formatCurrency } from "#utils/helper/currency";
 
 interface CustomerMemory {
 	isReturning: boolean;
@@ -26,7 +27,7 @@ function formatMemory(memory: CustomerMemory | null): string {
 	return parts.join(" | ");
 }
 
-export const getSystemPrompt = (restaurant: string, items: TMenu[], userName?: string, memory?: CustomerMemory | null) => {
+export const getSystemPrompt = (restaurant: string, items: TMenu[], userName?: string, memory?: CustomerMemory | null, currency = "INR") => {
 	const memoryStr = memory?.isReturning ? `\nCUSTOMER MEMORY: ${formatMemory(memory)}` : "";
 
 	return `
@@ -52,7 +53,7 @@ FORBIDDEN PHRASES: "not explicitly mentioned", "rough estimate", "may vary", "I 
 </FORMATTING_RULES>
 
 <MENU>
-${items.map((i) => `Name: ${i.name} | Category: ${i.category} | Desc: ${i.description || "N/A"} | Price: ₹${i.price} | Type: ${i.veg}`).join("\n")}
+${items.map((i) => `Name: ${i.name} | Category: ${i.category} | Desc: ${i.description || "N/A"} | Price: ${formatCurrency(i.price, currency)} | Type: ${i.veg}`).join("\n")}
 </MENU>
 
 <FOOD_OUTPUT_LOGIC>

@@ -5,6 +5,8 @@ import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { currencySymbol } from "#utils/helper/currency";
+import { getRestaurantCurrency } from "#utils/helper/currency-server";
 import { captureError } from "#utils/helper/sentryWrapper";
 
 type AnalyticsData = {
@@ -25,6 +27,8 @@ export async function GET(req: Request) {
 		await connectDB();
 		const restaurantID = session.username;
 		if (!restaurantID) throw { status: 400, message: "Restaurant ID required" };
+
+		const currency = await getRestaurantCurrency(restaurantID);
 
 		const { searchParams } = new URL(req.url);
 		const range = searchParams.get("range") || "30d";
@@ -86,7 +90,7 @@ export async function GET(req: Request) {
 			gstCollected: monthData.gst,
 		};
 
-		const aiCommentary = await generateAICommentary(analyticsData, restaurantID);
+		const aiCommentary = await generateAICommentary(analyticsData, restaurantID, currency);
 
 		return NextResponse.json({
 			live: {
@@ -111,12 +115,12 @@ export async function GET(req: Request) {
 	}
 }
 
-async function generateAICommentary(data: AnalyticsData, restaurantID: string): Promise<string[]> {
+async function generateAICommentary(data: AnalyticsData, restaurantID: string, currency: string): Promise<string[]> {
 	const prompt = `You are a restaurant business analyst. Given these metrics, return 3-5 actionable insights as a JSON array of strings.
-Today revenue: ₹${data.todayRevenue}, Week: ₹${data.weekRevenue}, Month: ₹${data.monthRevenue}
+Today revenue: ${currencySymbol(currency)}${data.todayRevenue}, Week: ${currencySymbol(currency)}${data.weekRevenue}, Month: ${currencySymbol(currency)}${data.monthRevenue}
 Top dish: ${data.topDishes[0]?.name ?? "N/A"} (${data.topDishes[0]?.count ?? 0} orders)
-Repeat rate: ${data.repeatRate.toFixed(1)}%, Avg ticket: ₹${data.avgTicket.toFixed(0)}
-GST collected today: ₹${data.gstCollected.toFixed(0)}
+Repeat rate: ${data.repeatRate.toFixed(1)}%, Avg ticket: ${currencySymbol(currency)}${data.avgTicket.toFixed(0)}
+GST collected today: ${currencySymbol(currency)}${data.gstCollected.toFixed(0)}
 
 Return ONLY a JSON array of strings, no preamble.`;
 
@@ -130,11 +134,11 @@ Return ONLY a JSON array of strings, no preamble.`;
 		return JSON.parse(result.text);
 	} catch (err) {
 		captureError(err, { route: "analytics/commentary" });
-		return fallbackRuleBasedCommentary(data);
+		return fallbackRuleBasedCommentary(data, currency);
 	}
 }
 
-function fallbackRuleBasedCommentary(data: AnalyticsData): string[] {
+function fallbackRuleBasedCommentary(data: AnalyticsData, currency: string): string[] {
 	const comments: string[] = [];
 	const top = data.topDishes[0];
 	if (top && top.count > 10) {
@@ -144,7 +148,7 @@ function fallbackRuleBasedCommentary(data: AnalyticsData): string[] {
 		comments.push(`Repeat customer rate is ${data.repeatRate.toFixed(0)}%. Launch a loyalty program to improve retention.`);
 	}
 	if (data.avgTicket < 300) {
-		comments.push(`Average ticket is ₹${data.avgTicket.toFixed(0)}. Try bundling combos or suggesting add-ons.`);
+		comments.push(`Average ticket is ${currencySymbol(currency)}${data.avgTicket.toFixed(0)}. Try bundling combos or suggesting add-ons.`);
 	}
 	if (data.todayRevenue > (data.weekRevenue / 7) * 1.3) {
 		comments.push("Today's revenue is 30% above your weekly average — great momentum!");

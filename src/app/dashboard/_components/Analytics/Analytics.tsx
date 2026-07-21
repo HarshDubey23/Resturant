@@ -2,6 +2,8 @@
 
 import { Bot, DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAdmin } from "#components/context/useContext";
+import { formatCurrency } from "#utils/helper/currency";
 
 interface AnalyticsData {
 	live: {
@@ -50,6 +52,7 @@ function Bar({ value, max, label }: { value: number; max: number; label: string 
 export default function Analytics() {
 	const [data, setData] = useState<AnalyticsData | null>(null);
 	const [loading, setLoading] = useState(true);
+	const { profile } = useAdmin();
 
 	useEffect(() => {
 		const fetchData = async () => {
@@ -80,18 +83,19 @@ export default function Analytics() {
 	}
 
 	const maxHour = Math.max(...data.peakHours.map((h) => h.count), 1);
+	const currency = profile?.currency || "INR";
 
 	return (
 		<div className="space-y-6 max-w-4xl">
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-				<StatCard icon={DollarSign} label="Today Revenue" value={`₹${data.live.todayRevenue.toLocaleString()}`} />
+				<StatCard icon={DollarSign} label="Today Revenue" value={formatCurrency(data.live.todayRevenue, currency)} />
 				<StatCard icon={ShoppingCart} label="Today Orders" value={data.live.todayOrders.toString()} sub={`${data.live.completedToday} completed`} />
 				<StatCard icon={Users} label="Repeat Rate" value={`${data.live.repeatRate}%`} />
 				<StatCard
 					icon={TrendingUp}
 					label="Avg Ticket"
-					value={`₹${data.live.avgTicket.toLocaleString()}`}
-					sub={`GST: ₹${data.live.gstCollected.toLocaleString()}`}
+					value={formatCurrency(data.live.avgTicket, currency)}
+					sub={`GST: ${formatCurrency(data.live.gstCollected, currency)}`}
 				/>
 			</div>
 
@@ -133,7 +137,7 @@ export default function Analytics() {
 							<div key={i} className="flex items-center justify-between text-xs">
 								<span className="truncate flex-1">{c.name}</span>
 								<span className="text-muted-foreground mx-2">{c.orders} orders</span>
-								<span className="font-medium">₹{c.total.toLocaleString()}</span>
+								<span className="font-medium">{formatCurrency(c.total, currency)}</span>
 							</div>
 						))}
 						{data.topCustomers.length === 0 && <p className="text-xs text-muted-foreground">No data yet</p>}

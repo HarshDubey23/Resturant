@@ -2,6 +2,7 @@
 
 import { type UIEvent, useEffect, useState } from "react";
 import { useAdmin } from "#components/context/useContext";
+import { formatCurrency } from "#utils/helper/currency";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +18,8 @@ const states: Record<string, { label: string; variant: "secondary" | "destructiv
 };
 
 export default function OrderHistory({ onScroll }: OrderHistoryProps) {
-	const { orderHistory = [] } = useAdmin();
+	const { profile, orderHistory = [] } = useAdmin();
+	const currency = profile?.currency || "INR";
 	const [activeCardID, setActiveCardID] = useState<string>();
 
 	useEffect(() => {
@@ -55,7 +57,7 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 								<p className="text-xs text-muted-foreground mt-1">
 									{data?.customer?.fname ?? "Guest"} {data?.customer?.lname ?? ""}
 								</p>
-								{data?.orderTotal != null && <p className="text-xs font-semibold mt-1">₹{data.orderTotal}</p>}
+								{data?.orderTotal != null && <p className="text-xs font-semibold mt-1">{formatCurrency(data.orderTotal, currency)}</p>}
 							</button>
 						);
 					})
@@ -109,7 +111,7 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 											<span className="text-muted-foreground">
 												{item.name} × {item.quantity}
 											</span>
-											<span className="font-medium">₹{item.price * item.quantity}</span>
+											<span className="font-medium">{formatCurrency(item.price * item.quantity, currency)}</span>
 										</div>
 									))}
 								</div>
@@ -120,15 +122,15 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 							<div className="space-y-1 text-sm">
 								<div className="flex justify-between">
 									<span className="text-muted-foreground">Subtotal</span>
-									<span>₹{activeData.orderTotal}</span>
+									<span>{formatCurrency(activeData.orderTotal, currency)}</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-muted-foreground">Tax</span>
-									<span>₹{activeData.taxTotal}</span>
+									<span>{formatCurrency(activeData.taxTotal, currency)}</span>
 								</div>
 								<div className="flex justify-between font-semibold pt-1">
 									<span>Total</span>
-									<span>₹{(activeData.orderTotal ?? 0) + (activeData.taxTotal ?? 0)}</span>
+									<span>{formatCurrency((activeData.orderTotal ?? 0) + (activeData.taxTotal ?? 0), currency)}</span>
 								</div>
 							</div>
 						</CardContent>

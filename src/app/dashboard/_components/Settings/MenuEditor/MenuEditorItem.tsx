@@ -2,7 +2,9 @@
 
 import { Eye, EyeOff, ImageIcon, PencilLine } from "lucide-react";
 import { useInView } from "react-intersection-observer";
+import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
+import { formatCurrency } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,8 @@ const VEG_STYLES: Record<string, { label: string; className: string }> = {
 
 export default function MenuEditorItem({ item, onEdit, onHide, hideSettingsLoading = false }: MenuEditorItemProps) {
 	const [itemRef, inView] = useInView({ threshold: 0 });
+	const { profile } = useAdmin();
+	const currency = profile?.currency || "INR";
 
 	return (
 		<div ref={itemRef} className={cn("flex items-center gap-3 rounded-lg border bg-card p-3", !inView && "min-h-[72px]")}>
@@ -47,7 +51,7 @@ export default function MenuEditorItem({ item, onEdit, onHide, hideSettingsLoadi
 					<div className="flex-1 min-w-0">
 						<p className="text-sm font-medium truncate">{item.name}</p>
 						<p className="text-xs text-muted-foreground truncate">{item.description}</p>
-						<p className="text-xs font-semibold mt-0.5">₹{item.price}</p>
+						<p className="text-xs font-semibold mt-0.5">{formatCurrency(item.price, currency)}</p>
 					</div>
 					<div className="flex items-center gap-1 shrink-0">
 						<Button

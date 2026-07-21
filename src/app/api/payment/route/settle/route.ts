@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 			accountNumber: process.env.RAZORPAY_ACCOUNT_NUMBER ?? "",
 			fundAccountId,
 			amount: Math.round(amount * 100),
-			currency: "INR",
+			currency: (profile?.currency as string) || "INR",
 			mode: "UPI",
 			purpose: "payout",
 			referenceId: `settle_${orderId}`,

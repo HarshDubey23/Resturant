@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import type { TMenu } from "#utils/database/models/menu";
+import { formatCurrency } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -110,7 +111,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 				</div>
 
 				<div className="flex items-center justify-between mt-2">
-					<span className="text-sm font-semibold text-foreground">₹{item.price}</span>
+					<span className="text-sm font-semibold text-foreground">{formatCurrency(item.price)}</span>
 
 					{!restrictOrder && (
 						<div className="flex items-center gap-1">
