@@ -30,7 +30,7 @@ interface ReviewSummary {
 
 function StarRow({ value, className = "h-4 w-4" }: { value: number; className?: string }) {
 	return (
-		<div className="flex gap-0.5" aria-label={`${value} out of 5 stars`}>
+		<div className="flex gap-0.5" role="img" aria-label={`${value} out of 5 stars`}>
 			{[1, 2, 3, 4, 5].map((star) => (
 				<Star key={star} className={`${className} ${star <= Math.round(value) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
 			))}
