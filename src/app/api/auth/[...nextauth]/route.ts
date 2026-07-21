@@ -9,11 +9,17 @@ export const runtime = "nodejs";
 const handler = NextAuth(authOptions);
 
 async function wrappedHandler(req: Request, ctx: { params: Promise<{ nextauth: string[] }> }) {
-	const ip = req.headers.get("x-forwarded-for") ?? "unknown";
-	const rateLimitResponse = req.method === "POST" ? await rateLimitMiddleware(`auth:${ip}`, 10, 60000) : null;
-	if (rateLimitResponse) return rateLimitResponse;
+	try {
+		const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+		const rateLimitResponse = req.method === "POST" ? await rateLimitMiddleware(`auth:${ip}`, 10, 60000) : null;
+		if (rateLimitResponse) return rateLimitResponse;
 
-	return handler(req, ctx);
+		return await handler(req, ctx);
+	} catch (e) {
+		console.error("Auth route error:", e);
+		return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+	}
 }
 
-export { wrappedHandler as GET, wrappedHandler as POST };
+export const GET = wrappedHandler;
+export const POST = wrappedHandler;

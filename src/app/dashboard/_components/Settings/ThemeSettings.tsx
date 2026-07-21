@@ -18,6 +18,18 @@ const PRESET_COLORS = [
 	{ name: "Slate", value: "#64748b" },
 ];
 
+function hslToHex(h: number, s: number, l: number): string {
+	s /= 100;
+	l /= 100;
+	const a = s * Math.min(l, 1 - l);
+	const f = (n: number) => {
+		const k = (n + h / 30) % 12;
+		const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+		return Math.round(255 * color).toString(16).padStart(2, "0");
+	};
+	return `#${f(0)}${f(8)}${f(4)}`;
+}
+
 function hexToHsl(hex: string): { h: number; s: number; l: number } {
 	const r = parseInt(hex.slice(1, 3), 16) / 255;
 	const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -48,14 +60,32 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } {
 
 export default function ThemeSettings() {
 	const { profile, profileMutate } = useAdmin();
-	const [themeColor, setThemeColor] = useState<string>((profile?.themeColor as unknown as string) ?? PRESET_COLORS[0].value);
+	const initialColor = (() => {
+		const c = profile?.themeColor;
+		if (!c) return PRESET_COLORS[0].value;
+		if (typeof c === "object") {
+			const hsl = c as { h: number; s: number; l: number };
+			return hslToHex(hsl.h, hsl.s, hsl.l);
+		}
+		return c as string;
+	})();
+	const [themeColor, setThemeColor] = useState<string>(initialColor);
 	const [loading, setLoading] = useState(false);
 	const [_customColor, setCustomColor] = useState("");
 
-	const hasChanged = themeColor !== (profile?.themeColor as unknown as string);
+	const currentColorStr = (() => {
+		const c = profile?.themeColor;
+		if (!c) return PRESET_COLORS[0].value;
+		if (typeof c === "object") {
+			const hsl = c as { h: number; s: number; l: number };
+			return hslToHex(hsl.h, hsl.s, hsl.l);
+		}
+		return c as string;
+	})();
+	const hasChanged = themeColor !== currentColorStr;
 
 	const onClear = () => {
-		if (profile?.themeColor) setThemeColor(profile.themeColor as unknown as string);
+		setThemeColor(currentColorStr);
 		setCustomColor("");
 	};
 

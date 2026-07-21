@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"play": "next dev",
-		"dev": "PORT=3050 next dev",
+		"dev": "next dev -p 3050",
 		"build:dev": "next build",
 		"dev:doppler": "doppler run --command=\"PORT=3050 next dev\"",
 		"build:doppler": "doppler run --command=\"next build\"",

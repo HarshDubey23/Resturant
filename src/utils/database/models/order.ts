@@ -19,7 +19,7 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 		taxTotal: { type: Number },
 		refundedAmount: { type: Number, default: 0 },
 		n8nEventId: { type: String, index: true },
-		invoiceNumber: { type: String, index: true },
+		invoiceNumber: { type: String },
 		cartSnapshot: {
 			items: [
 				{

@@ -50,13 +50,16 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 	const isRejectActive = reject && setReject;
 
 	return (
-		<button
+		<div
 			onClick={() => {
 				if (!active && !history) setReject?.({ _id: null, details: false });
 				activate(data._id.toString());
 			}}
+			role="button"
+			tabIndex={0}
+			onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); activate(data._id.toString()); } }}
 			className={cn(
-				"w-full rounded-lg border bg-card p-3 text-left transition-all text-sm",
+				"w-full rounded-lg border bg-card p-3 text-left transition-all text-sm cursor-pointer",
 				active && "ring-1 ring-primary",
 				isRejectActive && "ring-1 ring-destructive",
 				busy && "opacity-60 pointer-events-none",
@@ -130,6 +133,6 @@ export default function OrdersCard({ data, actions, history, active, reject, set
 					</div>
 				)}
 			</div>
-		</button>
+		</div>
 	);
 }

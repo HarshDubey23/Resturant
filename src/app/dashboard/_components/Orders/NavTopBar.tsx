@@ -24,6 +24,8 @@ const subNavItems: Record<string, Array<{ label: string; route: string }>> = {
 	settings: [
 		{ label: "account", route: "account" },
 		{ label: "menu", route: "menu" },
+		{ label: "tables", route: "tables" },
+		{ label: "ai keys", route: "ai-keys" },
 	],
 };
 

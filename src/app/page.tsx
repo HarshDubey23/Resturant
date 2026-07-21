@@ -1,3 +1,5 @@
+import { themeController } from "xtreme-ui";
+
 import { DashboardProvider } from "#components/context";
 import JsonLd from "#components/seo/JsonLd";
 import { getThemeColor } from "#utils/database/helper/getThemeColor";
@@ -18,15 +20,7 @@ export default async function Homepage() {
 		<DashboardProvider>
 			<script
 				dangerouslySetInnerHTML={{
-					__html: `
-            (function(){
-              var c = ${JSON.stringify(themeColor ?? "#6d28d9")};
-              var r = document.documentElement;
-              r.style.setProperty("--primary", c);
-              var h = c.match(/[\\da-f]{2}$/i) ? parseInt(c.slice(-2),16) : 128;
-              r.style.setProperty("--primary-foreground", h > 128 ? "#000" : "#fff");
-            })();
-          `,
+					__html: themeController({ color: themeColor }),
 				}}
 				suppressHydrationWarning
 			/>

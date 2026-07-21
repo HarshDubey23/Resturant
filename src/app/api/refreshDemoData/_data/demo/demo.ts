@@ -35,7 +35,7 @@ const tables = Array.from({ length: 10 }, (_, i) => ({
 	_id: new mongoose.Types.ObjectId(`${REF_DEMO}${TYPE_TABLE}${ID_SUFFIX}${(i + 1).toString().padStart(6, "0")}`),
 	restaurantID: "demo",
 	name: `T${i + 1}`,
-	username: (i + 1).toString(),
+	username: `T${i + 1}`,
 }));
 
 const demo = {
