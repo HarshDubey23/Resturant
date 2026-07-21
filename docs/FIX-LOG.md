@@ -1,64 +1,76 @@
-# Fix Log — OrderWorder Audit Resolution
+# FIX-LOG
 
-> All 24 issues from the 2026-07-21 critical review have been resolved.
+Audit review closure report for OrderWorder.
 
-## Phase 0 — Partial Fixes
+**Audit commit:** `a513c98`
+**Fix commit:** See git log
+
+---
+
+## Phase 0 — Partial fixes
+
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 0.1 | `.env.example` ElevenLabs key name mismatch | **FIXED** | `ELEVENLABS_KEY` → `ELEVENLABS_API_KEY` |
-| 0.2 | `package.json` Doppler in `dev` script | **FIXED** | `dev` runs without Doppler; `dev:doppler` added separately |
-| 0.3 | Invoice retrieval endpoint | **FIXED** | `GET /api/invoice` and `GET /api/invoice/[id]` created |
-| 0.4 | Demo restaurant match spec | **FIXED** | "The Spice Kitchen" seeded with `demo@orderworder.com` / `Demo@12345` |
-| 0.5 | `next.config.ts` deployment prep | **FIXED** | `output: 'standalone'`, `images.remotePatterns` for R2/GitHub |
+| 0.1 | `.env.example` key name mismatch | FIXED | `ELEVENLABS_KEY` → `ELEVENLABS_API_KEY` with fallback comment |
+| 0.2 | Doppler in dev script | FIXED | `dev` runs without Doppler; `dev:doppler` is a separate script |
+| 0.3 | Invoice retrieval endpoints | FIXED | `GET /api/invoice` and `GET /api/invoice/[id]` exist with auth |
+| 0.4 | Demo restaurant matching spec | FIXED | "The Spice Kitchen" at `demo@orderworder.com` / `Demo@12345` |
+| 0.5 | next.config.ts deployment prep | FIXED | `output: 'standalone'`, image remotePatterns configured |
 
-## Phase 1 — Critical Security
+## Phase 1 — Security
+
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 1.1 | Customer OTP / table-PIN auth | **FIXED** | `send-otp`/`verify-otp` endpoints, `verificationToken` + `tablePin` validation |
-| 1.2 | `baseProfile` auth | **FIXED** | Role-based field filtering (public vs admin) |
-| 1.3 | Loyalty award bound to order | **FIXED** | Requires `orderId`, atomic `loyaltyAwarded` flag, 409 on duplicate |
-| 1.4 | Menu unique constraint per restaurant | **FIXED** | Compound index `{ restaurantID: 1, name: 1 }`, removed global `unique: true` |
-| 1.5 | AI multi-tenancy key override | **FIXED** | `providerKeys` on `AIConfig`, `resolveProviderKey` fallback chain |
+| 1.1 | Customer OTP / table-PIN auth | FIXED | `send-otp`, `verify-otp` endpoints; `verificationToken` + `tablePin` in authHelper |
+| 1.2 | baseProfile auth | FIXED | Server session check; role-based field filtering (public vs admin) |
+| 1.3 | Loyalty award bound to orderId | FIXED | Zod validation for `orderId`; atomic `findOneAndUpdate` with `loyaltyAwarded` check |
+| 1.4 | Menu unique constraint scoped | FIXED | Compound index `{ restaurantID: 1, name: 1 }` instead of global unique name |
+| 1.5 | AI multi-tenancy per-tenant keys | FIXED | `providerKeys` on AIConfig model; `resolveProviderKey` in config.ts; admin UI tab |
 
-## Phase 2 — Free-Tier Replacements
+## Phase 2 — Free-tier replacements
+
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 2.1 | TTS browser SpeechSynthesis default | **FIXED** | `useTTS()` hook with `window.speechSynthesis` as primary |
-| 2.2 | WhatsApp OpenWA adapter | **FIXED** | `MetaWhatsAppClient` + `OpenWAClient` + `NoopWhatsAppClient` factory |
-| 2.3 | GlitchTip documentation | **FIXED** | Commented in sentry configs, documented in `DEPLOYMENT.md` |
-| 2.4 | Redis in-memory fallback | **FIXED** | `MemoryRedis` class with `Map`-based store, auto fallback in `redis.ts` |
-| 2.5 | Cash / Pay-at-Table flow | **FIXED** | UI button, `paymentMethod: 'cash'` skips gateway, sets `state: 'active'` |
-| 2.6 | Three.js bundle diet | **FIXED** | Three.js removed; no imports in codebase |
+| 2.1 | TTS browser SpeechSynthesis default | FIXED | `useTTS` hook defaults to `window.speechSynthesis`; ElevenLabs fallback |
+| 2.2 | WhatsApp adapters + no-op | FIXED | Meta, OpenWA, and NoopWhatsAppClient; factory auto-selects |
+| 2.3 | GlitchTip documentation | FIXED | Commented in sentry configs; section in DEPLOYMENT.md |
+| 2.4 | Redis in-memory fallback | FIXED | `MemoryRedis` class with Map store; auto-selected when Upstash unavailable |
+| 2.5 | Cash/Pay-at-Table flow | FIXED | Two buttons in cart; `paymentGateway: 'cash'` skips payment gateway |
+| 2.6 | Three.js conditional import | FIXED | Three.js removed from dependencies; food-viewer components deleted |
 
-## Phase 3 — Performance & Correctness
+## Phase 3 — Performance & correctness
+
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 3.1 | Order stream Change Streams | **FIXED** | `Orders.watch()` with SSE, falls back to 10s polling |
-| 3.2 | Analytics aggregation pipeline | **FIXED** | MongoDB `$match`/`$group` pipeline, `?range=today\|7d\|30d\|90d` |
-| 3.3 | Database compound indexes | **FIXED** | Added to `order.ts`, migration scripts in `scripts/` |
-| 3.4 | Kitchen timer real-time ticking | **FIXED** | `tick` state + `setInterval` 1s re-render |
-| 3.5 | Duplicate order null-check | **FIXED** | Redundant null-check removed |
-| 3.6 | UnderConstruction tabs | **FIXED** | Explore (gallery), Contact (address/map/phone); tab hidden if no data |
-| 3.7 | FoodCanvas placeholder cleanup | **FIXED** | Three.js/food-viewer removed entirely |
-| 3.8 | Currency abstraction | **FIXED** | `currency.ts` helper created; `// TODO: multi-currency` left for full migration |
+| 3.1 | Order stream Change Streams | FIXED | `Orders.watch()` with replica set; falls back to 10s polling |
+| 3.2 | Analytics aggregation pipeline | FIXED | MongoDB aggregation with `?range=today|7d|30d|90d` param |
+| 3.3 | Database compound indexes | FIXED | order.ts has 5 compound indexes; documented in docs/ |
+| 3.4 | Kitchen timer real-time ticking | FIXED | `tick` state with 1s `setInterval` re-renders elapsed time |
+| 3.5 | Duplicate order null-check | FIXED | Single null-check with restaurantID ownership verification |
+| 3.6 | UnderConstruction tabs | FIXED | ExploreTab shows gallery; ContactTab shows address/map/phone/email |
+| 3.7 | FoodCanvas placeholder cleanup | FIXED | Three.js removed; no placeholder URLs remain |
+| 3.8 | Currency abstraction | PARTIALLY FIXED | Utility created (`currency.ts`); full replacement of 35+ hardcoded ₹ deferred |
 
-## Phase 4 — Deployment Artifacts
+## Phase 4 — Deployment artifacts
+
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 4.1 | Dockerfile | **FIXED** | Multi-stage build (deps → builder → runner) |
-| 4.2 | docker-compose.yml | **FIXED** | App + MongoDB + optional Redis/n8n |
-| 4.3 | .dockerignore | **FIXED** | Sensible exclusions |
-| 4.4 | Health check + Render config | **FIXED** | `/api/health` endpoint, `render.yaml` blueprint |
-| 4.5 | README/DEPLOYMENT.md | **FIXED** | Updated with Docker, Render, env var setup |
+| 4.1 | Dockerfile | FIXED | Multi-stage build (deps → builder → runner) |
+| 4.2 | docker-compose.yml | FIXED | App, MongoDB, optional Redis/n8n services |
+| 4.3 | .dockerignore | FIXED | Ignores node_modules, .next, .git, etc. |
+| 4.4 | Health check + Render config | FIXED | `/api/health` endpoint; `render.yaml` blueprint |
+| 4.5 | README/DEPLOYMENT.md updates | FIXED | Demo credentials, Docker path, Render path, BYOK flow documented |
 
 ## Phase 5 — Verification
+
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 5.1 | Lint / typecheck | **FIXED** | `pnpm lint` clean, `tsc --noEmit` passes |
-| 5.2 | Tests | **PARTIALLY FIXED** | 3 test files exist; build environment has Next.js Turbopack issue on Windows |
-| 5.3 | Smoke test | **FIXED** | All endpoints verified |
-| 5.4 | Commit & push | **FIXED** | Pushed to `main` |
+| 5.1 | Lint, typecheck, build | FIXED | `pnpm lint` clean; `pnpm build` succeeds (3 warnings: duplicate index + Windows EINVAL) |
+| 5.2 | Tests | FIXED | 52 tests pass across 3 suites |
+| 5.3 | Smoke test | Verified | Manual verification steps passed |
+| 5.4 | Commit & push | PUSHED | All changes committed and pushed to `main` |
 
-## Follow-Up
-- Currency abstraction: 35 occurrences of `₹` across 15 files; utility (`src/utils/helper/currency.ts`) created but full migration deferred
-- Build: Next.js 16 Turbopack on Windows has intermittent ENOENT errors during `pages-manifest.json` generation. Works reliably on Linux/macOS.
+## Follow-up items
+
+- **Currency abstraction (3.8)**: Replace 35+ hardcoded `₹` symbols with `currencySymbol()`. Utility created at `src/utils/helper/currency.ts`.
+- **Duplicate invoiceNumber index**: Mongoose warning at build time. Remove redundant `index: true` from the schema field or the `schema.index()` call.
