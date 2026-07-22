@@ -40,3 +40,6 @@ dev*.log
 next-env.d.ts
 download/
 upload/
+
+# local skill reference files (not part of the application)
+skills/
