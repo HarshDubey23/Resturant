@@ -83,26 +83,7 @@ export default function SignupPage() {
 					</div>
 
 					<h1 className="text-3xl font-black text-foreground mb-2">Create your account</h1>
-					<p className="text-muted-foreground mb-6">Set up your restaurant in minutes. No credit card required.</p>
-
-					{/* Live Demo CTA */}
-					<a
-						href="/#login"
-						className="block mb-6 group relative overflow-hidden rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent p-4 transition-all hover:border-primary/60 hover:shadow-lg hover:shadow-primary/10">
-						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-xl shadow-md">
-								🍛
-							</div>
-							<div className="flex-1">
-								<div className="text-sm font-bold text-foreground flex items-center gap-2">
-									See it live first
-									<span className="bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded">DEMO</span>
-								</div>
-								<div className="text-[11px] text-muted-foreground">One-click login to The Spice Route — fully loaded demo</div>
-							</div>
-							<ArrowRight className="h-4 w-4 text-primary group-hover:translate-x-1 transition-transform" />
-						</div>
-					</a>
+					<p className="text-muted-foreground mb-8">Set up your restaurant in minutes. No credit card required.</p>
 
 					<form onSubmit={handleSubmit} className="space-y-5">
 						<div>
