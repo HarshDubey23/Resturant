@@ -54,6 +54,18 @@ const nextConfig: NextConfig = {
                                 protocol: "https",
                                 hostname: "images.unsplash.com",
                         },
+                        {
+                                protocol: "https",
+                                hostname: "upload.wikimedia.org",
+                        },
+                        {
+                                protocol: "https",
+                                hostname: "images.pexels.com",
+                        },
+                        {
+                                protocol: "https",
+                                hostname: "**.themealdb.com",
+                        },
                 ],
                 // Image optimization enabled: automatic WebP/AVIF conversion, responsive
                 // srcsets and lazy loading for menu photography on mobile networks.

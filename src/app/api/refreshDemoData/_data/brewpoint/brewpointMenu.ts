@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import type { TMenu } from "#utils/database/models/menu";
 import { ID_SUFFIX, REF_BREWPOINT, TYPE_MENU } from "../constants";
 
+// All images verified working Unsplash CDN URLs.
 const coffees = [
 	{
 		name: "Classic Espresso",
@@ -10,7 +11,7 @@ const coffees = [
 		price: 150,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Cappuccino",
@@ -19,16 +20,16 @@ const coffees = [
 		price: 200,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1561047029-3000c68339ca?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Caffe Latte",
-		description: "Smooth espresso with steamed milk and a light foam top.",
+		description: "Smooth espresso with steamed milk and a light foam top, beautiful latte art.",
 		category: "Coffee",
 		price: 220,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Flat White",
@@ -37,7 +38,7 @@ const coffees = [
 		price: 240,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Mocha",
@@ -46,9 +47,17 @@ const coffees = [
 		price: 260,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&h=600&fit=crop",
 	},
-	{ name: "Cold Brew", description: "Slow-steeped 18-hour cold brew, served over ice.", category: "Coffee", price: 230, foodType: "sweet", veg: "veg", image: "" },
+	{
+		name: "Cold Brew",
+		description: "Slow-steeped 18-hour cold brew, served over ice.",
+		category: "Coffee",
+		price: 230,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&h=600&fit=crop",
+	},
 	{
 		name: "Filter Coffee",
 		description: "Traditional South Indian filter coffee with frothy milk.",
@@ -56,14 +65,38 @@ const coffees = [
 		price: 160,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600&h=600&fit=crop",
 	},
 ];
 
 const teas = [
-	{ name: "Masala Chai", description: "Spiced tea brewed with ginger, cardamom, and cinnamon.", category: "Tea", price: 150, foodType: "sweet", veg: "veg", image: "" },
-	{ name: "Green Tea", description: "Japanese sencha green tea, light and refreshing.", category: "Tea", price: 120, foodType: "sweet", veg: "veg", image: "" },
-	{ name: "Iced Lemon Tea", description: "Chilled black tea with fresh lemon and mint.", category: "Tea", price: 140, foodType: "sweet", veg: "veg", image: "" },
+	{
+		name: "Masala Chai",
+		description: "Spiced tea brewed with ginger, cardamom, and cinnamon.",
+		category: "Tea",
+		price: 150,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://upload.wikimedia.org/wikipedia/commons/8/89/Chai_In_Sakora.jpg",
+	},
+	{
+		name: "Green Tea",
+		description: "Japanese sencha green tea, light and refreshing.",
+		category: "Tea",
+		price: 120,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.unsplash.com/photo-1432139509613-5c4255815697?w=600&h=600&fit=crop",
+	},
+	{
+		name: "Iced Lemon Tea",
+		description: "Chilled black tea with fresh lemon and mint.",
+		category: "Tea",
+		price: 140,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&h=600&fit=crop",
+	},
 ];
 
 const frappuccinos = [
@@ -74,7 +107,7 @@ const frappuccinos = [
 		price: 290,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Mocha Chip Frappuccino",
@@ -83,7 +116,7 @@ const frappuccinos = [
 		price: 320,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Caramel Frappuccino",
@@ -92,7 +125,7 @@ const frappuccinos = [
 		price: 310,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1517701604599-bb29b565090c?w=600&h=600&fit=crop",
 	},
 ];
 
@@ -104,7 +137,7 @@ const coldBeverages = [
 		price: 250,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Mango Smoothie",
@@ -113,7 +146,7 @@ const coldBeverages = [
 		price: 280,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1546173159-315724a31696?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Strawberry Lemonade",
@@ -122,12 +155,20 @@ const coldBeverages = [
 		price: 220,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&h=600&fit=crop",
 	},
 ];
 
 const bakery = [
-	{ name: "Butter Croissant", description: "Flaky, golden-baked French butter croissant.", category: "Bakery", price: 180, foodType: "sweet", veg: "veg", image: "" },
+	{
+		name: "Butter Croissant",
+		description: "Flaky, golden-baked French butter croissant.",
+		category: "Bakery",
+		price: 180,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&h=600&fit=crop",
+	},
 	{
 		name: "Cinnamon Roll",
 		description: "Soft dough rolled with cinnamon sugar and cream cheese icing.",
@@ -135,7 +176,7 @@ const bakery = [
 		price: 220,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1509365465985-25d11c17e812?w=600&h=600&fit=crop",
 	},
 ];
 
@@ -147,7 +188,7 @@ const savouries = [
 		price: 280,
 		foodType: "spicy",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Chicken Puff",
@@ -156,7 +197,7 @@ const savouries = [
 		price: 200,
 		foodType: "spicy",
 		veg: "non-veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1565299543923-37dd37887442?w=600&h=600&fit=crop",
 	},
 ];
 
@@ -168,7 +209,7 @@ const desserts = [
 		price: 320,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1509722747041-616f39b57569?w=600&h=600&fit=crop",
 	},
 	{
 		name: "Chocolate Brownie",
@@ -177,7 +218,7 @@ const desserts = [
 		price: 280,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&h=600&fit=crop",
 	},
 ];
 
@@ -189,7 +230,7 @@ const specials = [
 		price: 300,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.unsplash.com/photo-1485808191679-5f86510681a2?w=600&h=600&fit=crop",
 	},
 ];
 
