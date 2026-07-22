@@ -46,9 +46,7 @@ export default function NavSideBar({ navItems, defaultTab, head, foot }: NavSide
 							onClick={() => onNavClick(item.value)}
 							className={cn(
 								"flex flex-col items-center gap-1.5 rounded-xl p-2 w-14 lg:w-16 transition-all duration-200",
-								active
-									? "bg-primary/10 text-primary shadow-sm"
-									: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+								active ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 							)}
 							title={item.label}>
 							<span className={cn("h-5 w-5 transition-colors", active && "text-primary")}>{item.icon}</span>

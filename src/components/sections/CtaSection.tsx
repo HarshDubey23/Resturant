@@ -30,7 +30,9 @@ export default function CtaSection() {
 					</p>
 					<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
 						<Link href="/signup">
-							<Button size="lg" className="gap-2 text-base h-13 px-10 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300">
+							<Button
+								size="lg"
+								className="gap-2 text-base h-13 px-10 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300">
 								Get started
 								<ArrowRight className="h-4 w-4" />
 							</Button>

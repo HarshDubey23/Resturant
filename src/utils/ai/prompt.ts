@@ -40,9 +40,19 @@ function formatMemory(memory: CustomerMemory | null): string {
 	const parts: string[] = [`Visit #${memory.visitCount}`, `Tier: ${memory.tier}`, `Points: ${memory.totalPoints}`];
 	if (memory.preferences?.spiceTolerance) parts.push(`Spice: ${sanitizePromptInput(memory.preferences.spiceTolerance, 20)}`);
 	if (memory.preferences?.allergens?.length)
-		parts.push(`Allergens: ${memory.preferences.allergens.map((a) => sanitizePromptInput(a, 40)).filter(Boolean).join(", ")}`);
+		parts.push(
+			`Allergens: ${memory.preferences.allergens
+				.map((a) => sanitizePromptInput(a, 40))
+				.filter(Boolean)
+				.join(", ")}`,
+		);
 	if (memory.preferences?.favoriteDishes?.length)
-		parts.push(`Favorites: ${memory.preferences.favoriteDishes.map((d) => sanitizePromptInput(d.name, 60)).filter(Boolean).join(", ")}`);
+		parts.push(
+			`Favorites: ${memory.preferences.favoriteDishes
+				.map((d) => sanitizePromptInput(d.name, 60))
+				.filter(Boolean)
+				.join(", ")}`,
+		);
 	if (memory.birthday) parts.push(`Birthday: ${new Date(memory.birthday).toLocaleDateString()}`);
 	if (memory.preferences?.notes) parts.push(`Notes: ${sanitizePromptInput(memory.preferences.notes)}`);
 	return parts.join(" | ");

@@ -75,7 +75,8 @@ export default function HeroSection() {
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.4, duration: 0.6 }}
 							className="mt-8 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed mx-auto lg:mx-0">
-							Restaurant QR ordering made simple. Your customers scan, browse the menu, customize with notes &amp; spice levels, pay online, and get a digital bill — all from their table.
+							Restaurant QR ordering made simple. Your customers scan, browse the menu, customize with notes &amp; spice levels, pay online, and get a
+							digital bill — all from their table.
 						</motion.p>
 
 						{/* CTA Buttons */}
@@ -85,7 +86,9 @@ export default function HeroSection() {
 							transition={{ delay: 0.5, duration: 0.6 }}
 							className="mt-10 flex flex-col sm:flex-row items-center lg:justify-start gap-4">
 							<Link href="/signup">
-								<Button size="lg" className="gap-2 text-base h-13 px-8 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300">
+								<Button
+									size="lg"
+									className="gap-2 text-base h-13 px-8 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300">
 									Start Free Trial
 									<ArrowRight className="h-4 w-4" />
 								</Button>
@@ -108,7 +111,9 @@ export default function HeroSection() {
 							className="mt-10 flex items-center gap-4 lg:justify-start justify-center">
 							<div className="flex -space-x-2">
 								{["bg-orange-200", "bg-amber-200", "bg-red-200", "bg-yellow-200"].map((color, i) => (
-									<div key={i} className={`w-8 h-8 rounded-full ${color} border-2 border-background flex items-center justify-center text-[10px] font-bold text-foreground/70`}>
+									<div
+										key={i}
+										className={`w-8 h-8 rounded-full ${color} border-2 border-background flex items-center justify-center text-[10px] font-bold text-foreground/70`}>
 										{["PS", "RV", "MJ", "AR"][i]}
 									</div>
 								))}
@@ -119,7 +124,9 @@ export default function HeroSection() {
 										<Star key={s} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
 									))}
 								</div>
-								<span className="text-muted-foreground">Loved by <strong className="text-foreground">500+</strong> restaurants</span>
+								<span className="text-muted-foreground">
+									Loved by <strong className="text-foreground">500+</strong> restaurants
+								</span>
 							</div>
 						</motion.div>
 					</motion.div>

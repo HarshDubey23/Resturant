@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { motion } from "motion/react";
 import { Camera, RotateCw } from "lucide-react";
-import { useRestaurant } from "#components/context/useContext";
+import { motion } from "motion/react";
+import Image from "next/image";
 import { useState } from "react";
+import { useRestaurant } from "#components/context/useContext";
 import PanoramicViewer from "#components/features/PanoramicViewer";
 
 export default function ExploreTab() {
@@ -14,10 +14,10 @@ export default function ExploreTab() {
 	const [selectedImage, setSelectedImage] = useState("");
 
 	// Map of panoramic images by food name
-	const panoramicMap: Record<string, string> = {
+	const _panoramicMap: Record<string, string> = {
 		"butter-chicken": "/panoramic/butter-chicken-360.png",
 		"paneer-tikka": "/panoramic/paneer-tikka-360.png",
-		"biryani": "/panoramic/biryani-360.png",
+		biryani: "/panoramic/biryani-360.png",
 		"masala-chai": "/panoramic/masala-chai-360.png",
 		"gulab-jamun": "/panoramic/gulab-jamun-360.png",
 		"rogan-josh": "/panoramic/rogan-josh-360.png",
@@ -62,7 +62,14 @@ export default function ExploreTab() {
 									setSelectedImage(url);
 									setPanoramicOpen(true);
 								}}>
-								<Image src={url} alt={`Gallery ${i + 1}`} fill className="object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" sizes="(max-width: 768px) 50vw, 33vw" />
+								<Image
+									src={url}
+									alt={`Gallery ${i + 1}`}
+									fill
+									className="object-cover group-hover:scale-105 transition-transform duration-500"
+									loading="lazy"
+									sizes="(max-width: 768px) 50vw, 33vw"
+								/>
 								<div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
 							</motion.div>
 						))}
@@ -115,11 +122,7 @@ export default function ExploreTab() {
 			</div>
 
 			{/* Panoramic Viewer Dialog */}
-			<PanoramicViewer
-				imageUrl={selectedImage}
-				open={panoramicOpen}
-				onOpenChange={setPanoramicOpen}
-			/>
+			<PanoramicViewer imageUrl={selectedImage} open={panoramicOpen} onOpenChange={setPanoramicOpen} />
 		</div>
 	);
 }

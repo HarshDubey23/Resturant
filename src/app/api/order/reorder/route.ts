@@ -22,9 +22,7 @@ export async function POST(req: Request) {
 		const { orderId } = await req.json();
 		if (!orderId) throw { status: 400, message: "orderId is required" };
 
-		const pastOrder = await Orders.findOne({ _id: orderId, restaurantID, customer, state: "complete" })
-			.populate("products.product", "name price taxPercent")
-			.lean();
+		const pastOrder = await Orders.findOne({ _id: orderId, restaurantID, customer, state: "complete" }).populate("products.product", "name price taxPercent").lean();
 		if (!pastOrder) throw { status: 404, message: "Past order not found" };
 
 		type RawOrderProduct = { product?: { _id?: string; price?: number; taxPercent?: number }; quantity: number; price: number };

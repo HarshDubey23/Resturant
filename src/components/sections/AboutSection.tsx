@@ -1,6 +1,6 @@
 "use client";
 
-import { Quote, Shield, Zap, Globe } from "lucide-react";
+import { Globe, Quote, Shield, Zap } from "lucide-react";
 import { motion } from "motion/react";
 
 const stats = [
@@ -27,7 +27,8 @@ export default function AboutSection() {
 							<span className="text-gradient"> own their digital presence</span>
 						</h2>
 						<p className="mt-6 text-lg text-muted-foreground leading-relaxed">
-							We are a team dedicated to transforming the restaurant industry by going contactless and paperless. OrderWorder bridges the gap between your customers and your kitchen — efficiently, affordably, and without intermediaries.
+							We are a team dedicated to transforming the restaurant industry by going contactless and paperless. OrderWorder bridges the gap between your
+							customers and your kitchen — efficiently, affordably, and without intermediaries.
 						</p>
 
 						<div className="mt-10 grid grid-cols-3 gap-6">
@@ -56,7 +57,8 @@ export default function AboutSection() {
 							<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary rounded-t-3xl" />
 							<Quote className="h-10 w-10 text-primary/30 mb-6" />
 							<blockquote className="text-xl sm:text-2xl text-foreground leading-relaxed font-medium">
-								&ldquo;OrderWorder eliminated the friction between our customers and the kitchen. Setup took minutes, and our staff adapted immediately.&rdquo;
+								&ldquo;OrderWorder eliminated the friction between our customers and the kitchen. Setup took minutes, and our staff adapted
+								immediately.&rdquo;
 							</blockquote>
 							<div className="mt-8 flex items-center gap-4">
 								<div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-sm font-bold text-white shadow-sm">

@@ -63,9 +63,7 @@ export default function TestimonialsSection() {
 					<h2 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground">
 						Loved by <span className="text-gradient">restaurant owners</span>
 					</h2>
-					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-						See what restaurant owners and chefs say about OrderWorder.
-					</p>
+					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">See what restaurant owners and chefs say about OrderWorder.</p>
 				</motion.div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -78,7 +76,9 @@ export default function TestimonialsSection() {
 							transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
 							className="group relative rounded-2xl border bg-card/80 backdrop-blur-sm p-7 card-hover overflow-hidden">
 							{/* Gradient top bar */}
-							<div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${testimonial.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
+							<div
+								className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${testimonial.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+							/>
 
 							{/* Quote icon */}
 							<div className="mb-4">
@@ -95,7 +95,8 @@ export default function TestimonialsSection() {
 							<p className="text-sm text-foreground leading-relaxed mb-6">&ldquo;{testimonial.quote}&rdquo;</p>
 
 							<div className="flex items-center gap-3 pt-4 border-t border-border/50">
-								<div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-sm font-bold text-white shadow-sm`}>
+								<div
+									className={`h-11 w-11 rounded-xl bg-gradient-to-br ${testimonial.gradient} flex items-center justify-center text-sm font-bold text-white shadow-sm`}>
 									{testimonial.initials}
 								</div>
 								<div>

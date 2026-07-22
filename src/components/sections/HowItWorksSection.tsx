@@ -1,6 +1,6 @@
 "use client";
 
-import { CookingPot, CreditCard, QrCode, ScanLine, Utensils, ChevronRight } from "lucide-react";
+import { ChevronRight, CookingPot, CreditCard, QrCode, ScanLine, Utensils } from "lucide-react";
 import { motion } from "motion/react";
 
 const steps = [
@@ -54,9 +54,7 @@ export default function HowItWorksSection() {
 					<h2 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground">
 						How it <span className="text-gradient">works</span>
 					</h2>
-					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-						From restaurant registration to food served — in 5 simple steps.
-					</p>
+					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">From restaurant registration to food served — in 5 simple steps.</p>
 				</motion.div>
 
 				<div className="relative">
@@ -77,13 +75,13 @@ export default function HowItWorksSection() {
 									transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
 									className="relative flex flex-col items-center text-center group">
 									{/* Step number */}
-									<div className="absolute -top-3 right-1/2 translate-x-8 text-6xl font-black text-primary/5 select-none">
-										{step.number}
-									</div>
+									<div className="absolute -top-3 right-1/2 translate-x-8 text-6xl font-black text-primary/5 select-none">{step.number}</div>
 
 									{/* Icon */}
 									<div className="relative z-10 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-primary/20 bg-card shadow-lg mb-6 group-hover:shadow-xl group-hover:border-primary/40 transition-all duration-300">
-										<div className={`absolute inset-1 rounded-xl bg-gradient-to-br ${step.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
+										<div
+											className={`absolute inset-1 rounded-xl bg-gradient-to-br ${step.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
+										/>
 										<Icon className="h-8 w-8 text-primary relative z-10" />
 									</div>
 

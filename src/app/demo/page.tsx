@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, QrCode, UtensilsCrossed, CreditCard, BarChart3, Sparkles, RotateCw, Star, Users, Clock, Shield } from "lucide-react";
+import { ArrowRight, BarChart3, Clock, CreditCard, QrCode, RotateCw, Shield, Sparkles, Star, Users, UtensilsCrossed } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,28 +10,32 @@ const demoSteps = [
 	{
 		icon: QrCode,
 		title: "Scan the QR Code",
-		description: "Each table gets a unique QR code. Customers simply point their phone camera to scan — no app download required. The menu opens instantly in their browser with a beautiful, intuitive interface.",
+		description:
+			"Each table gets a unique QR code. Customers simply point their phone camera to scan — no app download required. The menu opens instantly in their browser with a beautiful, intuitive interface.",
 		color: "text-orange-500",
 		bg: "bg-orange-500/10",
 	},
 	{
 		icon: UtensilsCrossed,
 		title: "Browse & Customize Menu",
-		description: "Explore the full menu with gorgeous food photography. Every dish features 360° panoramic images that you can rotate and zoom. Customize spice levels, add special notes, and see real-time pricing.",
+		description:
+			"Explore the full menu with gorgeous food photography. Every dish features 360° panoramic images that you can rotate and zoom. Customize spice levels, add special notes, and see real-time pricing.",
 		color: "text-red-500",
 		bg: "bg-red-500/10",
 	},
 	{
 		icon: CreditCard,
 		title: "Place Order & Pay",
-		description: "Add items to cart with one tap. Review your order, apply coupons, and pay securely via Razorpay or Stripe. Support for UPI, cards, wallets, and split payments with friends.",
+		description:
+			"Add items to cart with one tap. Review your order, apply coupons, and pay securely via Razorpay or Stripe. Support for UPI, cards, wallets, and split payments with friends.",
 		color: "text-green-500",
 		bg: "bg-green-500/10",
 	},
 	{
 		icon: BarChart3,
 		title: "Track & Enjoy",
-		description: "Watch your order status in real-time as the kitchen accepts, prepares, and serves your food. Get notified when it's ready. Leave a review and earn loyalty points for your next visit.",
+		description:
+			"Watch your order status in real-time as the kitchen accepts, prepares, and serves your food. Get notified when it's ready. Leave a review and earn loyalty points for your next visit.",
 		color: "text-blue-500",
 		bg: "bg-blue-500/10",
 	},
@@ -68,21 +72,19 @@ export default function DemoPage() {
 				<div className="absolute top-20 left-1/4 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px]" />
 
 				<div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-					<motion.div
-						initial={{ opacity: 0, y: 30 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.6 }}
-						className="text-center">
+					<motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center">
 						<div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-5 py-2 text-sm text-muted-foreground mb-8 shadow-sm">
 							<Sparkles className="h-4 w-4 text-primary" />
 							Interactive Demo Guide
 						</div>
 						<h1 className="text-5xl sm:text-6xl md:text-7xl font-black tracking-tight text-foreground leading-[1.1]">
 							Experience <span className="text-gradient">OrderWorder</span>
-							<br />in Action
+							<br />
+							in Action
 						</h1>
 						<p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-							Explore every feature with our interactive demo. See how 360° panoramic food images, AI-powered recommendations, and seamless ordering come together to create the ultimate dining experience.
+							Explore every feature with our interactive demo. See how 360° panoramic food images, AI-powered recommendations, and seamless ordering come
+							together to create the ultimate dining experience.
 						</p>
 
 						<div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -131,11 +133,7 @@ export default function DemoPage() {
 			{/* How it Works */}
 			<section className="py-24">
 				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-					<motion.div
-						initial={{ opacity: 0, y: 30 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						className="text-center mb-16">
+					<motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
 						<h2 className="text-4xl sm:text-5xl font-black tracking-tight">
 							How the <span className="text-gradient">Demo</span> Works
 						</h2>
@@ -172,11 +170,7 @@ export default function DemoPage() {
 			{/* 360° Panoramic Food Gallery */}
 			<section className="py-24 bg-muted/30">
 				<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-					<motion.div
-						initial={{ opacity: 0, y: 30 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						className="text-center mb-16">
+					<motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-16">
 						<div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-5 py-2 text-sm text-muted-foreground mb-6 shadow-sm">
 							<RotateCw className="h-4 w-4 text-primary" />
 							360° Panoramic View
@@ -230,10 +224,7 @@ export default function DemoPage() {
 			{/* CTA */}
 			<section className="py-24">
 				<div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-					<motion.div
-						initial={{ opacity: 0, y: 30 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}>
+					<motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
 						<h2 className="text-4xl sm:text-5xl font-black tracking-tight">
 							Ready to try it <span className="text-gradient">live</span>?
 						</h2>

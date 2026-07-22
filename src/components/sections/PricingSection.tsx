@@ -63,9 +63,7 @@ export default function PricingSection() {
 					<h2 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground">
 						Simple, <span className="text-gradient">transparent</span> pricing
 					</h2>
-					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-						Start free. No credit card required. Upgrade when you grow.
-					</p>
+					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">Start free. No credit card required. Upgrade when you grow.</p>
 				</motion.div>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
@@ -78,9 +76,7 @@ export default function PricingSection() {
 							transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
 							className={`relative rounded-2xl border bg-card/80 backdrop-blur-sm overflow-hidden ${plan.popular ? "border-primary shadow-xl shadow-primary/10 scale-[1.03] z-10" : "card-hover"}`}>
 							{/* Popular badge */}
-							{plan.popular && (
-								<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
-							)}
+							{plan.popular && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-accent to-secondary" />}
 							{plan.popular && (
 								<div className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
 									<Sparkles className="h-3 w-3" />

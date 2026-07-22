@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useState, useCallback, useEffect } from "react";
-import { MotionStyle, PanInfo, motion } from "motion/react";
-import { X, RotateCw, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RotateCw, ZoomIn, ZoomOut } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface PanoramicViewerProps {
 	imageUrl: string;
@@ -43,13 +42,16 @@ export default function PanoramicViewer({ imageUrl, itemName, description, price
 		if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 	}, []);
 
-	const handleDragMove = useCallback((e: React.PointerEvent) => {
-		if (!isDragging) return;
-		const delta = e.clientX - lastX.current;
-		velocity.current = delta * 0.5;
-		setRotation((prev) => prev + delta * 0.3);
-		lastX.current = e.clientX;
-	}, [isDragging]);
+	const handleDragMove = useCallback(
+		(e: React.PointerEvent) => {
+			if (!isDragging) return;
+			const delta = e.clientX - lastX.current;
+			velocity.current = delta * 0.5;
+			setRotation((prev) => prev + delta * 0.3);
+			lastX.current = e.clientX;
+		},
+		[isDragging],
+	);
 
 	const handleDragEnd = useCallback(() => {
 		setIsDragging(false);
@@ -107,14 +109,8 @@ export default function PanoramicViewer({ imageUrl, itemName, description, price
 									transition: isDragging ? "none" : "transform 0.05s linear",
 								}}>
 								{/* Duplicate image for seamless wrapping */}
-								<div
-									className="absolute inset-0 w-1/2 h-full bg-cover bg-center"
-									style={{ backgroundImage: `url(${imageUrl})` }}
-								/>
-								<div
-									className="absolute left-1/2 inset-0 w-1/2 h-full bg-cover bg-center"
-									style={{ backgroundImage: `url(${imageUrl})` }}
-								/>
+								<div className="absolute inset-0 w-1/2 h-full bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
+								<div className="absolute left-1/2 inset-0 w-1/2 h-full bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
 							</div>
 						</div>
 
@@ -126,18 +122,10 @@ export default function PanoramicViewer({ imageUrl, itemName, description, price
 
 						{/* Zoom controls */}
 						<div className="absolute top-4 right-4 flex flex-col gap-2">
-							<Button
-								variant="outline"
-								size="icon"
-								className="h-9 w-9 rounded-xl glass"
-								onClick={() => setZoom((z) => Math.min(z + 0.3, 3))}>
+							<Button variant="outline" size="icon" className="h-9 w-9 rounded-xl glass" onClick={() => setZoom((z) => Math.min(z + 0.3, 3))}>
 								<ZoomIn className="h-4 w-4" />
 							</Button>
-							<Button
-								variant="outline"
-								size="icon"
-								className="h-9 w-9 rounded-xl glass"
-								onClick={() => setZoom((z) => Math.max(z - 0.3, 0.5))}>
+							<Button variant="outline" size="icon" className="h-9 w-9 rounded-xl glass" onClick={() => setZoom((z) => Math.max(z - 0.3, 0.5))}>
 								<ZoomOut className="h-4 w-4" />
 							</Button>
 						</div>
@@ -151,7 +139,8 @@ export default function PanoramicViewer({ imageUrl, itemName, description, price
 									<div className="flex items-center gap-3 mb-1">
 										<h3 className="text-xl font-bold text-foreground">{itemName}</h3>
 										{veg && (
-											<span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${veg === "veg" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+											<span
+												className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${veg === "veg" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
 												{vegLabel}
 											</span>
 										)}

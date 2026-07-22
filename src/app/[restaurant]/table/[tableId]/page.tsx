@@ -111,9 +111,7 @@ export default function TableMenuPage() {
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.message || "Invalid coupon");
 			setCouponDiscount(data.discount);
-			toast.success(
-				`Coupon applied! ${data.discountType === "percentage" ? `${data.discountValue}% off` : `${formatCurrency(data.discountValue, currency)} off`}`,
-			);
+			toast.success(`Coupon applied! ${data.discountType === "percentage" ? `${data.discountValue}% off` : `${formatCurrency(data.discountValue, currency)} off`}`);
 		} catch (err) {
 			setCouponDiscount(0);
 			toast.error(err instanceof Error ? err.message : "Invalid coupon code");

@@ -40,10 +40,7 @@ async function checkDailyBudget(restaurantID: string): Promise<{ allowed: boolea
 
 async function recordDailyUsage(restaurantID: string, tokens: number, cost: number): Promise<void> {
 	try {
-		await AIConfig.findOneAndUpdate(
-			{ restaurantID },
-			{ $inc: { "dailyBudget.tokensUsed": tokens, "dailyBudget.costUsed": cost } },
-		);
+		await AIConfig.findOneAndUpdate({ restaurantID }, { $inc: { "dailyBudget.tokensUsed": tokens, "dailyBudget.costUsed": cost } });
 	} catch {}
 }
 

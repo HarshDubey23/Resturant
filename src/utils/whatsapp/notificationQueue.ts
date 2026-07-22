@@ -1,6 +1,6 @@
 import connectDB from "#utils/database/connect";
 import { NotificationQueue, type TNotificationQueue } from "#utils/database/models/notificationQueue";
-import { sendWhatsAppText, sendWhatsAppMessage, type WhatsAppTemplate } from "./index";
+import { sendWhatsAppMessage, sendWhatsAppText, type WhatsAppTemplate } from "./index";
 
 const BATCH_SIZE = 10;
 
@@ -55,10 +55,7 @@ export async function processNotificationQueue(restaurantID?: string): Promise<n
 		} catch (err) {
 			const errorMessage = err instanceof Error ? err.message : "Unknown error";
 			const willRetry = (claimed.attempts || 0) < 3;
-			await NotificationQueue.updateOne(
-				{ _id: claimed._id },
-				{ $set: { status: willRetry ? "pending" : "failed", lastError: errorMessage } },
-			);
+			await NotificationQueue.updateOne({ _id: claimed._id }, { $set: { status: willRetry ? "pending" : "failed", lastError: errorMessage } });
 		}
 	}
 

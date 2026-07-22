@@ -15,9 +15,7 @@ export default function NotFound() {
 			<div>
 				<h1 className="text-5xl font-black tracking-tight text-foreground mb-3">404</h1>
 				<p className="text-xl font-semibold text-foreground mb-2">Page not found</p>
-				<p className="max-w-md text-muted-foreground">
-					This restaurant hasn&apos;t joined OrderWorder yet, or the link you followed may be wrong.
-				</p>
+				<p className="max-w-md text-muted-foreground">This restaurant hasn&apos;t joined OrderWorder yet, or the link you followed may be wrong.</p>
 			</div>
 			<Link
 				href="/"

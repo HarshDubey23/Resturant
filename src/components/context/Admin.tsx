@@ -123,10 +123,10 @@ export const AdminProvider = ({ children }: TAdminProviderProps) => {
 			setOrderActionLoading(true);
 			try {
 				const req = await fetch("/api/admin/order/action", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ orderID, action }),
-			});
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ orderID, action }),
+				});
 				const res = await req.json();
 				if (!req.ok) toast.error(res?.message);
 				await mutate();

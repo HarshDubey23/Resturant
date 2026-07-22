@@ -1,7 +1,7 @@
 "use client";
 
+import { MessageSquare, Star } from "lucide-react";
 import { motion } from "motion/react";
-import { Star, TrendingUp, MessageSquare } from "lucide-react";
 import useSWR from "swr";
 
 import { useRestaurant } from "#components/context/useContext";
@@ -136,9 +136,19 @@ export default function ReviewsTab() {
 								{fb.review && <p className="text-sm text-muted-foreground leading-relaxed">{fb.review}</p>}
 								{(fb.foodQuality || fb.serviceSpeed || fb.taste) && (
 									<div className="flex flex-wrap gap-2 pt-1">
-										{fb.foodQuality ? <span className="text-[11px] px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600 font-medium">Food {fb.foodQuality}/5</span> : null}
-										{fb.serviceSpeed ? <span className="text-[11px] px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 font-medium">Service {fb.serviceSpeed}/5</span> : null}
-										{fb.taste ? <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-medium">Taste {fb.taste}/5</span> : null}
+										{fb.foodQuality ? (
+											<span className="text-[11px] px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600 font-medium">
+												Food {fb.foodQuality}/5
+											</span>
+										) : null}
+										{fb.serviceSpeed ? (
+											<span className="text-[11px] px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 font-medium">
+												Service {fb.serviceSpeed}/5
+											</span>
+										) : null}
+										{fb.taste ? (
+											<span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-medium">Taste {fb.taste}/5</span>
+										) : null}
 									</div>
 								)}
 							</motion.div>

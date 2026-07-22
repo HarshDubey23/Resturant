@@ -13,11 +13,7 @@ async function checkTtsDailyBudget(restaurantID: string, textLength: number): Pr
 	try {
 		await connectDB();
 		const now = new Date();
-		const config = await AIConfig.findOneAndUpdate(
-			{ restaurantID },
-			{ $inc: { dailyTtsChars: textLength } },
-			{ new: true, upsert: true },
-		);
+		const config = await AIConfig.findOneAndUpdate({ restaurantID }, { $inc: { dailyTtsChars: textLength } }, { new: true, upsert: true });
 		const lastReset = config?.lastTtsReset ?? new Date(0);
 		if (now.getTime() - lastReset.getTime() > 24 * 60 * 60 * 1000) {
 			await AIConfig.updateOne({ restaurantID }, { $set: { dailyTtsChars: textLength, lastTtsReset: now } });

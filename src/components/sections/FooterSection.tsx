@@ -66,9 +66,7 @@ export default function FooterSection() {
 				</div>
 
 				<div className="mt-12 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-					<div className="text-sm text-muted-foreground">
-						&copy; {new Date().getFullYear()} OrderWorder, Inc. All rights reserved.
-					</div>
+					<div className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} OrderWorder, Inc. All rights reserved.</div>
 					<div className="flex items-center gap-1 text-sm text-muted-foreground">
 						Made with <Heart className="h-3.5 w-3.5 text-red-500 fill-red-500" /> for restaurants
 					</div>

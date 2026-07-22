@@ -116,13 +116,7 @@ export default function MenuEditor() {
 				</div>
 			</div>
 
-			<MenuItemEditModal
-				item={editItem}
-				categories={profile?.categories ?? []}
-				open={modalOpen}
-				onOpenChange={setModalOpen}
-				onSaved={profileMutate}
-			/>
+			<MenuItemEditModal item={editItem} categories={profile?.categories ?? []} open={modalOpen} onOpenChange={setModalOpen} onSaved={profileMutate} />
 		</div>
 	);
 }

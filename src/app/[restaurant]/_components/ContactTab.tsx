@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Phone, Mail, Clock, Navigation } from "lucide-react";
+import { Mail, MapPin, Navigation, Phone } from "lucide-react";
 import { motion } from "motion/react";
 import { useRestaurant } from "#components/context/useContext";
 
@@ -20,7 +20,7 @@ export default function ContactTab() {
 		{ icon: MapPin, label: "Address", value: profile.address, color: "text-orange-500", bg: "bg-orange-500/10" },
 		{ icon: Phone, label: "Phone", value: profile.phone, color: "text-green-500", bg: "bg-green-500/10" },
 		{ icon: Mail, label: "Email", value: profile.email, color: "text-blue-500", bg: "bg-blue-500/10" },
-	].filter(item => item.value);
+	].filter((item) => item.value);
 
 	return (
 		<div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">

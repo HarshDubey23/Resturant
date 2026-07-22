@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import Image from "next/image";
-import Link from "next/link";
+import { useState } from "react";
 
 export default function SignupPage() {
 	const [form, setForm] = useState({ email: "", password: "", restaurantName: "", restaurantID: "" });
@@ -44,28 +43,16 @@ export default function SignupPage() {
 			{/* Left side - Visual */}
 			<div className="hidden lg:flex lg:w-1/2 relative bg-mesh">
 				<div className="absolute inset-0 flex flex-col items-center justify-center p-12">
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.6 }}
-						className="text-center max-w-md">
+					<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center max-w-md">
 						<div className="relative w-full max-w-sm mx-auto mb-10">
 							<div className="aspect-square rounded-3xl overflow-hidden shadow-2xl glow-primary">
-								<Image
-									src="/food-images/hero-restaurant.png"
-									alt="Restaurant dining experience"
-									fill
-									className="object-cover"
-									priority
-								/>
+								<Image src="/food-images/hero-restaurant.png" alt="Restaurant dining experience" fill className="object-cover" priority />
 							</div>
 						</div>
 						<h2 className="text-3xl font-black text-foreground mb-3">
 							Join the <span className="text-gradient">revolution</span>
 						</h2>
-						<p className="text-muted-foreground leading-relaxed">
-							500+ restaurants already use OrderWorder to serve customers faster and smarter.
-						</p>
+						<p className="text-muted-foreground leading-relaxed">500+ restaurants already use OrderWorder to serve customers faster and smarter.</p>
 
 						<div className="mt-8 flex items-center justify-center gap-4">
 							{[
@@ -85,11 +72,7 @@ export default function SignupPage() {
 
 			{/* Right side - Form */}
 			<div className="flex-1 flex items-center justify-center p-6 sm:p-8">
-				<motion.div
-					initial={{ opacity: 0, x: 20 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.5, delay: 0.2 }}
-					className="w-full max-w-md">
+				<motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="w-full max-w-md">
 					<div className="flex items-center gap-2 mb-8">
 						<div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
 							<Sparkles className="h-5 w-5 text-primary" />
@@ -176,11 +159,7 @@ export default function SignupPage() {
 							<p className="text-xs text-muted-foreground mt-1.5">Lowercase letters, numbers, and hyphens only</p>
 						</div>
 
-						{error && (
-							<div className="bg-destructive/10 text-destructive text-sm p-3 rounded-xl font-medium">
-								{error}
-							</div>
-						)}
+						{error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-xl font-medium">{error}</div>}
 
 						<button
 							type="submit"

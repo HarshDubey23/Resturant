@@ -78,9 +78,7 @@ export default function FeaturesSection() {
 						<br />
 						<span className="text-gradient">run your restaurant</span>
 					</h2>
-					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">
-						One platform for contactless ordering, kitchen display, payments, and growth.
-					</p>
+					<p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto">One platform for contactless ordering, kitchen display, payments, and growth.</p>
 				</motion.div>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -95,10 +93,13 @@ export default function FeaturesSection() {
 								transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
 								className={`${feature.className} group relative overflow-hidden rounded-2xl border bg-card/80 backdrop-blur-sm p-8 card-hover`}>
 								{/* Gradient glow on hover */}
-								<div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+								<div
+									className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
+								/>
 
 								<div className="relative z-10">
-									<div className={`flex h-14 w-14 items-center justify-center rounded-2xl ${feature.iconBg} border border-white/10 mb-6 group-hover:scale-110 transition-transform duration-300`}>
+									<div
+										className={`flex h-14 w-14 items-center justify-center rounded-2xl ${feature.iconBg} border border-white/10 mb-6 group-hover:scale-110 transition-transform duration-300`}>
 										<Icon className="h-7 w-7 text-primary" />
 									</div>
 									<h3 className="text-xl font-bold text-foreground mb-3">{feature.title}</h3>
