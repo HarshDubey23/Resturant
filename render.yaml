@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: orderworder
+    env: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        value: https://orderworder.onrender.com
+      - key: DEMO_MODE
+        value: "true"
+      - key: AI_GROQ_KEY
+        sync: false
+      - key: AI_CEREBRAS_KEY
+        sync: false
+      - key: AI_GOOGLE_KEY
+        sync: false
+      - key: AI_SILICONFLOW_KEY
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true

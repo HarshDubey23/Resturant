@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build (no-env test - lazy connect)
+        run: pnpm build
+        env:
+          MONGODB_URI: "mongodb://dummy:dummy@dummy.mongodb.net/dummy?retryWrites=true&w=majority"
+          NEXTAUTH_URL: "https://dummy.local"
+          NEXTAUTH_SECRET: "dummy-secret-for-build-only-do-not-use-in-runtime"
+          NEXT_PUBLIC_SITE_URL: "https://orderworder.ritik.me"
+
+  # deploy job disabled — VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+  # secrets are not configured in the repository.
+  # deploy:
+  #   needs: lint-test-build
+  #   if: github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Deploy to Vercel
+  #       uses: amondnet/vercel-action@v25
+  #       with:
+  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #         vercel-args: "--prod"
