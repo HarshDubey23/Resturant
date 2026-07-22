@@ -35,8 +35,8 @@ export default function NavSideBar({ navItems, defaultTab, head, foot }: NavSide
 	}, [defaultTab, queryParams, tab]);
 
 	return (
-		<aside className="flex flex-col border-r bg-muted/20 w-16 lg:w-20 shrink-0">
-			<nav className={cn("flex flex-col items-center gap-1 py-3", head && "mt-auto", foot && "mt-auto")}>
+		<aside className="flex flex-col border-r bg-card/80 backdrop-blur-sm w-16 lg:w-20 shrink-0">
+			<nav className={cn("flex flex-col items-center gap-1 py-4 px-1", head && "mt-auto", foot && "mt-auto")}>
 				{navItems.map((item) => {
 					if (item.value === "signout" && session.status !== "authenticated") return null;
 					const active = tab === item.value;
@@ -45,12 +45,15 @@ export default function NavSideBar({ navItems, defaultTab, head, foot }: NavSide
 							key={item.value}
 							onClick={() => onNavClick(item.value)}
 							className={cn(
-								"flex flex-col items-center gap-1 rounded-lg p-2 w-14 lg:w-16 transition-colors",
-								active ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+								"flex flex-col items-center gap-1.5 rounded-xl p-2 w-14 lg:w-16 transition-all duration-200",
+								active
+									? "bg-primary/10 text-primary shadow-sm"
+									: "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 							)}
 							title={item.label}>
-							<span className={cn("h-5 w-5", active && "text-primary")}>{item.icon}</span>
-							<span className="text-[10px] leading-tight font-medium capitalize">{item.label}</span>
+							<span className={cn("h-5 w-5 transition-colors", active && "text-primary")}>{item.icon}</span>
+							<span className={cn("text-[10px] leading-tight font-medium capitalize", active && "text-primary font-semibold")}>{item.label}</span>
+							{active && <div className="absolute left-0 w-1 h-6 rounded-r-full bg-primary" />}
 						</button>
 					);
 				})}

@@ -9,51 +9,51 @@ import { Toaster } from "@/components/ui/sonner";
 import "./tailwind.css";
 
 function getMetadataBase(): URL {
-	try {
-		return new URL(SITE_URL);
-	} catch {
-		return new URL("http://localhost:3000");
-	}
+        try {
+                return new URL(SITE_URL);
+        } catch {
+                return new URL("http://localhost:3000");
+        }
 }
 
 export const metadata: Metadata = {
-	metadataBase: getMetadataBase(),
-	title: {
-		template: `%s | ${SITE_NAME}`,
-		default: `${SITE_NAME} — Contactless Restaurant Ordering & AI-Powered Dining`,
-	},
-	description: SITE_DESCRIPTION,
-	keywords: [...SITE_KEYWORDS],
-	openGraph: {
-		type: "website",
-		locale: "en_US",
-		siteName: SITE_NAME,
-	},
-	twitter: { card: "summary_large_image" },
-	robots: {
-		index: true,
-		follow: true,
-		"max-image-preview": "large",
-		"max-snippet": -1,
-		"max-video-preview": -1,
-	},
+        metadataBase: getMetadataBase(),
+        title: {
+                template: `%s | ${SITE_NAME}`,
+                default: `${SITE_NAME} — Contactless Restaurant Ordering & AI-Powered Dining`,
+        },
+        description: SITE_DESCRIPTION,
+        keywords: [...SITE_KEYWORDS],
+        openGraph: {
+                type: "website",
+                locale: "en_US",
+                siteName: SITE_NAME,
+        },
+        twitter: { card: "summary_large_image" },
+        robots: {
+                index: true,
+                follow: true,
+                "max-image-preview": "large",
+                "max-snippet": -1,
+                "max-video-preview": -1,
+        },
 };
 
 export default function RootLayout({ children }: IRootProps) {
-	return (
-		<html lang="en" className={`${inter.variable} ${montserrat.variable}`} suppressHydrationWarning>
-			<body>
-				<GlobalProvider>
-					{children}
-					<CsrfProvider />
-				</GlobalProvider>
-				<Toaster />
-				<PWARegister />
-			</body>
-		</html>
-	);
+        return (
+                <html lang="en" className={`${inter.variable} ${montserrat.variable}`} suppressHydrationWarning>
+                        <body className="antialiased">
+                                <GlobalProvider>
+                                        {children}
+                                        <CsrfProvider />
+                                </GlobalProvider>
+                                <Toaster />
+                                <PWARegister />
+                        </body>
+                </html>
+        );
 }
 
 interface IRootProps {
-	children?: ReactNode;
+        children?: ReactNode;
 }

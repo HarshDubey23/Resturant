@@ -1,49 +1,91 @@
 "use client";
 
-import { ArrowRight, Play } from "lucide-react";
-import { motion } from "motion/react";
+import { ArrowRight, Play, Sparkles, Star } from "lucide-react";
+import { motion, useScroll, useTransform } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 
 export default function HeroSection() {
-	return (
-		<section id="homepage" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-			<div className="absolute inset-0 bg-gradient-to-b from-orange-500/10 via-background to-background pointer-events-none" />
-			<div className="absolute top-20 left-10 w-72 h-72 bg-orange-500/20 rounded-full blur-3xl" />
-			<div className="absolute bottom-20 right-10 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl" />
+	const ref = useRef(null);
+	const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+	const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+	const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
-			<div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
-				<div className="grid lg:grid-cols-2 gap-12 items-center">
+	return (
+		<section id="homepage" ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+			{/* Animated gradient mesh background */}
+			<div className="absolute inset-0 bg-mesh" />
+			<div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] animate-float" />
+			<div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-accent/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: "3s" }} />
+			<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-secondary/5 rounded-full blur-[150px]" />
+
+			{/* Decorative floating food icons */}
+			<div className="absolute inset-0 overflow-hidden pointer-events-none">
+				{["🍕", "🍔", "🌮", "🍜", "🧁", "🥗", "🍣", "🥘"].map((emoji, i) => (
 					<motion.div
-						initial={{ opacity: 0, x: -32 }}
+						key={emoji}
+						className="absolute text-4xl opacity-10 select-none"
+						style={{ left: `${10 + i * 12}%`, top: `${15 + (i % 3) * 30}%` }}
+						animate={{ y: [0, -20, 0], rotate: [0, 10, -10, 0] }}
+						transition={{ duration: 5 + i, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}>
+						{emoji}
+					</motion.div>
+				))}
+			</div>
+
+			<motion.div style={{ y, opacity }} className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full pt-24 pb-16">
+				<div className="grid lg:grid-cols-2 gap-16 items-center">
+					<motion.div
+						initial={{ opacity: 0, x: -40 }}
 						animate={{ opacity: 1, x: 0 }}
-						transition={{ duration: 0.6, ease: "easeOut" }}
+						transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
 						className="text-center lg:text-left">
-						<div className="inline-flex items-center gap-2 rounded-full border bg-muted/50 px-4 py-1.5 text-sm text-muted-foreground mb-8">
+						{/* Badge */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.2 }}
+							className="inline-flex items-center gap-2 rounded-full border bg-card/80 backdrop-blur-sm px-5 py-2 text-sm text-muted-foreground mb-8 shadow-sm">
+							<Sparkles className="h-4 w-4 text-primary" />
+							<span className="font-medium">No app needed. Just scan &amp; order</span>
 							<span className="relative flex h-2 w-2">
 								<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
 								<span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
 							</span>
-							No app needed. Just scan & order
-						</div>
+						</motion.div>
 
-						<h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight text-foreground leading-[1.05]">
-							Scan.
+						{/* Headline */}
+						<motion.h1
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.3, duration: 0.6 }}
+							className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05]">
+							<span className="text-foreground">Scan.</span>
 							<br />
-							<span className="text-primary">Order.</span>
+							<span className="text-gradient">Order.</span>
 							<br />
-							Enjoy.
-						</h1>
+							<span className="text-foreground">Enjoy.</span>
+						</motion.h1>
 
-						<p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
-							Restaurant QR ordering made simple. Your customers scan, browse the menu, customize with notes &amp; spice levels, pay online, and get a
-							digital bill — all from their table.
-						</p>
+						{/* Subtitle */}
+						<motion.p
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.4, duration: 0.6 }}
+							className="mt-8 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed mx-auto lg:mx-0">
+							Restaurant QR ordering made simple. Your customers scan, browse the menu, customize with notes &amp; spice levels, pay online, and get a digital bill — all from their table.
+						</motion.p>
 
-						<div className="mt-8 flex flex-col sm:flex-row items-center lg:justify-start gap-4">
+						{/* CTA Buttons */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.5, duration: 0.6 }}
+							className="mt-10 flex flex-col sm:flex-row items-center lg:justify-start gap-4">
 							<Link href="/signup">
-								<Button size="lg" className="gap-2 text-base">
+								<Button size="lg" className="gap-2 text-base h-13 px-8 rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300">
 									Start Free Trial
 									<ArrowRight className="h-4 w-4" />
 								</Button>
@@ -51,70 +93,113 @@ export default function HeroSection() {
 							<Button
 								variant="outline"
 								size="lg"
-								className="gap-2 text-base"
+								className="gap-2 text-base h-13 px-8 rounded-xl border-2 hover:bg-primary/5 transition-all duration-300"
 								onClick={() => document.getElementById("features")?.scrollIntoView({ behavior: "smooth" })}>
 								<Play className="h-4 w-4" />
 								Watch Demo
 							</Button>
-						</div>
+						</motion.div>
+
+						{/* Social Proof */}
+						<motion.div
+							initial={{ opacity: 0 }}
+							animate={{ opacity: 1 }}
+							transition={{ delay: 0.8 }}
+							className="mt-10 flex items-center gap-4 lg:justify-start justify-center">
+							<div className="flex -space-x-2">
+								{["bg-orange-200", "bg-amber-200", "bg-red-200", "bg-yellow-200"].map((color, i) => (
+									<div key={i} className={`w-8 h-8 rounded-full ${color} border-2 border-background flex items-center justify-center text-[10px] font-bold text-foreground/70`}>
+										{["PS", "RV", "MJ", "AR"][i]}
+									</div>
+								))}
+							</div>
+							<div className="text-sm">
+								<div className="flex gap-0.5 mb-0.5">
+									{[1, 2, 3, 4, 5].map((s) => (
+										<Star key={s} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+									))}
+								</div>
+								<span className="text-muted-foreground">Loved by <strong className="text-foreground">500+</strong> restaurants</span>
+							</div>
+						</motion.div>
 					</motion.div>
 
+					{/* Hero Visual - Immersive food imagery */}
 					<motion.div
-						initial={{ opacity: 0, x: 32 }}
+						initial={{ opacity: 0, x: 40 }}
 						animate={{ opacity: 1, x: 0 }}
-						transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+						transition={{ duration: 0.8, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
 						className="relative lg:min-h-[600px] flex items-center justify-center">
-						<div className="relative w-full max-w-md mx-auto aspect-[4/5]">
+						{/* Main food image */}
+						<div className="relative w-full max-w-lg mx-auto">
 							<motion.div
 								animate={{ y: [0, -8, 0] }}
-								transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-								className="absolute top-0 left-0 w-56 h-72 md:w-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-orange-100 to-amber-200 border border-orange-200/50 z-10">
-								<Image
-									src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=600&auto=format&fit=crop"
-									alt="Customer enjoying a gourmet burger"
-									fill
-									sizes="(max-width: 768px) 224px, 256px"
-									className="object-cover"
-									priority
-								/>
-								<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3">
-									<p className="text-white text-xs font-medium">Order at the table, no waiting</p>
+								transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+								className="relative rounded-3xl overflow-hidden shadow-2xl glow-primary">
+								<div className="aspect-[4/5] relative">
+									<Image
+										src="/food-images/hero-restaurant.png"
+										alt="Fine dining experience at OrderWorder restaurant"
+										fill
+										sizes="(max-width: 768px) 100vw, 50vw"
+										className="object-cover"
+										priority
+									/>
+									<div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+									<div className="absolute bottom-6 left-6 right-6">
+										<div className="glass rounded-2xl p-4">
+											<div className="flex items-center gap-3">
+												<div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+													<Sparkles className="h-5 w-5 text-primary" />
+												</div>
+												<div>
+													<p className="text-sm font-semibold text-foreground">AI-Powered Ordering</p>
+													<p className="text-xs text-muted-foreground">Smart recommendations &amp; instant checkout</p>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
 							</motion.div>
+
+							{/* Floating card - QR */}
 							<motion.div
-								animate={{ y: [0, 6, 0] }}
-								transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-								className="absolute bottom-0 right-0 w-48 h-60 md:w-56 md:h-72 rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-amber-100 to-orange-200 border border-amber-200/50 z-20">
-								<Image
-									src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop"
-									alt="Freshly baked pizza served to a happy diner"
-									fill
-									sizes="(max-width: 768px) 192px, 224px"
-									className="object-cover"
-								/>
-								<div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent p-3">
-									<p className="text-white text-xs font-medium">Hot from the kitchen to you</p>
+								animate={{ y: [0, 6, 0], x: [0, 4, 0] }}
+								transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+								className="absolute -top-4 -right-4 md:-right-8 glass rounded-2xl p-3 shadow-xl z-20">
+								<div className="flex items-center gap-2">
+									<div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+										<Image src="/food-images/qr-scanning.png" alt="QR Scan" width={32} height={32} className="rounded" />
+									</div>
+									<div>
+										<p className="text-xs font-semibold">Scan to Order</p>
+										<p className="text-[10px] text-muted-foreground">No app needed</p>
+									</div>
+								</div>
+							</motion.div>
+
+							{/* Floating card - Order Status */}
+							<motion.div
+								animate={{ y: [0, -6, 0], x: [0, -3, 0] }}
+								transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+								className="absolute -bottom-4 -left-4 md:-left-8 glass rounded-2xl p-3 shadow-xl z-20">
+								<div className="flex items-center gap-2">
+									<div className="h-8 w-8 rounded-full bg-green-500/20 flex items-center justify-center">
+										<div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
+									</div>
+									<div>
+										<p className="text-xs font-semibold">Order Confirmed</p>
+										<p className="text-[10px] text-muted-foreground">Preparing your food</p>
+									</div>
 								</div>
 							</motion.div>
 						</div>
 					</motion.div>
 				</div>
+			</motion.div>
 
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
-					className="mt-20 text-center">
-					<p className="text-sm text-muted-foreground mb-6 font-medium">Trusted by 500+ restaurants</p>
-					<div className="flex flex-wrap items-center justify-center gap-8 opacity-50 grayscale">
-						{[...Array(5)].map((_, i) => (
-							<div key={i} className="h-8 w-24 rounded bg-muted flex items-center justify-center text-xs text-muted-foreground">
-								Logo {i + 1}
-							</div>
-						))}
-					</div>
-				</motion.div>
-			</div>
+			{/* Bottom fade */}
+			<div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 		</section>
 	);
 }

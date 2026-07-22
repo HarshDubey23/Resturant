@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Star } from "lucide-react";
+import { Star, TrendingUp, MessageSquare } from "lucide-react";
 import useSWR from "swr";
 
 import { useRestaurant } from "#components/context/useContext";
@@ -32,7 +32,7 @@ function StarRow({ value, className = "h-4 w-4" }: { value: number; className?: 
 	return (
 		<div className="flex gap-0.5" role="img" aria-label={`${value} out of 5 stars`}>
 			{[1, 2, 3, 4, 5].map((star) => (
-				<Star key={star} className={`${className} ${star <= Math.round(value) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"}`} />
+				<Star key={star} className={`${className} ${star <= Math.round(value) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/20"}`} />
 			))}
 		</div>
 	);
@@ -60,45 +60,55 @@ export default function ReviewsTab() {
 
 	return (
 		<div className="p-4 sm:p-6 space-y-6 max-w-3xl mx-auto">
-			<h2 className="text-xl font-semibold">Ratings & Reviews</h2>
+			<div className="flex items-center gap-2 mb-2">
+				<MessageSquare className="h-5 w-5 text-primary" />
+				<h2 className="text-xl font-bold text-foreground">Ratings & Reviews</h2>
+			</div>
 
 			{isLoading ? (
 				<div className="space-y-3">
 					{[...Array(3)].map((_, i) => (
-						<div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
+						<div key={i} className="h-28 rounded-2xl bg-muted animate-pulse" />
 					))}
 				</div>
 			) : !summary || summary.totalReviews === 0 ? (
-				<div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-					<Star className="h-12 w-12 mb-3 text-muted-foreground/30" />
-					<p className="font-medium">No reviews yet</p>
-					<p className="text-sm mt-1">Be the first to share your experience after your meal.</p>
+				<div className="flex flex-col items-center justify-center py-20 text-center">
+					<div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+						<Star className="h-8 w-8 text-muted-foreground/30" />
+					</div>
+					<p className="text-lg font-semibold text-foreground">No reviews yet</p>
+					<p className="text-sm text-muted-foreground mt-1">Be the first to share your experience after your meal.</p>
 				</div>
 			) : (
 				<>
 					{/* Summary card */}
-					<div className="flex flex-col sm:flex-row gap-6 rounded-2xl border bg-card p-5">
-						<div className="text-center sm:text-left">
-							<div className="text-5xl font-black">{summary.averageRating.toFixed(1)}</div>
+					<motion.div
+						initial={{ opacity: 0, y: 12 }}
+						animate={{ opacity: 1, y: 0 }}
+						className="flex flex-col sm:flex-row gap-8 rounded-2xl border bg-card/80 p-6 shadow-sm">
+						<div className="text-center sm:text-left shrink-0">
+							<div className="text-5xl font-black text-foreground">{summary.averageRating.toFixed(1)}</div>
 							<StarRow value={summary.averageRating} className="h-5 w-5" />
-							<p className="text-sm text-muted-foreground mt-1">{summary.totalReviews} reviews</p>
+							<p className="text-sm text-muted-foreground mt-2">{summary.totalReviews} reviews</p>
 						</div>
-						<div className="flex-1 space-y-1.5">
+						<div className="flex-1 space-y-2">
 							{distribution.map(([stars, count]) => (
-								<div key={stars} className="flex items-center gap-2 text-sm">
-									<span className="w-3 text-muted-foreground">{stars}</span>
+								<div key={stars} className="flex items-center gap-3 text-sm">
+									<span className="w-3 text-muted-foreground font-medium">{stars}</span>
 									<Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-									<div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-										<div
-											className="h-full bg-amber-400 rounded-full transition-all"
-											style={{ width: summary.totalReviews ? `${(count / summary.totalReviews) * 100}%` : "0%" }}
+									<div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
+										<motion.div
+											initial={{ width: 0 }}
+											animate={{ width: summary.totalReviews ? `${(count / summary.totalReviews) * 100}%` : "0%" }}
+											transition={{ duration: 0.6, ease: "easeOut" }}
+											className="h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full"
 										/>
 									</div>
-									<span className="w-6 text-right text-muted-foreground">{count}</span>
+									<span className="w-8 text-right text-muted-foreground text-xs font-medium">{count}</span>
 								</div>
 							))}
 						</div>
-					</div>
+					</motion.div>
 
 					{/* Review list */}
 					<div className="space-y-3">
@@ -108,14 +118,14 @@ export default function ReviewsTab() {
 								initial={{ opacity: 0, y: 12 }}
 								animate={{ opacity: 1, y: 0 }}
 								transition={{ delay: Math.min(index, 8) * 0.04 }}
-								className="rounded-2xl border bg-card p-4 space-y-2">
+								className="rounded-2xl border bg-card/80 p-5 space-y-3 card-hover">
 								<div className="flex items-center justify-between">
-									<div className="flex items-center gap-2">
-										<div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+									<div className="flex items-center gap-3">
+										<div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-bold text-primary">
 											{(fb.customer?.fname || "G")[0].toUpperCase()}
 										</div>
 										<div>
-											<p className="text-sm font-medium">{fb.customer?.fname || "Guest"}</p>
+											<p className="text-sm font-semibold text-foreground">{fb.customer?.fname || "Guest"}</p>
 											<p className="text-[11px] text-muted-foreground">
 												{new Date(fb.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
 											</p>
@@ -125,10 +135,10 @@ export default function ReviewsTab() {
 								</div>
 								{fb.review && <p className="text-sm text-muted-foreground leading-relaxed">{fb.review}</p>}
 								{(fb.foodQuality || fb.serviceSpeed || fb.taste) && (
-									<div className="flex flex-wrap gap-3 text-[11px] text-muted-foreground pt-1">
-										{fb.foodQuality ? <span>Food {fb.foodQuality}/5</span> : null}
-										{fb.serviceSpeed ? <span>Service {fb.serviceSpeed}/5</span> : null}
-										{fb.taste ? <span>Taste {fb.taste}/5</span> : null}
+									<div className="flex flex-wrap gap-2 pt-1">
+										{fb.foodQuality ? <span className="text-[11px] px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-600 font-medium">Food {fb.foodQuality}/5</span> : null}
+										{fb.serviceSpeed ? <span className="text-[11px] px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 font-medium">Service {fb.serviceSpeed}/5</span> : null}
+										{fb.taste ? <span className="text-[11px] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-medium">Taste {fb.taste}/5</span> : null}
 									</div>
 								)}
 							</motion.div>
