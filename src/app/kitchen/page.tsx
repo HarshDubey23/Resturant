@@ -41,6 +41,27 @@ const STATUS_FILTERS = [
 	{ value: "ready", label: "Ready", color: "bg-green-500" },
 ] as const;
 
+/**
+ * Kitchen stations. Each station sees only the items assigned to it, so a
+ * barista at the "bar" station doesn't have to scan past tandoor tickets.
+ * "All stations" is the default so the head chef can see everything.
+ */
+const STATION_FILTERS = [
+	{ value: "all", label: "All Stations", icon: "🍳" },
+	{ value: "main", label: "Main Kitchen", icon: "🍲" },
+	{ value: "grill", label: "Grill / Tandoor", icon: "🔥" },
+	{ value: "bar", label: "Bar / Beverages", icon: "🥤" },
+	{ value: "pastry", label: "Pastry / Desserts", icon: "🍰" },
+] as const;
+
+/** Per-station icon for the inline badge on each product ticket. */
+const STATION_ICON: Record<string, string> = {
+	main: "🍲",
+	grill: "🔥",
+	bar: "🥤",
+	pastry: "🍰",
+};
+
 const SPICE_EMOJIS: Record<string, string> = {
 	mild: "🟢",
 	medium: "🟡",
@@ -99,6 +120,7 @@ export default function KitchenPage() {
 	const { data: restaurantData } = useSWR<{ profile?: { currency?: string } }>(restaurantID ? `/api/menu?id=${restaurantID}` : null, fetcher);
 	const currency = restaurantData?.profile?.currency || "INR";
 	const [statusFilter, setStatusFilter] = useState("all");
+	const [stationFilter, setStationFilter] = useState<string>("all");
 	const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
 	const [isFullscreen, setIsFullscreen] = useState(false);
 	const [connectionState, setConnectionState] = useState<"connected" | "connecting" | "reconnecting">("connecting");
@@ -206,11 +228,30 @@ export default function KitchenPage() {
 		}
 	};
 
-	const activeOrders = orders.filter((o) => {
-		const allStatuses = o.products.map((p) => p.kitchenStatus);
-		if (statusFilter === "all") return true;
-		return allStatuses.includes(statusFilter as ProductData["kitchenStatus"]);
-	});
+	const activeOrders = orders
+		.map((o) => ({
+			...o,
+			// If a station filter is active, hide products that don't belong to
+			// that station — the operator only cares about their own items.
+			products: stationFilter === "all" ? o.products : o.products.filter((p) => (p.station || "main") === stationFilter),
+		}))
+		.filter((o) => {
+			// Hide orders that have zero visible products after station filtering.
+			if (o.products.length === 0) return false;
+			const allStatuses = o.products.map((p) => p.kitchenStatus);
+			if (statusFilter === "all") return true;
+			return allStatuses.includes(statusFilter as ProductData["kitchenStatus"]);
+		});
+
+	// Station summary counts for the header (how many items per station are pending)
+	const stationCounts = STATION_FILTERS.reduce(
+		(acc, s) => {
+			if (s.value === "all") return acc;
+			acc[s.value] = orders.reduce((count, o) => count + o.products.filter((p) => (p.station || "main") === s.value && p.kitchenStatus !== "served").length, 0);
+			return acc;
+		},
+		{} as Record<string, number>,
+	);
 
 	if (status === "loading") {
 		return (
@@ -288,6 +329,34 @@ export default function KitchenPage() {
 						</button>
 					))}
 				</div>
+
+				<div className="flex gap-1.5 px-4 sm:px-6 pb-3 overflow-x-auto border-t border-white/5 pt-3">
+					{STATION_FILTERS.map((s) => {
+						const count = s.value === "all" ? null : (stationCounts[s.value] ?? 0);
+						const active = stationFilter === s.value;
+						return (
+							<button
+								key={s.value}
+								onClick={() => setStationFilter(s.value)}
+								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+									active ? "bg-orange-500 text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
+								}`}
+								title={s.label}>
+								<span>{s.icon}</span>
+								<span className="hidden sm:inline">{s.label}</span>
+								<span className="sm:hidden">{s.label.split(" ")[0]}</span>
+								{count !== null && count > 0 && (
+									<span
+										className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+											active ? "bg-white/20" : "bg-orange-500/20 text-orange-400"
+										}`}>
+										{count}
+									</span>
+								)}
+							</button>
+						);
+					})}
+				</div>
 			</header>
 
 			<main className="p-4 sm:p-6">
@@ -352,6 +421,11 @@ export default function KitchenPage() {
 																</span>
 																<span className="text-sm font-medium truncate">{product.name || "Item"}</span>
 																<span className="text-xs text-gray-500 shrink-0">x{product.quantity}</span>
+																{stationFilter === "all" && product.station && product.station !== "main" && (
+																	<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-gray-400 border border-white/10 shrink-0">
+																		{STATION_ICON[product.station] ?? "🍳"} {product.station}
+																	</span>
+																)}
 															</div>
 															<span className="text-xs text-gray-500 shrink-0">{formatCurrency(product.price, currency)}</span>
 														</div>

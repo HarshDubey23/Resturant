@@ -37,7 +37,7 @@ export default function CtaSection() {
 								<ArrowRight className="h-4 w-4" />
 							</Button>
 						</Link>
-						<Link href="/demo">
+						<Link href="/demo?tab=menu">
 							<Button variant="outline" size="lg" className="gap-2 text-base h-13 px-10 rounded-xl border-2 hover:bg-primary/5 transition-all duration-300">
 								Try Live Demo
 							</Button>

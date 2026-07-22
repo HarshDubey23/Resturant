@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
+import { Customers } from "#utils/database/models/customer";
 import { Invoices } from "#utils/database/models/invoice";
 import { Orders } from "#utils/database/models/order";
 import { SplitPayments } from "#utils/database/models/splitPayment";
@@ -40,6 +41,31 @@ export async function POST(req: Request) {
 		switch (event) {
 			case "payment.captured": {
 				const payment = payload.payment?.entity;
+
+				// UPI Autodebit auth payment — register the mandate on the
+				// customer record. The mandate ID comes from the payment
+				// entity's `upi` block when Razorpay creates the mandate.
+				if (payment?.notes?.purpose === "upi_autodebit_auth") {
+					const customerId = payment.notes.customer_id;
+					const restaurantID = payment.notes.restaurant_id;
+					const vpa = payment.upi?.vpa || payment.vpa;
+					const mandateId = payment.upi?.mandate_id || payment.mandate_id;
+					if (customerId && restaurantID) {
+						await Customers.updateOne(
+							{ _id: customerId, restaurantID },
+							{
+								$set: {
+									"upiMandate.mandateId": mandateId,
+									"upiMandate.status": mandateId ? "active" : "created",
+									"upiMandate.vpa": vpa,
+									"upiMandate.createdAt": new Date(),
+								},
+							},
+						);
+					}
+					break;
+				}
+
 				const orderId = payment?.notes?.orderId;
 
 				// Split payment capture: mark the individual split paid and settle

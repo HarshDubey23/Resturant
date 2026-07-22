@@ -54,6 +54,7 @@ export async function POST(req: Request) {
 					quantity: product?.quantity,
 					price: menuItem?.price,
 					tax,
+					station: (menuItem as { station?: string })?.station ?? "main",
 				};
 			}),
 		);

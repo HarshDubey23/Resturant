@@ -25,6 +25,17 @@ const MenuSchema = new mongoose.Schema<TMenu>(
 		costPrice: { type: Number, default: 0 },
 		sku: { type: String, trim: true, index: true },
 		hidden: { type: Boolean, default: true },
+		/** Premium UI fields — populated by enrichMenuForPremiumUI for demo
+		 * data, or set per-item by the restaurant owner from the dashboard. */
+		rating: { type: Number, default: null },
+		reviewCount: { type: Number, default: null },
+		tags: [{ type: String, trim: true }],
+		spiceLevel: { type: Number, default: null },
+		originalPrice: { type: Number, default: null },
+		panoramicImage: { type: String, trim: true, default: null },
+		/** Kitchen station this item is prepared at (e.g. "main", "grill",
+		 * "bar", "pastry"). Drives the KDS station filter. */
+		station: { type: String, trim: true, lowercase: true, default: "main" },
 	},
 	{ timestamps: true },
 );
@@ -79,6 +90,8 @@ export type TMenu = HydratedDocument<{
 	spiceLevel?: number;
 	originalPrice?: number;
 	panoramicImage?: string;
+	/** Kitchen station this item is prepared at. */
+	station?: string;
 }>;
 
 export type TFoodType = (typeof FoodType)[number];

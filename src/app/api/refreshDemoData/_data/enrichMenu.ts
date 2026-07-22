@@ -1,14 +1,40 @@
 import type { TMenu } from "#utils/database/models/menu";
 
 /**
- * Enriches menu items with premium UI fields (rating, reviewCount, tags,
- * spiceLevel, originalPrice) in a deterministic way so the same menu
- * always renders with the same ratings — important for visual stability
- * across refreshes and for screenshots.
- *
- * This does NOT mutate the original menu items' culinary data; it only
- * adds presentation-layer metadata.
+ * Map menu categories to kitchen stations. Drives the KDS station filter —
+ * each station sees only the items it's responsible for. Categories not in
+ * this map default to "main".
  */
+const CATEGORY_STATION_MAP: Record<string, string> = {
+	// drinks
+	beverages: "bar",
+	"cold beverages": "bar",
+	coffee: "bar",
+	tea: "bar",
+	frappuccino: "bar",
+	"mocktails & drinks": "bar",
+	// sweets
+	desserts: "pastry",
+	bakery: "pastry",
+	sweets: "pastry",
+	// grilled / tandoor items
+	starters: "grill",
+	"non-veg starters": "grill",
+	"veg starters": "grill",
+	"tandoor & grill": "grill",
+	// everything else
+	"main course": "main",
+	mains: "main",
+	breads: "main",
+	biryani: "main",
+	"biryani and rice": "main",
+	"egg dishes": "main",
+	"fried rice and noodles": "main",
+	"empire box": "main",
+	savouries: "main",
+	specials: "main",
+};
+
 export function enrichMenuForPremiumUI(menus: TMenu[], _restaurantID: string): TMenu[] {
 	return menus.map((menu, index) => {
 		const m = menu as TMenu & {
@@ -17,6 +43,7 @@ export function enrichMenuForPremiumUI(menus: TMenu[], _restaurantID: string): T
 			tags?: string[];
 			spiceLevel?: number;
 			originalPrice?: number;
+			station?: string;
 		};
 
 		if (m.rating === undefined) {
@@ -39,6 +66,10 @@ export function enrichMenuForPremiumUI(menus: TMenu[], _restaurantID: string): T
 		if (m.originalPrice === undefined && index % 9 === 0 && m.price > 0) {
 			m.originalPrice = m.price;
 			m.price = Math.round((m.price * 0.9 + Number.EPSILON) * 100) / 100;
+		}
+		if (!m.station) {
+			const cat = (m.category || "").toLowerCase();
+			m.station = CATEGORY_STATION_MAP[cat] ?? "main";
 		}
 
 		return menu;

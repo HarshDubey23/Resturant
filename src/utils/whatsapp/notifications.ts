@@ -3,6 +3,7 @@ import { Orders } from "#utils/database/models/order";
 import { Profiles } from "#utils/database/models/profile";
 import { formatCurrency } from "#utils/helper/currency";
 import { captureError } from "#utils/helper/sentryWrapper";
+import { outboundCall } from "#utils/twilio";
 import { sendWhatsAppText } from "./index";
 
 type CustomerInfo = { phone?: string; fname?: string };
@@ -90,6 +91,19 @@ export async function sendOrderReadyNotification(orderId: string, restaurantID: 
 		const message = `Hi ${name}! 🎉\n\nYour entire order is ready at Table ${order.table}!\n\nTotal: ${formatCurrency(total, currency)}\n\nPlease collect from the counter.\n\nThank you for dining with us!\n— Team`;
 
 		await sendWhatsAppText(customer.phone, message);
+
+		// Also fire an IVR call if Twilio is configured. The call plays
+		// a synthesized voice message — useful for customers who don't
+		// check WhatsApp. Skipped silently when env vars aren't set.
+		try {
+			const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
+			await outboundCall({
+				to: customer.phone,
+				url: `${base}/api/twilio/voice/order-ready?orderId=${encodeURIComponent(orderId)}&restaurantID=${encodeURIComponent(restaurantID)}`,
+			});
+		} catch (err) {
+			captureError(err, { context: "sendOrderReadyNotification/ivr", orderId, restaurantID });
+		}
 	} catch (err) {
 		captureError(err, { context: "sendOrderReadyNotification", orderId, restaurantID });
 	}

@@ -10,6 +10,14 @@ const CustomerSchema = new mongoose.Schema<TCustomer>(
 		gender: { type: String, trim: true, lowercase: true, enum: gender },
 		whatsappOptIn: { type: Boolean, default: false },
 		restaurantID: { type: String, trim: true, lowercase: true, required: true },
+		/** UPI Autodebit mandate (Razorpay recurring). Populated by the
+		 * payment webhook when the ₹1 auth payment succeeds. */
+		upiMandate: {
+			mandateId: { type: String, trim: true },
+			status: { type: String, trim: true, enum: ["created", "active", "paused", "revoked"], default: null },
+			vpa: { type: String, trim: true },
+			createdAt: { type: Date },
+		},
 	},
 	{ timestamps: true },
 );
@@ -29,4 +37,10 @@ export type TCustomer = HydratedDocument<{
 	email: string;
 	whatsappOptIn: boolean;
 	restaurantID: string;
+	upiMandate?: {
+		mandateId?: string;
+		status?: "created" | "active" | "paused" | "revoked" | null;
+		vpa?: string;
+		createdAt?: Date;
+	};
 }>;

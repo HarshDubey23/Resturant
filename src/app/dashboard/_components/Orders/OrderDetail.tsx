@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, DollarSign, Phone, User, X } from "lucide-react";
+import { Check, DollarSign, Phone, User, Wallet, X } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
 import type { TOrder } from "#utils/database/models/order";
@@ -41,6 +42,8 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 	const subTab = queryParams.get("subTab") ?? "";
 	const { profile } = useAdmin();
 	const currency = profile?.currency || "INR";
+	const [settling, setSettling] = useState(false);
+	const [settled, setSettled] = useState(false);
 
 	const { approvedItems, requestedItems } = useMemo(
 		() => ({
@@ -52,6 +55,30 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 
 	const totalWithTax = (data.orderTotal ?? 0) + (data.taxTotal ?? 0);
 	const paymentBadge = PAYMENT_STATUS_BADGES[data.paymentStatus ?? "pending"];
+
+	const handleSettle = async () => {
+		const ownerVpa = profile?.upiId;
+		if (!ownerVpa) {
+			toast.error("Set UPI ID in Business Settings first");
+			return;
+		}
+		setSettling(true);
+		try {
+			const res = await fetch("/api/payment/route/settle", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ orderId: data._id.toString(), amount: totalWithTax, ownerVpa }),
+			});
+			const json = await res.json();
+			if (!res.ok) throw new Error(json?.message || "Settle failed");
+			toast.success("Payout initiated — funds will arrive in your UPI within minutes.");
+			setSettled(true);
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Settle failed");
+		} finally {
+			setSettling(false);
+		}
+	};
 
 	return (
 		<div className="space-y-4">
@@ -93,6 +120,23 @@ export default function OrderDetail({ data, actions, busy, reject, setReject, ac
 								<Check className="h-4 w-4 mr-1" />
 								{reject ? "Yes" : subTab === "active" ? "Complete" : "Accept"}
 							</Button>
+							{data.paymentStatus === "paid" && !settled && (
+								<Button
+									variant="outline"
+									size="sm"
+									loading={settling}
+									onClick={handleSettle}
+									title={`Settle ${formatCurrency(totalWithTax, currency)} to owner UPI`}>
+									<Wallet className="h-4 w-4 mr-1" />
+									Settle
+								</Button>
+							)}
+							{settled && (
+								<Badge className="text-[10px] px-1.5 py-0.5 h-auto bg-green-900/30 text-green-400">
+									<Wallet className="h-3 w-3 mr-1" />
+									Settled
+								</Badge>
+							)}
 						</div>
 					)}
 				</div>

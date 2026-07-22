@@ -14,7 +14,7 @@ const navLinks = [
 	{ label: "How It Works", href: "how-it-works" },
 	{ label: "Testimonials", href: "testimonials" },
 	{ label: "Pricing", href: "pricing" },
-	{ label: "Demo", href: "/demo", isLink: true },
+	{ label: "Demo", href: "/demo?tab=menu", isLink: true },
 ];
 
 export default function Navbar({ onLoginClick }: NavbarProps) {

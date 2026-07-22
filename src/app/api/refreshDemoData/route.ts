@@ -40,11 +40,14 @@ const deleteData = async (ids: string[]) => {
 const createData = async (props: TDocumentData) => {
 	const { account, profile, menus, kitchens, tables } = props;
 	const start = performance.now();
+	// 1. Save Account WITHOUT profile — the Profile pre-save hook requires
+	//    the Account to exist (it does Accounts.findOne({ username: restaurantID })).
+	const newAccount = await new Accounts(account).save();
+	// 2. Save Profile — its pre-save hook validates the account exists, and its
+	//    post-save hook sets Account.profile = profile._id automatically.
 	const newProfile = await new Profiles(profile).save();
-	// Link profile to account BEFORE saving menus — the Menu pre-save hook
-	// does Accounts.findOne(...).populate("profile") and reads categories.
-	const accountWithProfile = { ...(account as Record<string, unknown>), profile: newProfile._id };
-	const newAccount = await new Accounts(accountWithProfile).save();
+	// 3. Now Menus can be saved — their pre-save hook re-fetches the Account
+	//    with profile populated (the post-save above already linked them).
 	const [newMenus, newKitchen, newTables] = await Promise.all([
 		Promise.all(menus.map((m) => new Menus(m).save())),
 		Promise.all(kitchens.map((k) => new Kitchens(k).save())),

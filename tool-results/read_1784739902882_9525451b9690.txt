@@ -1,0 +1,428 @@
+     1→"use client";
+     2→
+     3→import { AnimatePresence, motion } from "motion/react";
+     4→import { useSession } from "next-auth/react";
+     5→import { useCallback, useEffect, useRef, useState } from "react";
+     6→import { toast } from "sonner";
+     7→import useSWR from "swr";
+     8→import { formatCurrency } from "@/utils/helper/currency";
+     9→
+    10→const fetcher = (url: string) => fetch(url).then((r) => r.json());
+    11→
+    12→type ProductData = {
+    13→        _id?: string;
+    14→        name?: string;
+    15→        description?: string;
+    16→        quantity: number;
+    17→        price: number;
+    18→        tax: number;
+    19→        veg?: string;
+    20→        foodType?: string;
+    21→        kitchenStatus: "pending" | "preparing" | "ready" | "served";
+    22→        fulfilled: boolean;
+    23→        station?: string;
+    24→};
+    25→
+    26→type KitchenOrder = {
+    27→        _id: string;
+    28→        restaurantID: string;
+    29→        table: string;
+    30→        state: string;
+    31→        customer?: { fname?: string; lname?: string; phone?: string };
+    32→        products: ProductData[];
+    33→        createdAt: string;
+    34→        updatedAt?: string;
+    35→};
+    36→
+    37→const STATUS_FILTERS = [
+    38→        { value: "all", label: "All", color: "bg-gray-600" },
+    39→        { value: "pending", label: "New", color: "bg-red-500" },
+    40→        { value: "preparing", label: "In Progress", color: "bg-yellow-500" },
+    41→        { value: "ready", label: "Ready", color: "bg-green-500" },
+    42→] as const;
+    43→
+    44→const SPICE_EMOJIS: Record<string, string> = {
+    45→        mild: "🟢",
+    46→        medium: "🟡",
+    47→        hot: "🟠",
+    48→        "extra-hot": "🔴",
+    49→};
+    50→
+    51→const SPICE_LABELS: Record<string, string> = {
+    52→        mild: "Mild",
+    53→        medium: "Medium",
+    54→        hot: "Hot",
+    55→        "extra-hot": "Extra Hot",
+    56→};
+    57→
+    58→function playNewOrderSound() {
+    59→        try {
+    60→                const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    61→
+    62→                const playTone = (freq: number, startTime: number, duration: number) => {
+    63→                        const osc = audioCtx.createOscillator();
+    64→                        const gain = audioCtx.createGain();
+    65→                        osc.connect(gain);
+    66→                        gain.connect(audioCtx.destination);
+    67→                        osc.frequency.setValueAtTime(freq, startTime);
+    68→                        gain.gain.setValueAtTime(0.4, startTime);
+    69→                        gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+    70→                        osc.start(startTime);
+    71→                        osc.stop(startTime + duration);
+    72→                };
+    73→
+    74→                playTone(800, audioCtx.currentTime, 0.3);
+    75→                playTone(1000, audioCtx.currentTime + 0.25, 0.3);
+    76→                playTone(1200, audioCtx.currentTime + 0.5, 0.4);
+    77→        } catch {
+    78→                // Audio not available
+    79→        }
+    80→}
+    81→
+    82→function formatTime(seconds: number) {
+    83→        const m = Math.floor(seconds / 60);
+    84→        const s = seconds % 60;
+    85→        return `${m}:${s.toString().padStart(2, "0")}`;
+    86→}
+    87→
+    88→function getUrgency(seconds: number): { color: string; bg: string; pulse: boolean } {
+    89→        if (seconds < 300) return { color: "text-green-400", bg: "bg-green-900/30", pulse: false };
+    90→        if (seconds < 600) return { color: "text-yellow-400", bg: "bg-yellow-900/30", pulse: false };
+    91→        if (seconds < 900) return { color: "text-orange-400", bg: "bg-orange-900/30", pulse: false };
+    92→        return { color: "text-red-400", bg: "bg-red-900/30", pulse: true };
+    93→}
+    94→
+    95→export default function KitchenPage() {
+    96→        const { status } = useSession();
+    97→        const [orders, setOrders] = useState<KitchenOrder[]>([]);
+    98→        const restaurantID = orders[0]?.restaurantID;
+    99→        const { data: restaurantData } = useSWR<{ profile?: { currency?: string } }>(restaurantID ? `/api/menu?id=${restaurantID}` : null, fetcher);
+   100→        const currency = restaurantData?.profile?.currency || "INR";
+   101→        const [statusFilter, setStatusFilter] = useState("all");
+   102→        const [newOrderIds, setNewOrderIds] = useState<Set<string>>(new Set());
+   103→        const [isFullscreen, setIsFullscreen] = useState(false);
+   104→        const [connectionState, setConnectionState] = useState<"connected" | "connecting" | "reconnecting">("connecting");
+   105→        const [_tick, setTick] = useState(0);
+   106→        const eventSourceRef = useRef<EventSource | null>(null);
+   107→        const previousOrderIdsRef = useRef<Set<string>>(new Set());
+   108→        const prevOrdersLength = useRef(0);
+   109→
+   110→        // Timer tick every second
+   111→        useEffect(() => {
+   112→                const timer = setInterval(() => setTick((t) => t + 1), 1000);
+   113→                return () => clearInterval(timer);
+   114→        }, []);
+   115→
+   116→        // SSE stream with automatic reconnection (exponential backoff, max 30s).
+   117→        // Restaurant Wi-Fi is unreliable; previously a dropped connection silently
+   118→        // stopped order updates until someone noticed and refreshed. The stream
+   119→        // resends a full snapshot on connect, so a reconnect recovers everything.
+   120→        useEffect(() => {
+   121→                if (status !== "authenticated") return;
+   122→
+   123→                let retryCount = 0;
+   124→                let retryTimer: ReturnType<typeof setTimeout> | null = null;
+   125→                let disposed = false;
+   126→
+   127→                const connect = () => {
+   128→                        if (disposed) return;
+   129→                        const es = new EventSource("/api/order/stream");
+   130→                        eventSourceRef.current = es;
+   131→
+   132→                        es.onopen = () => {
+   133→                                retryCount = 0;
+   134→                                setConnectionState("connected");
+   135→                        };
+   136→
+   137→                        es.addEventListener("order", (event) => {
+   138→                                try {
+   139→                                        const { data } = JSON.parse(event.data) as { data?: { type: string; data: KitchenOrder[] } };
+   140→                                        if (data?.type === "orders" && Array.isArray(data?.data)) {
+   141→                                                const activeOrders = data.data.filter((o) => o.state === "active");
+   142→                                                setOrders(activeOrders);
+   143→
+   144→                                                const currentIds = new Set(activeOrders.map((o) => o._id));
+   145→                                                if (prevOrdersLength.current > 0 && currentIds.size > previousOrderIdsRef.current.size) {
+   146→                                                        playNewOrderSound();
+   147→                                                        const newIds = new Set<string>();
+   148→                                                        currentIds.forEach((id) => {
+   149→                                                                if (!previousOrderIdsRef.current.has(id)) newIds.add(id);
+   150→                                                        });
+   151→                                                        setNewOrderIds(newIds);
+   152→                                                        setTimeout(() => setNewOrderIds(new Set()), 5000);
+   153→                                                }
+   154→                                                previousOrderIdsRef.current = currentIds;
+   155→                                                prevOrdersLength.current = activeOrders.length;
+   156→                                        }
+   157→                                } catch {
+   158→                                        // parse error
+   159→                                }
+   160→                        });
+   161→
+   162→                        es.onerror = () => {
+   163→                                es.close();
+   164→                                eventSourceRef.current = null;
+   165→                                if (disposed) return;
+   166→                                setConnectionState("reconnecting");
+   167→                                const delay = Math.min(1000 * 2 ** retryCount, 30000);
+   168→                                retryCount += 1;
+   169→                                retryTimer = setTimeout(connect, delay);
+   170→                        };
+   171→                };
+   172→
+   173→                connect();
+   174→
+   175→                return () => {
+   176→                        disposed = true;
+   177→                        if (retryTimer) clearTimeout(retryTimer);
+   178→                        eventSourceRef.current?.close();
+   179→                        eventSourceRef.current = null;
+   180→                };
+   181→        }, [status]);
+   182→
+   183→        const handleAction = useCallback(async (orderId: string, productId: string, action: "preparing" | "ready" | "served") => {
+   184→                try {
+   185→                        const res = await fetch("/api/kitchen/action", {
+   186→                                method: "POST",
+   187→                                headers: { "Content-Type": "application/json" },
+   188→                                body: JSON.stringify({ orderId, productId, action }),
+   189→                        });
+   190→                        if (!res.ok) {
+   191→                                const data = await res.json();
+   192→                                toast.error(data?.message || "Action failed");
+   193→                        }
+   194→                } catch {
+   195→                        toast.error("Failed to update order");
+   196→                }
+   197→        }, []);
+   198→
+   199→        const toggleFullscreen = () => {
+   200→                if (!document.fullscreenElement) {
+   201→                        document.documentElement.requestFullscreen().catch(() => {});
+   202→                        setIsFullscreen(true);
+   203→                } else {
+   204→                        document.exitFullscreen().catch(() => {});
+   205→                        setIsFullscreen(false);
+   206→                }
+   207→        };
+   208→
+   209→        const activeOrders = orders.filter((o) => {
+   210→                const allStatuses = o.products.map((p) => p.kitchenStatus);
+   211→                if (statusFilter === "all") return true;
+   212→                return allStatuses.includes(statusFilter as ProductData["kitchenStatus"]);
+   213→        });
+   214→
+   215→        if (status === "loading") {
+   216→                return (
+   217→                        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-white">
+   218→                                <div className="text-center">
+   219→                                        <div className="text-6xl mb-4 animate-pulse">👨‍🍳</div>
+   220→                                        <p className="text-lg">Loading kitchen display...</p>
+   221→                                </div>
+   222→                        </div>
+   223→                );
+   224→        }
+   225→
+   226→        if (status === "unauthenticated") {
+   227→                return (
+   228→                        <div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] gap-4">
+   229→                                <div className="text-6xl mb-2">🔒</div>
+   230→                                <p className="text-lg text-gray-400">Please log in to access the kitchen display.</p>
+   231→                                <a href="/" className="text-orange-400 hover:underline text-sm">
+   232→                                        Go to Login
+   233→                                </a>
+   234→                        </div>
+   235→                );
+   236→        }
+   237→
+   238→        return (
+   239→                <div className="min-h-screen bg-[#0a0a0a] text-white">
+   240→                        <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0a0a0a]/95 backdrop-blur-sm">
+   241→                                <div className="flex items-center justify-between px-4 sm:px-6 h-14">
+   242→                                        <div className="flex items-center gap-3">
+   243→                                                <div className="relative">
+   244→                                                        <span className="text-2xl">👨‍🍳</span>
+   245→                                                        {orders.length > 0 && (
+   246→                                                                <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+   247→                                                                        {orders.length}
+   248→                                                                </span>
+   249→                                                        )}
+   250→                                                </div>
+   251→                                                <div>
+   252→                                                        <h1 className="text-base font-bold">Kitchen Display</h1>
+   253→                                                        <p className="text-[10px] text-gray-500">
+   254→                                                                {orders.filter((o) => o.products.some((p) => p.kitchenStatus === "pending")).length} new •{" "}
+   255→                                                                {orders.filter((o) => o.products.some((p) => p.kitchenStatus === "preparing")).length} in progress
+   256→                                                        </p>
+   257→                                                </div>
+   258→                                        </div>
+   259→
+   260→                                        <div className="flex items-center gap-2">
+   261→                                                <button onClick={toggleFullscreen} className="px-3 py-1.5 text-xs rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 transition-colors">
+   262→                                                        {isFullscreen ? "⛶ Exit" : "⛶ Fullscreen"}
+   263→                                                </button>
+   264→                                                {connectionState === "connected" ? (
+   265→                                                        <span className="flex items-center gap-1.5" title="Live">
+   266→                                                                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+   267→                                                                <span className="text-[10px] text-green-500 hidden sm:inline">Live</span>
+   268→                                                        </span>
+   269→                                                ) : (
+   270→                                                        <span className="flex items-center gap-1.5" title="Connection lost">
+   271→                                                                <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+   272→                                                                <span className="text-[10px] text-red-400 hidden sm:inline">Connection Lost — Reconnecting…</span>
+   273→                                                        </span>
+   274→                                                )}
+   275→                                        </div>
+   276→                                </div>
+   277→
+   278→                                <div className="flex gap-1.5 px-4 sm:px-6 pb-3 overflow-x-auto">
+   279→                                        {STATUS_FILTERS.map((f) => (
+   280→                                                <button
+   281→                                                        key={f.value}
+   282→                                                        onClick={() => setStatusFilter(f.value)}
+   283→                                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+   284→                                                                statusFilter === f.value ? "bg-white text-black" : "bg-white/5 text-gray-400 hover:bg-white/10"
+   285→                                                        }`}>
+   286→                                                        <span className={`w-1.5 h-1.5 rounded-full ${f.color}`} />
+   287→                                                        {f.label}
+   288→                                                </button>
+   289→                                        ))}
+   290→                                </div>
+   291→                        </header>
+   292→
+   293→                        <main className="p-4 sm:p-6">
+   294→                                {activeOrders.length === 0 ? (
+   295→                                        <div className="flex flex-col items-center justify-center py-20 text-gray-600">
+   296→                                                <div className="text-6xl mb-4">🍳</div>
+   297→                                                <p className="text-lg font-medium">No active orders</p>
+   298→                                                <p className="text-sm mt-1">Waiting for new orders to arrive...</p>
+   299→                                        </div>
+   300→                                ) : (
+   301→                                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+   302→                                                <AnimatePresence>
+   303→                                                        {activeOrders.map((order) => {
+   304→                                                                const elapsed = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 1000);
+   305→                                                                const urgency = getUrgency(elapsed);
+   306→                                                                const isNew = newOrderIds.has(order._id);
+   307→
+   308→                                                                return (
+   309→                                                                        <motion.div
+   310→                                                                                key={order._id}
+   311→                                                                                layout
+   312→                                                                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+   313→                                                                                animate={{
+   314→                                                                                        opacity: 1,
+   315→                                                                                        y: 0,
+   316→                                                                                        scale: 1,
+   317→                                                                                        borderColor: isNew ? ["rgb(251 146 60)", "rgb(251 146 60 / 0.5)", "transparent"] : undefined,
+   318→                                                                                }}
+   319→                                                                                transition={{ duration: 0.3 }}
+   320→                                                                                className={`rounded-xl border ${urgency.bg} overflow-hidden ${
+   321→                                                                                        isNew ? "border-orange-500 shadow-lg shadow-orange-500/20" : "border-white/5"
+   322→                                                                                }`}>
+   323→                                                                                <div
+   324→                                                                                        className={`flex items-center justify-between p-3 border-b ${isNew ? "border-orange-500/30 bg-orange-500/10" : "border-white/5 bg-white/[0.02]"}`}>
+   325→                                                                                        <div>
+   326→                                                                                                <div className="flex items-center gap-2">
+   327→                                                                                                        <span className="text-sm font-bold">Table {order.table}</span>
+   328→                                                                                                        {order.products.every((p) => p.kitchenStatus === "served") && (
+   329→                                                                                                                <span className="text-[10px] bg-green-900 text-green-400 px-1.5 py-0.5 rounded-full">Served</span>
+   330→                                                                                                        )}
+   331→                                                                                                </div>
+   332→                                                                                                {order.customer?.fname && (
+   333→                                                                                                        <p className="text-xs text-gray-500 mt-0.5">
+   334→                                                                                                                {order.customer.fname} {order.customer.lname}
+   335→                                                                                                        </p>
+   336→                                                                                                )}
+   337→                                                                                        </div>
+   338→                                                                                        <div className={`font-mono text-lg font-bold tabular-nums ${urgency.color} ${urgency.pulse ? "animate-pulse" : ""}`}>
+   339→                                                                                                {formatTime(elapsed)}
+   340→                                                                                        </div>
+   341→                                                                                </div>
+   342→
+   343→                                                                                <div className="divide-y divide-white/5">
+   344→                                                                                        {order.products.map((product) => {
+   345→                                                                                                const productKey = product._id || `${product.name}-${Math.random()}`;
+   346→                                                                                                return (
+   347→                                                                                                        <div key={productKey} className="p-3 space-y-2">
+   348→                                                                                                                <div className="flex items-start justify-between gap-2">
+   349→                                                                                                                        <div className="flex items-center gap-1.5 min-w-0">
+   350→                                                                                                                                <span className="text-xs shrink-0">
+   351→                                                                                                                                        {product.veg === "veg" ? "🟢" : product.veg === "non-veg" ? "🔴" : "🟡"}
+   352→                                                                                                                                </span>
+   353→                                                                                                                                <span className="text-sm font-medium truncate">{product.name || "Item"}</span>
+   354→                                                                                                                                <span className="text-xs text-gray-500 shrink-0">x{product.quantity}</span>
+   355→                                                                                                                        </div>
+   356→                                                                                                                        <span className="text-xs text-gray-500 shrink-0">{formatCurrency(product.price, currency)}</span>
+   357→                                                                                                                </div>
+   358→
+   359→                                                                                                                {product.foodType && SPICE_EMOJIS[product.foodType] && (
+   360→                                                                                                                        <div className="flex items-center gap-1">
+   361→                                                                                                                                <span className="text-[10px]">{SPICE_EMOJIS[product.foodType]}</span>
+   362→                                                                                                                                <span className="text-[10px] text-gray-400">{SPICE_LABELS[product.foodType]}</span>
+   363→                                                                                                                        </div>
+   364→                                                                                                                )}
+   365→
+   366→                                                                                                                {product.description && (
+   367→                                                                                                                        <p className="text-xs text-orange-300/80 bg-orange-500/10 rounded px-2 py-1 leading-relaxed">
+   368→                                                                                                                                📝 {product.description}
+   369→                                                                                                                        </p>
+   370→                                                                                                                )}
+   371→
+   372→                                                                                                                <div className="flex gap-1.5 pt-1">
+   373→                                                                                                                        {product.kitchenStatus === "pending" && (
+   374→                                                                                                                                <button
+   375→                                                                                                                                        onClick={() => handleAction(order._id, productKey, "preparing")}
+   376→                                                                                                                                        className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-yellow-600 hover:bg-yellow-500 transition-colors">
+   377→                                                                                                                                        ▶ Start
+   378→                                                                                                                                </button>
+   379→                                                                                                                        )}
+   380→                                                                                                                        {product.kitchenStatus === "preparing" && (
+   381→                                                                                                                                <button
+   382→                                                                                                                                        onClick={() => handleAction(order._id, productKey, "ready")}
+   383→                                                                                                                                        className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-green-600 hover:bg-green-500 transition-colors">
+   384→                                                                                                                                        ✅ Mark Ready
+   385→                                                                                                                                </button>
+   386→                                                                                                                        )}
+   387→                                                                                                                        {product.kitchenStatus === "ready" && (
+   388→                                                                                                                                <>
+   389→                                                                                                                                        <span className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-green-900/50 text-green-400 text-center">
+   390→                                                                                                                                                Ready ✓
+   391→                                                                                                                                        </span>
+   392→                                                                                                                                        <button
+   393→                                                                                                                                                onClick={() => handleAction(order._id, productKey, "served")}
+   394→                                                                                                                                                className="px-2 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-500 transition-colors">
+   395→                                                                                                                                                🍽️ Served
+   396→                                                                                                                                        </button>
+   397→                                                                                                                                </>
+   398→                                                                                                                        )}
+   399→                                                                                                                        {product.kitchenStatus === "served" && (
+   400→                                                                                                                                <span className="flex-1 px-2 py-1.5 text-xs font-medium rounded-lg bg-gray-800 text-gray-500 text-center">
+   401→                                                                                                                                        Served ✓
+   402→                                                                                                                                </span>
+   403→                                                                                                                        )}
+   404→                                                                                                                </div>
+   405→                                                                                                        </div>
+   406→                                                                                                );
+   407→                                                                                        })}
+   408→                                                                                </div>
+   409→
+   410→                                                                                <div className="px-3 py-2 border-t border-white/5 flex gap-2">
+   411→                                                                                        <button onClick={() => window.print()} className="flex-1 text-[10px] text-gray-500 hover:text-gray-300 transition-colors">
+   412→                                                                                                🖨️ Print Ticket
+   413→                                                                                        </button>
+   414→                                                                                        <span className="text-[10px] text-gray-600">
+   415→                                                                                                {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+   416→                                                                                        </span>
+   417→                                                                                </div>
+   418→                                                                        </motion.div>
+   419→                                                                );
+   420→                                                        })}
+   421→                                                </AnimatePresence>
+   422→                                        </div>
+   423→                                )}
+   424→                        </main>
+   425→                </div>
+   426→        );
+   427→}
+   428→

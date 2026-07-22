@@ -60,7 +60,7 @@ const mainCourse = [
 	{
 		name: "Butter Chicken",
 		description: "Creamy tomato-based curry with tender tandoori chicken pieces",
-		category: "main-course",
+		category: "Mains",
 		price: 380,
 		foodType: null,
 		veg: "non-veg",
@@ -70,7 +70,7 @@ const mainCourse = [
 	{
 		name: "Dal Makhani",
 		description: "Slow-cooked black lentils in rich buttery creamy gravy",
-		category: "main-course",
+		category: "Mains",
 		price: 280,
 		foodType: null,
 		veg: "veg",
@@ -80,7 +80,7 @@ const mainCourse = [
 	{
 		name: "Rogan Josh",
 		description: "Kashmiri lamb curry with aromatic spice blend",
-		category: "main-course",
+		category: "Mains",
 		price: 450,
 		foodType: "spicy",
 		veg: "non-veg",
@@ -90,7 +90,7 @@ const mainCourse = [
 	{
 		name: "Palak Paneer",
 		description: "Cottage cheese cubes in creamy spinach gravy",
-		category: "main-course",
+		category: "Mains",
 		price: 260,
 		foodType: null,
 		veg: "veg",
@@ -100,7 +100,7 @@ const mainCourse = [
 	{
 		name: "Chicken Chettinad",
 		description: "Fiery South Indian chicken curry with coconut and spices",
-		category: "main-course",
+		category: "Mains",
 		price: 350,
 		foodType: "extra-spicy",
 		veg: "non-veg",
@@ -110,7 +110,7 @@ const mainCourse = [
 	{
 		name: "Biryani",
 		description: "Fragrant basmati rice layered with spiced meat and saffron",
-		category: "main-course",
+		category: "Mains",
 		price: 320,
 		foodType: "spicy",
 		veg: "non-veg",

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { TMenu } from "#utils/database/models/menu";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,8 @@ export default function MenuItemEditModal({ item, categories, open, onOpenChange
 	const [foodType, setFoodType] = useState("");
 	const [image, setImage] = useState("");
 	const [saving, setSaving] = useState(false);
+	const [uploading, setUploading] = useState(false);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
 		if (item && open) {
@@ -78,6 +81,27 @@ export default function MenuItemEditModal({ item, categories, open, onOpenChange
 			toast.error(err instanceof Error ? err.message : "Failed to update item");
 		} finally {
 			setSaving(false);
+		}
+	};
+
+	const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
+		setUploading(true);
+		try {
+			const fd = new FormData();
+			fd.append("file", file);
+			fd.append("bucket", "menu");
+			const res = await fetch("/api/upload", { method: "POST", body: fd });
+			const data = await res.json();
+			if (!res.ok) throw new Error(data?.message || "Upload failed");
+			setImage(data.url);
+			toast.success("Image uploaded to R2");
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : "Upload failed — falling back to URL field");
+		} finally {
+			setUploading(false);
+			if (fileInputRef.current) fileInputRef.current.value = "";
 		}
 	};
 
@@ -142,7 +166,27 @@ export default function MenuItemEditModal({ item, categories, open, onOpenChange
 					</div>
 					<div className="space-y-1.5">
 						<Label htmlFor="edit-image">Image URL</Label>
-						<Input id="edit-image" type="url" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://…" />
+						<div className="flex gap-2">
+							<Input id="edit-image" type="url" value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://…" className="flex-1" />
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => fileInputRef.current?.click()}
+								loading={uploading}
+								title="Upload image to Cloudflare R2">
+								<Upload className="h-4 w-4" />
+							</Button>
+							<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={onUpload} className="hidden" />
+						</div>
+						{image && (
+							<div
+								role="img"
+								aria-label="Preview"
+								style={{ backgroundImage: `url(${image})` }}
+								className="mt-2 h-20 w-20 bg-cover bg-center rounded-md border"
+							/>
+						)}
 					</div>
 					<div className="flex justify-end gap-2 pt-2">
 						<Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
