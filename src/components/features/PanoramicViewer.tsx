@@ -22,7 +22,7 @@ export default function PanoramicViewer({ imageUrl, itemName, description, price
 	const [isDragging, setIsDragging] = useState(false);
 	const lastX = useRef(0);
 	const velocity = useRef(0);
-	const animFrameRef = useRef<number>();
+	const animFrameRef = useRef<number>(0);
 
 	// Inertia spin after drag
 	const inertiaSpin = useCallback(() => {

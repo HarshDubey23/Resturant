@@ -247,7 +247,7 @@ const desserts = [
 	},
 ];
 
-let menus = [...starters, ...mainCourse, ...breads, ...beverages, ...desserts] as TMenu[];
+let menus = [...starters, ...mainCourse, ...breads, ...beverages, ...desserts] as unknown as TMenu[];
 
 menus = menus.map((menu, index) => {
 	menu._id = new mongoose.Types.ObjectId(`${REF_DEMO}${TYPE_MENU}${ID_SUFFIX}${index.toString().padStart(6, "0")}`);

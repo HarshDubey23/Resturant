@@ -1,6 +1,6 @@
 "use client";
 
-import { Github, Heart, Sparkles } from "lucide-react";
+import { ExternalLink, Heart, Sparkles } from "lucide-react";
 
 export default function FooterSection() {
 	return (
@@ -27,7 +27,7 @@ export default function FooterSection() {
 								rel="noopener noreferrer"
 								className="flex h-10 w-10 items-center justify-center rounded-xl border bg-card hover:bg-primary/5 hover:border-primary/20 transition-colors"
 								aria-label="View source on GitHub">
-								<Github className="h-5 w-5 text-muted-foreground" />
+								<ExternalLink className="h-5 w-5 text-muted-foreground" />
 							</a>
 						</div>
 					</div>
