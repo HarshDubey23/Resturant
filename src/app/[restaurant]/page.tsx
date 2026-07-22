@@ -13,8 +13,6 @@ import { buildMetadata } from "#utils/seo/metadata";
 
 import PageContainer from "./_components/PageContainer";
 
-const navIconSize = "60px";
-
 const navItems = [
 	{ label: "explore", value: "explore", icon: <Compass className="h-5 w-5" /> },
 	{ label: "menu", value: "menu", icon: <UtensilsCrossed className="h-5 w-5" /> },
@@ -80,7 +78,7 @@ const Restaurant = async ({ params }: IRestaurantProps) => {
 					},
 				}}
 			/>
-			<div style={{ paddingLeft: navIconSize }} className="flex w-full h-full overflow-hidden">
+			<div className="flex w-full h-full overflow-hidden">
 				<NavSideBar navItems={navItems} defaultTab="menu" foot />
 				<div className="flex-1 overflow-hidden">
 					<PageContainer />

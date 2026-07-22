@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Circle, Flame, Info, Leaf, Minus, Plus, Sparkles, Star } from "lucide-react";
+import { Box, Circle, Flame, Info, Leaf, Minus, Plus, Sparkles, Star, View } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { useInView } from "react-intersection-observer";
 import type { TMenu } from "#utils/database/models/menu";
 import { formatCurrency } from "#utils/helper/currency";
 import FoodViewer3D from "@/components/features/FoodViewer3DDynamic";
+import PanoramicViewer from "@/components/features/PanoramicViewer";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 	const [cardRef, inView] = useInView({ threshold: 0.05, triggerOnce: true });
 	const [isFlashing, setFlashing] = useState(false);
 	const [viewerOpen, setViewerOpen] = useState(false);
+	const [panoramicOpen, setPanoramicOpen] = useState(false);
 	const [imgLoaded, setImgLoaded] = useState(false);
 	const flashTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -122,6 +124,20 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 								className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-105">
 								<Box className="h-3 w-3" />
 								3D View
+							</button>
+						)}
+
+						{/* 360° panoramic viewer button */}
+						{item.panoramicImage && (
+							<button
+								type="button"
+								onClick={() => setPanoramicOpen(true)}
+								className={cn(
+									"absolute bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-105",
+									item.model3d?.url || item.modelUrl ? "left-[90px]" : "left-2",
+								)}>
+								<View className="h-3 w-3" />
+								360° View
 							</button>
 						)}
 
@@ -293,6 +309,16 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 				modelUrl={item.model3d?.url || item.modelUrl || undefined}
 				itemName={item.name}
 				fallbackImages={item.image ? [item.image] : []}
+			/>
+
+			<PanoramicViewer
+				open={panoramicOpen}
+				onOpenChange={setPanoramicOpen}
+				imageUrl={item.panoramicImage as string}
+				itemName={item.name}
+				description={item.description ?? undefined}
+				price={item.price}
+				veg={item.veg ?? undefined}
 			/>
 		</motion.div>
 	);

@@ -259,7 +259,7 @@ const desserts = [
 		price: 100,
 		foodType: "sweet",
 		veg: "veg",
-		image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQNagtidO6K8puIclUH4pDKKQmnLMTu1uQOgeV-gOGyfilMahQ&s",
+		image: "https://images.pexels.com/photos/8951562/pexels-photo-8951562.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Strawberry Ice Cream",
@@ -268,7 +268,7 @@ const desserts = [
 		price: 30,
 		foodType: "sweet",
 		veg: "veg",
-		image: "https://images.media-allrecipes.com/userphotos/838110.jpg",
+		image: "https://images.pexels.com/photos/128402/pexels-photo-128402.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Death By Chocolate",
@@ -277,7 +277,7 @@ const desserts = [
 		price: 150,
 		foodType: "sweet",
 		veg: "veg",
-		image: "https://irepo.primecp.com/2015/04/218935/Death-By-Chocolate_MASTER_ID-977271.jpg?v=977271",
+		image: "https://images.pexels.com/photos/45202/brownie-dessert-cake-sweet-45202.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 

@@ -11,7 +11,7 @@ const coffees = [
 		price: 150,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Cappuccino",
@@ -20,7 +20,7 @@ const coffees = [
 		price: 200,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/302902/pexels-photo-302902.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Caffe Latte",
@@ -29,7 +29,7 @@ const coffees = [
 		price: 220,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/2074130/pexels-photo-2074130.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Flat White",
@@ -38,7 +38,7 @@ const coffees = [
 		price: 240,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/302896/pexels-photo-302896.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Mocha",
@@ -47,9 +47,17 @@ const coffees = [
 		price: 260,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
-	{ name: "Cold Brew", description: "Slow-steeped 18-hour cold brew, served over ice.", category: "Coffee", price: 230, foodType: "sweet", veg: "veg", image: "" },
+	{
+		name: "Cold Brew",
+		description: "Slow-steeped 18-hour cold brew, served over ice.",
+		category: "Coffee",
+		price: 230,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.pexels.com/photos/1024311/pexels-photo-1024311.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
+	},
 	{
 		name: "Filter Coffee",
 		description: "Traditional South Indian filter coffee with frothy milk.",
@@ -57,14 +65,39 @@ const coffees = [
 		price: 160,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/2074122/pexels-photo-2074122.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 
 const teas = [
-	{ name: "Masala Chai", description: "Spiced tea brewed with ginger, cardamom, and cinnamon.", category: "Tea", price: 150, foodType: "sweet", veg: "veg", image: "" },
-	{ name: "Green Tea", description: "Japanese sencha green tea, light and refreshing.", category: "Tea", price: 120, foodType: "sweet", veg: "veg", image: "" },
-	{ name: "Iced Lemon Tea", description: "Chilled black tea with fresh lemon and mint.", category: "Tea", price: 140, foodType: "sweet", veg: "veg", image: "" },
+	{
+		name: "Masala Chai",
+		description: "Spiced tea brewed with ginger, cardamom, and cinnamon.",
+		category: "Tea",
+		price: 150,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.pexels.com/photos/1638280/pexels-photo-1638280.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
+		panoramicImage: "/panoramic/masala-chai-360.png",
+	},
+	{
+		name: "Green Tea",
+		description: "Japanese sencha green tea, light and refreshing.",
+		category: "Tea",
+		price: 120,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.pexels.com/photos/1417945/pexels-photo-1417945.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
+	},
+	{
+		name: "Iced Lemon Tea",
+		description: "Chilled black tea with fresh lemon and mint.",
+		category: "Tea",
+		price: 140,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.pexels.com/photos/96374/pexels-photo-96374.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
+	},
 ];
 
 const frappuccinos = [
@@ -75,7 +108,7 @@ const frappuccinos = [
 		price: 290,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/3030215/pexels-photo-3030215.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Mocha Chip Frappuccino",
@@ -84,7 +117,7 @@ const frappuccinos = [
 		price: 320,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/235294/pexels-photo-235294.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Caramel Frappuccino",
@@ -93,7 +126,7 @@ const frappuccinos = [
 		price: 310,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 
@@ -105,7 +138,7 @@ const coldBeverages = [
 		price: 250,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/4110271/pexels-photo-4110271.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Mango Smoothie",
@@ -114,7 +147,7 @@ const coldBeverages = [
 		price: 280,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/1346155/pexels-photo-1346155.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Strawberry Lemonade",
@@ -123,12 +156,20 @@ const coldBeverages = [
 		price: 220,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/6347637/pexels-photo-6347637.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 
 const bakery = [
-	{ name: "Butter Croissant", description: "Flaky, golden-baked French butter croissant.", category: "Bakery", price: 180, foodType: "sweet", veg: "veg", image: "" },
+	{
+		name: "Butter Croissant",
+		description: "Flaky, golden-baked French butter croissant.",
+		category: "Bakery",
+		price: 180,
+		foodType: "sweet",
+		veg: "veg",
+		image: "https://images.pexels.com/photos/3892469/pexels-photo-3892469.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
+	},
 	{
 		name: "Cinnamon Roll",
 		description: "Soft dough rolled with cinnamon sugar and cream cheese icing.",
@@ -136,7 +177,7 @@ const bakery = [
 		price: 220,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/4040692/pexels-photo-4040692.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 
@@ -148,7 +189,7 @@ const savouries = [
 		price: 280,
 		foodType: "spicy",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/539451/pexels-photo-539451.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Chicken Puff",
@@ -157,7 +198,7 @@ const savouries = [
 		price: 200,
 		foodType: "spicy",
 		veg: "non-veg",
-		image: "",
+		image: "https://images.pexels.com/photos/4109136/pexels-photo-4109136.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 
@@ -169,7 +210,7 @@ const desserts = [
 		price: 320,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/461431/pexels-photo-461431.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 	{
 		name: "Chocolate Brownie",
@@ -178,7 +219,7 @@ const desserts = [
 		price: 280,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/45202/brownie-dessert-cake-sweet-45202.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 
@@ -190,7 +231,7 @@ const specials = [
 		price: 300,
 		foodType: "sweet",
 		veg: "veg",
-		image: "",
+		image: "https://images.pexels.com/photos/2074130/pexels-photo-2074130.jpeg?auto=compress&cs=tinysrgb&w=600&h=450&fit=crop",
 	},
 ];
 

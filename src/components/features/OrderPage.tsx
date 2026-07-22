@@ -7,6 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { type UIEvent, useEffect, useMemo, useRef, useState } from "react";
 import { VoiceButtonPro } from "#components/chatbot/VoiceButtonPro";
 import { useOrder, useRestaurant } from "#components/context/useContext";
+import { formatCurrency } from "#utils/helper/currency";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -187,7 +188,9 @@ export default function OrderPage() {
 									<p className="text-sm sm:text-base text-muted-foreground line-clamp-2 max-w-xl mb-3">{featuredItem.description}</p>
 								)}
 								<div className="flex items-center gap-3">
-									<span className="text-2xl font-bold text-primary">{typeof featuredItem.price === "number" ? `₹${featuredItem.price}` : ""}</span>
+									<span className="text-2xl font-bold text-primary">
+										{typeof featuredItem.price === "number" ? formatCurrency(featuredItem.price) : ""}
+									</span>
 									{eligibleToOrder && (
 										<Button
 											size="sm"
@@ -264,7 +267,7 @@ export default function OrderPage() {
 									<Button variant="default" size="sm" onClick={() => setSideSheetOpen(true)} className="relative gap-1.5 rounded-full shadow-md">
 										<ShoppingCart className="h-4 w-4" />
 										<span className="font-bold tabular-nums">{cartCount}</span>
-										<span className="hidden sm:inline text-xs opacity-80">· ₹{cartTotal.toFixed(0)}</span>
+										<span className="hidden sm:inline text-xs opacity-80">· {formatCurrency(cartTotal)}</span>
 									</Button>
 								</motion.div>
 							)}
@@ -456,7 +459,7 @@ export default function OrderPage() {
 							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 font-bold tabular-nums">{cartCount}</div>
 							<span className="font-semibold">View cart</span>
 						</div>
-						<span className="font-bold tabular-nums">₹{cartTotal.toFixed(0)}</span>
+						<span className="font-bold tabular-nums">{formatCurrency(cartTotal)}</span>
 					</button>
 				</motion.div>
 			)}

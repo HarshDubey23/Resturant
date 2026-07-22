@@ -36,8 +36,12 @@ function ParallaxFallback({ images, itemName }: { images: string[]; itemName?: s
 					key={src}
 					role="img"
 					aria-label={itemName || "Food preview"}
-					className="absolute w-3/4 h-3/4 transition-transform duration-100 ease-out will-change-transform bg-contain bg-center bg-no-repeat"
-					style={{ ...style, transform: `${style.transform} translateZ(${(i + 1) * 40}px)`, backgroundImage: `url(${src})` }}
+					className="absolute w-3/4 h-3/4 transition-transform duration-100 ease-out will-change-transform bg-contain bg-center bg-no-repeat rounded-2xl shadow-2xl"
+					style={{
+						...style,
+						transform: `${style.transform} translateZ(${(i + 1) * 40}px)`,
+						backgroundImage: `url(${src})`,
+					}}
 				/>
 			))}
 		</div>
@@ -80,21 +84,43 @@ function ModelViewer({ modelUrl, itemName }: { modelUrl: string; itemName?: stri
 
 export default function FoodViewer3D({ modelUrl, fallbackImages, itemName, open, onOpenChange }: FoodViewer3DProps) {
 	const tier = useMemo<WebGLTier>(() => getStoredWebGLTier(), []);
+	const [R3FViewer, setR3FViewer] = useState<React.ComponentType<{ modelUrl: string; itemName: string }> | null>(null);
+
+	// Lazy-load R3F only on WebGL2 devices when actually opening a 3D model
+	useEffect(() => {
+		if (!open || tier !== "r3f" || !modelUrl) return;
+		let mounted = true;
+		import("./R3FViewer")
+			.then((mod) => {
+				if (mounted) setR3FViewer(() => mod.R3FViewer);
+			})
+			.catch(() => {
+				if (mounted) setR3FViewer(null);
+			});
+		return () => {
+			mounted = false;
+		};
+	}, [open, tier, modelUrl]);
 
 	const viewer = useMemo(() => {
 		if (!modelUrl) return null;
+		// r3f tier: use real Three.js when module loaded, fall back to parallax if R3F fails to load
 		if (tier === "r3f") {
-			return (
-				<Suspense fallback={null}>
-					<ParallaxFallback images={fallbackImages?.length ? fallbackImages : ["/icon-192.png"]} itemName={itemName} />
-				</Suspense>
-			);
+			if (R3FViewer) {
+				return (
+					<Suspense fallback={<ParallaxFallback images={fallbackImages?.length ? fallbackImages : ["/icon-192.png"]} itemName={itemName} />}>
+						<R3FViewer modelUrl={modelUrl} itemName={itemName || "3D Preview"} />
+					</Suspense>
+				);
+			}
+			// While R3F is loading, show parallax as instant fallback
+			return <ParallaxFallback images={fallbackImages?.length ? fallbackImages : ["/icon-192.png"]} itemName={itemName} />;
 		}
 		if (tier === "model-viewer") {
 			return <ModelViewer modelUrl={modelUrl} itemName={itemName} />;
 		}
 		return <ParallaxFallback images={fallbackImages?.length ? fallbackImages : ["/icon-192.png"]} itemName={itemName} />;
-	}, [tier, modelUrl, fallbackImages, itemName]);
+	}, [tier, modelUrl, fallbackImages, itemName, R3FViewer]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
