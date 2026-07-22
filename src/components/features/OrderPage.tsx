@@ -1,9 +1,11 @@
 "use client";
 
-import { ChefHat, ChevronLeft, ChevronRight, LayoutDashboard, Scan, Search, ShoppingCart } from "lucide-react";
+import { ChefHat, ChevronLeft, ChevronRight, LayoutDashboard, Scan, Search, ShoppingCart, Sparkles, Star } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Image from "next/image";
 import { signOut, useSession } from "next-auth/react";
 import { type UIEvent, useEffect, useMemo, useRef, useState } from "react";
+import { VoiceButtonPro } from "#components/chatbot/VoiceButtonPro";
 import { useOrder, useRestaurant } from "#components/context/useContext";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +14,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import CartPage from "./CartPage";
 import type { TMenuCustom } from "./MenuCard";
 import MenuCard from "./MenuCard";
@@ -53,8 +56,36 @@ export default function OrderPage() {
 		);
 	}, [category, menus, searchParam]);
 
-	const hasImageItems = filteredProducts?.some((p) => !!p.image) ?? false;
-	const hasNonImageItems = filteredProducts?.some((p) => !p.image) ?? false;
+	// Group items by category for premium sectioned layout
+	const groupedByCategory = useMemo(() => {
+		if (!filteredProducts.length) return [];
+		const groups = new Map<string, TMenuCustom[]>();
+		for (const item of filteredProducts) {
+			const cat = item.category || "other";
+			if (!groups.has(cat)) groups.set(cat, []);
+			groups.get(cat)?.push(item);
+		}
+		// Sort items within each group: chef specials first, then by rating
+		return Array.from(groups.entries()).map(([cat, items]) => ({
+			category: cat,
+			items: items.sort((a, b) => {
+				const aSpecial = a.tags?.includes?.("chef-special") || a.tags?.includes?.("signature") ? 1 : 0;
+				const bSpecial = b.tags?.includes?.("chef-special") || b.tags?.includes?.("signature") ? 1 : 0;
+				if (aSpecial !== bSpecial) return bSpecial - aSpecial;
+				return (b.rating ?? 0) - (a.rating ?? 0);
+			}),
+		}));
+	}, [filteredProducts]);
+
+	const featuredItem = useMemo(() => {
+		if (!menus) return null;
+		const withImages = menus.filter((m) => m.image && !m.hidden);
+		if (!withImages.length) return null;
+		// Pick highest rated or first chef special
+		const special = withImages.find((m) => m.tags?.includes?.("chef-special") || m.tags?.includes?.("signature"));
+		if (special) return special;
+		return withImages.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
+	}, [menus]);
 
 	const onMenuScroll = (event: UIEvent<HTMLDivElement>) => {
 		const scrollTop = (event.target as HTMLDivElement).scrollTop;
@@ -107,6 +138,7 @@ export default function OrderPage() {
 
 	const resetSelectedProducts = () => setSelectedProducts([]);
 	const cartCount = selectedProducts.reduce((sum, p) => sum + p.quantity, 0);
+	const cartTotal = selectedProducts.reduce((sum, p) => sum + p.price * p.quantity, 0);
 
 	useEffect(() => {
 		const validCategories = category.filter((c) => restaurant?.profile?.categories?.includes(c));
@@ -127,48 +159,134 @@ export default function OrderPage() {
 	}, [restaurant?.username, session.data?.restaurant?.username, session.status, session.data?.role]);
 
 	return (
-		<div className="flex h-full">
+		<div className="flex h-full bg-gradient-to-b from-background via-background to-muted/20">
 			<div className="flex-1 overflow-auto" onScroll={onMenuScroll}>
-				<div className={`sticky top-0 z-10 bg-background/95 backdrop-blur-md transition-all ${floatHeader ? "shadow-md border-b" : ""}`}>
-					<div className="flex items-center justify-between px-4 py-3">
-						<div>
-							<h1 className="text-lg font-bold tracking-tight">
-								{eligibleToOrder ? "Choose" : "Explore"} <span className="text-gradient">Order</span>
-							</h1>
+				{/* ─── Premium Hero Banner ─── */}
+				{!searchParam && category.length === 0 && featuredItem && (
+					<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }} className="relative h-64 sm:h-80 overflow-hidden">
+						<Image src={featuredItem.image || ""} alt={featuredItem.name} fill priority className="object-cover" sizes="100vw" />
+						<div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-background/20" />
+						<div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
+
+						<div className="relative h-full flex flex-col justify-end p-6 sm:p-10">
+							<motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }} className="max-w-2xl">
+								<div className="flex items-center gap-2 mb-3">
+									<Badge className="bg-amber-500 hover:bg-amber-600 text-white gap-1">
+										<Sparkles className="h-3 w-3" />
+										Featured
+									</Badge>
+									{(featuredItem.rating ?? 0) > 0 && (
+										<div className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur-sm">
+											<Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+											<span className="text-xs font-bold text-white tabular-nums">{featuredItem.rating?.toFixed(1)}</span>
+										</div>
+									)}
+								</div>
+								<h2 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground mb-2 drop-shadow-sm">{featuredItem.name}</h2>
+								{featuredItem.description && (
+									<p className="text-sm sm:text-base text-muted-foreground line-clamp-2 max-w-xl mb-3">{featuredItem.description}</p>
+								)}
+								<div className="flex items-center gap-3">
+									<span className="text-2xl font-bold text-primary">{typeof featuredItem.price === "number" ? `₹${featuredItem.price}` : ""}</span>
+									{eligibleToOrder && (
+										<Button
+											size="sm"
+											onClick={() => increaseProductQuantity(featuredItem)}
+											className="rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-105 transition-all">
+											Order Now
+										</Button>
+									)}
+								</div>
+							</motion.div>
 						</div>
-						<div className="flex items-center gap-2">
-							<Button variant="ghost" size="icon" onClick={() => setSearchActive(!searchActive)} aria-label="Search menu">
+					</motion.div>
+				)}
+
+				{/* ─── Sticky Header ─── */}
+				<div
+					className={cn(
+						"sticky top-0 z-20 transition-all duration-300",
+						floatHeader ? "bg-background/95 backdrop-blur-xl shadow-lg shadow-black/5 border-b border-border/60" : "bg-transparent",
+					)}>
+					<div className="flex items-center justify-between px-4 py-3 gap-2">
+						<div className="min-w-0 flex-1">
+							{restaurant?.profile ? (
+								<div className="flex items-center gap-2 min-w-0">
+									{restaurant.profile.logoUrl ? (
+										<Image
+											src={restaurant.profile.logoUrl}
+											alt={restaurant.profile.name}
+											width={36}
+											height={36}
+											className="rounded-full ring-2 ring-primary/20"
+										/>
+									) : (
+										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-white font-bold ring-2 ring-primary/20">
+											{restaurant.profile.name?.[0] || "R"}
+										</div>
+									)}
+									<div className="min-w-0">
+										<h1 className="text-base font-bold tracking-tight truncate">{restaurant.profile.name}</h1>
+										{table && (
+											<p className="text-[11px] text-muted-foreground flex items-center gap-1">
+												<span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+												Table {table}
+											</p>
+										)}
+									</div>
+								</div>
+							) : (
+								<h1 className="text-lg font-bold tracking-tight">Menu</h1>
+							)}
+						</div>
+
+						<div className="flex items-center gap-1.5 shrink-0">
+							<Button
+								variant={floatHeader ? "ghost" : "secondary"}
+								size="icon"
+								onClick={() => setSearchActive(!searchActive)}
+								aria-label="Search menu"
+								className="h-9 w-9 backdrop-blur-sm">
 								<Search className="h-4 w-4" />
 							</Button>
 
+							<VoiceButtonPro
+								onTranscript={(text) => {
+									setSearchValue(text);
+									setSearchActive(true);
+								}}
+								variant="icon"
+								lang="en-US"
+							/>
+
 							{eligibleToOrder && cartCount > 0 && (
-								<Button variant="outline" size="sm" onClick={() => setSideSheetOpen(true)} className="relative">
-									<ShoppingCart className="h-4 w-4 mr-1" />
-									Cart
-									<Badge variant="secondary" className="ml-1 h-5 min-w-5 px-1 text-[10px]">
-										{cartCount}
-									</Badge>
-								</Button>
+								<motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+									<Button variant="default" size="sm" onClick={() => setSideSheetOpen(true)} className="relative gap-1.5 rounded-full shadow-md">
+										<ShoppingCart className="h-4 w-4" />
+										<span className="font-bold tabular-nums">{cartCount}</span>
+										<span className="hidden sm:inline text-xs opacity-80">· ₹{cartTotal.toFixed(0)}</span>
+									</Button>
+								</motion.div>
 							)}
 
 							{(!session.data?.role || !showOrderButton) && (
-								<Button size="sm" onClick={onLoginClick}>
-									<Scan className="h-4 w-4 mr-1" />
-									{showOrderButton ? "Order" : "Scan"}
+								<Button size="sm" onClick={onLoginClick} className="gap-1.5 rounded-full shadow-md">
+									<Scan className="h-4 w-4" />
+									<span className="hidden sm:inline">{showOrderButton ? "Order" : "Sign in"}</span>
 								</Button>
 							)}
 
 							{session.data?.role === "admin" && (
-								<Button variant="outline" size="sm" onClick={() => params.router.push("/dashboard")}>
-									<LayoutDashboard className="h-4 w-4 mr-1" />
-									Dashboard
+								<Button variant="secondary" size="sm" onClick={() => params.router.push("/dashboard")} className="gap-1.5 rounded-full">
+									<LayoutDashboard className="h-4 w-4" />
+									<span className="hidden sm:inline">Dashboard</span>
 								</Button>
 							)}
 
 							{session.data?.role === "kitchen" && (
-								<Button variant="outline" size="sm" onClick={() => params.router.push("/kitchen")}>
-									<ChefHat className="h-4 w-4 mr-1" />
-									Kitchen
+								<Button variant="secondary" size="sm" onClick={() => params.router.push("/kitchen")} className="gap-1.5 rounded-full">
+									<ChefHat className="h-4 w-4" />
+									<span className="hidden sm:inline">Kitchen</span>
 								</Button>
 							)}
 						</div>
@@ -181,113 +299,172 @@ export default function OrderPage() {
 								animate={{ height: "auto", opacity: 1 }}
 								exit={{ height: 0, opacity: 0 }}
 								className="px-4 pb-3">
-								<Input placeholder="Search menu..." value={searchValue} onChange={(e) => setSearchValue(e.target.value)} autoFocus />
+								<div className="relative">
+									<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+									<Input
+										placeholder="Search dishes, cuisines, ingredients…"
+										value={searchValue}
+										onChange={(e) => setSearchValue(e.target.value)}
+										autoFocus
+										className="pl-9 pr-9 rounded-full bg-background/80 backdrop-blur"
+									/>
+									{searchValue && (
+										<button
+											type="button"
+											onClick={() => setSearchValue("")}
+											className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground">
+											Clear
+										</button>
+									)}
+								</div>
 							</motion.div>
 						)}
 					</AnimatePresence>
 
-					{restaurant?.profile?.categories && (
+					{restaurant?.profile?.categories && restaurant.profile.categories.length > 0 && (
 						<div className="relative px-4 pb-3">
-							<div ref={categoriesRef} onScroll={onCategoryScroll} className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth">
+							<div ref={categoriesRef} onScroll={onCategoryScroll} className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth pb-1">
+								<button
+									type="button"
+									onClick={() => params.set({ category: "" })}
+									className={cn(
+										"shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200",
+										category.length === 0
+											? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+											: "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+									)}>
+									All
+								</button>
 								{restaurant.profile.categories.map((cat) => (
 									<button
+										type="button"
 										key={cat}
 										onClick={() => onCategoryClick(cat)}
-										className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+										className={cn(
+											"shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-all duration-200",
 											category.includes(cat)
-												? "bg-primary text-primary-foreground"
-												: "bg-muted/80 text-muted-foreground hover:bg-muted hover:text-foreground shadow-sm"
-										}`}>
-										{cat}
+												? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+												: "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+										)}>
+										{cat.replace(/-/g, " ")}
 									</button>
 								))}
 							</div>
 							{leftCategoryScroll && (
 								<button
+									type="button"
 									onClick={() => scrollCategory("left")}
-									className="absolute left-4 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-background shadow-sm border"
+									className="absolute left-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-background shadow-lg border"
 									aria-label="Scroll left">
-									<ChevronLeft className="h-3 w-3" />
+									<ChevronLeft className="h-3.5 w-3.5" />
 								</button>
 							)}
 							{rightCategoryScroll && (
 								<button
+									type="button"
 									onClick={() => scrollCategory("right")}
-									className="absolute right-4 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-background shadow-sm border"
+									className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-background shadow-lg border"
 									aria-label="Scroll right">
-									<ChevronRight className="h-3 w-3" />
+									<ChevronRight className="h-3.5 w-3.5" />
 								</button>
 							)}
 						</div>
 					)}
 				</div>
 
-				<div className="px-4 pb-24">
+				{/* ─── Main Content ─── */}
+				<div className="px-4 pb-32 pt-2">
 					{!restaurant ? (
 						<div className="space-y-3 pt-4">
 							{Array.from({ length: 6 }).map((_, i) => (
-								<Skeleton key={i} className="h-28 w-full rounded-xl" />
+								<Skeleton key={i} className="h-44 w-full rounded-2xl" />
 							))}
 						</div>
+					) : groupedByCategory.length === 0 ? (
+						<motion.div
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							className="flex flex-col items-center justify-center py-24 text-center">
+							<div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted/60 mb-4">
+								<Search className="h-7 w-7 text-muted-foreground" />
+							</div>
+							<h3 className="text-base font-semibold mb-1">No dishes found</h3>
+							<p className="text-sm text-muted-foreground">Try a different search or category filter</p>
+						</motion.div>
 					) : (
-						<>
-							{hasImageItems && (
-								<div className="space-y-3 pt-2">
-									{filteredProducts
-										.filter((item) => item.image)
-										.map((item) => (
-											<MenuCard
+						<div className="space-y-8 pt-4">
+							{groupedByCategory.map((group, gi) => (
+								<motion.section
+									key={group.category}
+									initial={{ opacity: 0, y: 16 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: gi * 0.05, duration: 0.4 }}>
+									<div className="flex items-center gap-3 mb-4">
+										<h2 className="text-xl font-bold capitalize tracking-tight">{group.category.replace(/-/g, " ")}</h2>
+										<span className="text-xs text-muted-foreground font-medium">
+											{group.items.length} {group.items.length === 1 ? "dish" : "dishes"}
+										</span>
+										<div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+									</div>
+									<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+										{group.items.map((item, i) => (
+											<motion.div
 												key={String(item._id)}
-												item={item}
-												restrictOrder={!eligibleToOrder}
-												increaseQuantity={increaseProductQuantity}
-												decreaseQuantity={decreaseProductQuantity}
-												showInfo={showInfoCard === item._id.toString()}
-												setShowInfo={(v) => setShowInfoCard(v ? item._id.toString() : false)}
-												quantity={selectedProducts.find((p) => String(p._id) === String(item._id))?.quantity ?? 0}
-											/>
+												initial={{ opacity: 0, y: 10 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.3 }}>
+												<MenuCard
+													item={item}
+													restrictOrder={!eligibleToOrder}
+													increaseQuantity={increaseProductQuantity}
+													decreaseQuantity={decreaseProductQuantity}
+													showInfo={showInfoCard === item._id.toString()}
+													setShowInfo={(v) => setShowInfoCard(v ? item._id.toString() : false)}
+													quantity={selectedProducts.find((p) => String(p._id) === String(item._id))?.quantity ?? 0}
+												/>
+											</motion.div>
 										))}
-								</div>
-							)}
+									</div>
+								</motion.section>
+							))}
 
-							{hasImageItems && hasNonImageItems && <hr className="my-6 border-t" />}
-
-							{hasNonImageItems && (
-								<div className="space-y-3 pt-2">
-									{filteredProducts
-										.filter((item) => !item.image)
-										.map((item) => (
-											<MenuCard
-												key={String(item._id)}
-												item={item}
-												restrictOrder={!eligibleToOrder}
-												increaseQuantity={increaseProductQuantity}
-												decreaseQuantity={decreaseProductQuantity}
-												showInfo={showInfoCard === item._id.toString()}
-												setShowInfo={(v) => setShowInfoCard(v ? item._id.toString() : false)}
-												quantity={selectedProducts.find((p) => String(p._id) === String(item._id))?.quantity ?? 0}
-											/>
-										))}
+							{/* Footer with branding */}
+							<div className="pt-8 pb-4 text-center">
+								<div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+									<div className="h-px w-8 bg-border" />
+									<span>Powered by OrderWorder</span>
+									<div className="h-px w-8 bg-border" />
 								</div>
-							)}
-
-							{filteredProducts.length === 0 && (
-								<div className="flex flex-col items-center justify-center py-20 text-center">
-									<Search className="h-8 w-8 text-muted-foreground mb-3" />
-									<p className="text-sm text-muted-foreground">No items found</p>
-								</div>
-							)}
-						</>
+							</div>
+						</div>
 					)}
 				</div>
 			</div>
 
+			{/* Floating cart bar for mobile */}
+			{eligibleToOrder && cartCount > 0 && !sideSheetOpen && (
+				<motion.div
+					initial={{ y: 100, opacity: 0 }}
+					animate={{ y: 0, opacity: 1 }}
+					exit={{ y: 100, opacity: 0 }}
+					className="fixed bottom-4 left-4 right-4 z-30 lg:hidden">
+					<button
+						type="button"
+						onClick={() => setSideSheetOpen(true)}
+						className="flex w-full items-center justify-between gap-3 rounded-2xl bg-primary px-5 py-3 text-primary-foreground shadow-2xl shadow-primary/30">
+						<div className="flex items-center gap-2">
+							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 font-bold tabular-nums">{cartCount}</div>
+							<span className="font-semibold">View cart</span>
+						</div>
+						<span className="font-bold tabular-nums">₹{cartTotal.toFixed(0)}</span>
+					</button>
+				</motion.div>
+			)}
+
 			<Sheet open={sideSheetOpen} onOpenChange={setSideSheetOpen}>
 				<SheetContent side="right" className="w-full sm:max-w-md p-0">
 					<SheetHeader className="px-4 py-3 border-b bg-card/50">
-						<SheetTitle>
-							Your <span className="text-gradient">Order</span>
-						</SheetTitle>
+						<SheetTitle>Your Order</SheetTitle>
 					</SheetHeader>
 					<CartPage
 						selectedProducts={selectedProducts}

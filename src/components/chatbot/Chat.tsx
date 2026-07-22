@@ -11,7 +11,7 @@ import { useResize } from "../../utils/hooks/useResize";
 import { useOrder, useRestaurant } from "../context/useContext";
 import { ChatFab } from "./ChatFab";
 import { MessageList } from "./MessageList";
-import { VoiceButton } from "./VoiceButton";
+import { VoiceButtonPro as VoiceButton } from "./VoiceButtonPro";
 import { Welcome } from "./Welcome";
 
 export const ChatInterface = () => {

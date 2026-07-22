@@ -71,6 +71,14 @@ export type TMenu = HydratedDocument<{
 	costPrice: number;
 	sku: string;
 	hidden: boolean;
+	/** Premium UI fields — populated by enrichMenuForPremiumUI for demo data,
+	 * or set per-item by the restaurant owner from the dashboard. */
+	rating?: number;
+	reviewCount?: number;
+	tags?: string[];
+	spiceLevel?: number;
+	originalPrice?: number;
+	panoramicImage?: string;
 }>;
 
 export type TFoodType = (typeof FoodType)[number];

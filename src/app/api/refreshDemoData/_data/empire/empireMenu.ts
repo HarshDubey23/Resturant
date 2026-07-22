@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import type { TMenu } from "#utils/database/models/menu";
 import { ID_SUFFIX, REF_EMPIRE, TYPE_MENU } from "../constants";
+import { enrichMenuForPremiumUI } from "../enrichMenu";
 
 const empireBox = [
 	{
@@ -289,5 +290,7 @@ menus = menus.map((menu, index) => {
 	if (!menu?.hidden) menu.hidden = false;
 	return menu;
 });
+
+menus = enrichMenuForPremiumUI(menus, "empire");
 
 export { menus };

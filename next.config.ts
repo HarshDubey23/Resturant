@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-	output: "standalone",
+	// output: "standalone", // disabled for preview — enables `next start`
 	// Keep Three.js / React Three Fiber out of the server bundle — they are
 	// only ever used by the lazily-imported 3D viewer on the client.
 	serverExternalPackages: ["three", "@react-three/fiber", "@react-three/drei", "@google/model-viewer"],

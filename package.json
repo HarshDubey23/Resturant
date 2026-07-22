@@ -21,6 +21,7 @@
 		"@ai-sdk/openai-compatible": "^2.0.24",
 		"@base-ui/react": "^1.6.0",
 		"@google/model-viewer": "^4.3.1",
+		"@huggingface/transformers": "^4.2.0",
 		"@react-pdf/renderer": "^4.3.2",
 		"@react-three/drei": "^10.7.7",
 		"@react-three/fiber": "^9.6.1",
@@ -88,6 +89,8 @@
 		"@parcel/watcher",
 		"bcrypt",
 		"es5-ext",
+		"onnxruntime-node",
+		"protobufjs",
 		"sharp"
 	]
 }

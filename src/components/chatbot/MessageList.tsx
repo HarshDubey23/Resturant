@@ -3,7 +3,7 @@
 import DOMPurify from "dompurify";
 import { Bot, Volume2 } from "lucide-react";
 import { memo, type RefObject } from "react";
-import { useTTS } from "#utils/hooks/useTTS";
+import { useFreeVoiceTTS as useTTS } from "#utils/hooks/useFreeVoiceTTS";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "../../types/chat";
 import { MenuCard } from "./MenuCard";
