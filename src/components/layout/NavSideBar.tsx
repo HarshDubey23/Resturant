@@ -47,7 +47,7 @@ export default function NavSideBar({ navItems, defaultTab, head, foot }: NavSide
 	const restaurantInitial = restaurantName.charAt(0).toUpperCase() || "R";
 
 	return (
-		<aside className="flex flex-col border-r bg-card/80 backdrop-blur-sm w-16 lg:w-20 shrink-0">
+		<aside className="flex flex-col border-r bg-card/80 backdrop-blur-sm w-16 lg:w-20 shrink-0 h-screen">
 			{/* Optional header slot (logo / brand) */}
 			{head && <div className="h-2" />}
 

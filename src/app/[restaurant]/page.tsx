@@ -78,7 +78,7 @@ const Restaurant = async ({ params }: IRestaurantProps) => {
 					},
 				}}
 			/>
-			<div className="flex w-full h-full overflow-hidden">
+			<div className="flex w-full h-screen overflow-hidden">
 				<NavSideBar navItems={navItems} defaultTab="menu" foot />
 				<div className="flex-1 overflow-hidden">
 					<PageContainer />

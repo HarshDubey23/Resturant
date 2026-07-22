@@ -3,10 +3,11 @@
 import { Box, Circle, Flame, Info, Leaf, Minus, Plus, Sparkles, Star, View } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import type { TMenu } from "#utils/database/models/menu";
 import { formatCurrency } from "#utils/helper/currency";
+import { getPanoramicForItem } from "#utils/helper/panoramic";
 import FoodViewer3D from "@/components/features/FoodViewer3DDynamic";
 import PanoramicViewer from "@/components/features/PanoramicViewer";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,19 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 	const [viewerOpen, setViewerOpen] = useState(false);
 	const [panoramicOpen, setPanoramicOpen] = useState(false);
 	const [imgLoaded, setImgLoaded] = useState(false);
+	const [imgFailed, setImgFailed] = useState(false);
 	const flashTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+	// Auto-attach a panoramic image if the item doesn't have one but matches a known dish.
+	// This makes the "360° View" button appear on many more dishes for free.
+	const panoramicImage = useMemo(() => {
+		if (item.panoramicImage) return item.panoramicImage as string;
+		return getPanoramicForItem({ slug: item.slug, name: item.name });
+	}, [item.panoramicImage, item.slug, item.name]);
+
+	// 3D preview is available whenever we have either an explicit 3D model OR an image
+	// (the FoodViewer3D dialog falls back to a 3D parallax experience using the image).
+	const has3DPreview = Boolean(item.model3d?.url || item.modelUrl || item.image);
 
 	useEffect(() => {
 		const handleHighlight = ((e: CustomEvent<{ id: string }>) => {
@@ -101,7 +114,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 
 			<div className="flex gap-0">
 				{/* Image — bigger, with overlay gradient and lazy shimmer */}
-				{item.image ? (
+				{item.image && !imgFailed ? (
 					<div className="relative h-44 w-40 shrink-0 overflow-hidden bg-muted/40 sm:h-48 sm:w-44">
 						{!imgLoaded && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/60 to-muted/20" />}
 						<Image
@@ -110,6 +123,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 							fill
 							loading="lazy"
 							onLoad={() => setImgLoaded(true)}
+							onError={() => setImgFailed(true)}
 							className={cn("object-cover transition-all duration-500 group-hover:scale-110", !imgLoaded && "opacity-0")}
 							sizes="(max-width: 640px) 160px, 176px"
 						/>
@@ -117,7 +131,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 						<div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
 						{/* 3D badge over image */}
-						{(item.model3d?.url || item.modelUrl) && (
+						{has3DPreview && (
 							<button
 								type="button"
 								onClick={() => setViewerOpen(true)}
@@ -128,13 +142,13 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 						)}
 
 						{/* 360° panoramic viewer button */}
-						{item.panoramicImage && (
+						{panoramicImage && (
 							<button
 								type="button"
 								onClick={() => setPanoramicOpen(true)}
 								className={cn(
 									"absolute bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-105",
-									item.model3d?.url || item.modelUrl ? "left-[90px]" : "left-2",
+									has3DPreview ? "left-[90px]" : "left-2",
 								)}>
 								<View className="h-3 w-3" />
 								360° View
@@ -150,6 +164,36 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 									<Flame key={i} className="h-2.5 w-2.5 fill-orange-500 text-orange-500" />
 								))}
 							</div>
+						)}
+					</div>
+				) : item.image && imgFailed ? (
+					<div className="relative h-44 w-40 shrink-0 overflow-hidden bg-gradient-to-br from-muted/60 to-muted/20 sm:h-48 sm:w-44">
+						<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2 text-center">
+							<div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/80">
+								<Sparkles className="h-6 w-6 text-muted-foreground/80" />
+							</div>
+							<span className="text-[10px] font-medium text-muted-foreground line-clamp-2">{item.name}</span>
+						</div>
+						{has3DPreview && (
+							<button
+								type="button"
+								onClick={() => setViewerOpen(true)}
+								className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-105">
+								<Box className="h-3 w-3" />
+								3D View
+							</button>
+						)}
+						{panoramicImage && (
+							<button
+								type="button"
+								onClick={() => setPanoramicOpen(true)}
+								className={cn(
+									"absolute bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm transition-all hover:bg-black/80 hover:scale-105",
+									has3DPreview ? "left-[90px]" : "left-2",
+								)}>
+								<View className="h-3 w-3" />
+								360° View
+							</button>
 						)}
 					</div>
 				) : (
@@ -314,7 +358,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 			<PanoramicViewer
 				open={panoramicOpen}
 				onOpenChange={setPanoramicOpen}
-				imageUrl={item.panoramicImage as string}
+				imageUrl={panoramicImage as string}
 				itemName={item.name}
 				description={item.description ?? undefined}
 				price={item.price}

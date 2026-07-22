@@ -26,7 +26,7 @@ export async function generateMetadata({ searchParams }: IMetaDataProps) {
 const Dashboard = () => {
 	return (
 		<DashboardProvider>
-			<div className="dashboard">
+			<div className="flex h-screen overflow-hidden dashboard">
 				<NavSideBar navItems={navItems} defaultTab="overview" foot />
 				<PageContainer />
 			</div>

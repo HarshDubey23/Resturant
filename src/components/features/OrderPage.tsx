@@ -9,6 +9,7 @@ import { VoiceButtonPro } from "#components/chatbot/VoiceButtonPro";
 import { useOrder, useRestaurant } from "#components/context/useContext";
 import { formatCurrency } from "#utils/helper/currency";
 import { useQueryParams } from "#utils/hooks/useQueryParams";
+import { SITE_NAME } from "#utils/seo/constants";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -215,13 +216,13 @@ export default function OrderPage() {
 						<div className="min-w-0 flex-1">
 							{restaurant?.profile ? (
 								<div className="flex items-center gap-2 min-w-0">
-									{restaurant.profile.logoUrl ? (
+									{restaurant.profile.logoUrl || restaurant.profile.avatar ? (
 										<Image
-											src={restaurant.profile.logoUrl}
+											src={restaurant.profile.logoUrl || (restaurant.profile.avatar as string)}
 											alt={restaurant.profile.name}
 											width={36}
 											height={36}
-											className="rounded-full ring-2 ring-primary/20"
+											className="rounded-full ring-2 ring-primary/20 object-cover"
 										/>
 									) : (
 										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-white font-bold ring-2 ring-primary/20">
@@ -435,7 +436,7 @@ export default function OrderPage() {
 							<div className="pt-8 pb-4 text-center">
 								<div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
 									<div className="h-px w-8 bg-border" />
-									<span>Powered by OrderWorder</span>
+									<span>Powered by {SITE_NAME}</span>
 									<div className="h-px w-8 bg-border" />
 								</div>
 							</div>

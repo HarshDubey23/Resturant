@@ -1,6 +1,8 @@
 "use client";
 
-import { Eye, EyeOff, ImageIcon, PencilLine } from "lucide-react";
+import { Eye, EyeOff, ImageIcon, PencilLine, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { useAdmin } from "#components/context/useContext";
 import type { TMenu } from "#utils/database/models/menu";
@@ -25,16 +27,17 @@ export default function MenuEditorItem({ item, onEdit, onHide, hideSettingsLoadi
 	const [itemRef, inView] = useInView({ threshold: 0 });
 	const { profile } = useAdmin();
 	const currency = profile?.currency || "INR";
+	const [imgFailed, setImgFailed] = useState(false);
 
 	return (
-		<div ref={itemRef} className={cn("flex items-center gap-3 rounded-lg border bg-card p-3", !inView && "min-h-[72px]")}>
+		<div ref={itemRef} className={cn("flex items-center gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-muted/30", !inView && "min-h-[72px]")}>
 			{inView && (
 				<>
-					<div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted relative">
-						{item.image ? (
-							<span className="block h-full w-full bg-cover bg-center" style={{ background: `url(${item.image})` }} />
+					<div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
+						{item.image && !imgFailed ? (
+							<Image src={item.image} alt={item.name} fill unoptimized className="object-cover" onError={() => setImgFailed(true)} />
 						) : (
-							<div className="flex h-full items-center justify-center">
+							<div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted/80 to-muted/40">
 								<ImageIcon className="h-5 w-5 text-muted-foreground" />
 							</div>
 						)}
@@ -49,9 +52,22 @@ export default function MenuEditorItem({ item, onEdit, onHide, hideSettingsLoadi
 						)}
 					</div>
 					<div className="flex-1 min-w-0">
-						<p className="text-sm font-medium truncate">{item.name}</p>
+						<div className="flex items-center gap-1.5">
+							<p className="text-sm font-medium truncate">{item.name}</p>
+							{item.rating !== undefined && item.rating > 0 && (
+								<span className="shrink-0 inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-600">
+									<Sparkles className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
+									{item.rating.toFixed(1)}
+								</span>
+							)}
+						</div>
 						<p className="text-xs text-muted-foreground truncate">{item.description}</p>
-						<p className="text-xs font-semibold mt-0.5">{formatCurrency(item.price, currency)}</p>
+						<div className="flex items-center gap-2 mt-0.5">
+							<p className="text-xs font-semibold">{formatCurrency(item.price, currency)}</p>
+							{item.originalPrice && item.originalPrice > item.price && (
+								<p className="text-[10px] text-muted-foreground line-through">{formatCurrency(item.originalPrice, currency)}</p>
+							)}
+						</div>
 					</div>
 					<div className="flex items-center gap-1 shrink-0">
 						<Button

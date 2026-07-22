@@ -76,12 +76,10 @@ export default function Overview() {
 	const currency = profile?.currency || "INR";
 
 	return (
-		<div className="space-y-6 max-w-5xl">
-			<div className="flex items-center justify-between">
-				<div>
-					<h2 className="text-lg font-semibold">Welcome{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""} 👋</h2>
-					<p className="text-xs text-muted-foreground mt-0.5">Here&apos;s what&apos;s happening today</p>
-				</div>
+		<div className="space-y-6">
+			<div>
+				<h2 className="text-lg font-semibold">Welcome{profile?.name ? `, ${profile.name.split(" ")[0]}` : ""} 👋</h2>
+				<p className="text-xs text-muted-foreground mt-0.5">Here&apos;s what&apos;s happening today</p>
 			</div>
 
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

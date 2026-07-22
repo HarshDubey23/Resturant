@@ -18,12 +18,12 @@ const profile = {
 	description: "Specialty coffee and artisan bakery in the heart of the city. Freshly roasted beans and handcrafted beverages.",
 	address: "MG Road, Bengaluru",
 	themeColor: { h: 24, s: 85, l: 45 },
-	avatar: "https://images.unsplash.com/photo-1509042239860-f23cee9d0b6f?w=200&h=200&fit=crop",
-	cover: "https://images.unsplash.com/photo-1509042239860-f23cee9d0b6f?w=1200&h=600&fit=crop",
+	avatar: "https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&fit=crop",
+	cover: "https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=1200&h=600&fit=crop",
 	photos: [
-		"https://images.unsplash.com/photo-1509042239860-f23cee9d0b6f?w=800&h=600&fit=crop",
-		"https://images.unsplash.com/photo-1509042239860-f23cee9d0b6f?w=800&h=600&fit=crop",
-		"https://images.unsplash.com/photo-1509042239860-f23cee9d0b6f?w=800&h=600&fit=crop",
+		"https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop",
+		"https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop",
+		"https://images.pexels.com/photos/2074129/pexels-photo-2074129.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop",
 	],
 	categories: ["Coffee", "Tea", "Frappuccino", "Cold Beverages", "Bakery", "Savouries", "Desserts", "Specials"],
 };

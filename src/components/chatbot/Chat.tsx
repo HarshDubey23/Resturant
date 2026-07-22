@@ -2,7 +2,7 @@
 
 import { Bot, Send } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,18 @@ export const ChatInterface = () => {
 	});
 
 	const [input, setInput] = useState("");
+
+	// Find the latest assistant message with content, so we can show a
+	// one-tap "Listen" button next to the mic.
+	const lastAssistantText = useMemo(() => {
+		for (let i = messages.length - 1; i >= 0; i--) {
+			const m = messages[i];
+			if (m.role === "assistant" && m.content && m.content.trim()) {
+				return m.content.replace(/<[^>]*>/g, " ").trim();
+			}
+		}
+		return undefined;
+	}, [messages]);
 
 	const handleLoginRedirect = () => {
 		setIsOpen(false);
@@ -72,6 +84,8 @@ export const ChatInterface = () => {
 										}
 									}}
 									disabled={isLoading}
+									speakText={lastAssistantText}
+									lang="en-US"
 								/>
 								<Input
 									value={input}
