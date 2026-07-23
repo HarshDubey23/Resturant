@@ -790,7 +790,12 @@ function MenuStep({
 						type="text"
 						value={newCategory}
 						onChange={(e) => setNewCategory(e.target.value)}
-						onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addCategory())}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								addCategory();
+							}
+						}}
 						placeholder="Add a category (e.g. pizzas)"
 						className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
 					/>
@@ -1399,9 +1404,9 @@ function StepHeader({ title, subtitle }: { title: string; subtitle: string }) {
 function Field({ label, children, error, hint, required }: { label: string; children: React.ReactNode; error?: string; hint?: string; required?: boolean }) {
 	return (
 		<div>
-			<label className="block text-sm font-semibold mb-1.5">
+			<span className="block text-sm font-semibold mb-1.5">
 				{label} {required && <span className="text-destructive">*</span>}
-			</label>
+			</span>
 			{children}
 			{error ? <p className="text-xs text-destructive mt-1">{error}</p> : hint ? <p className="text-xs text-muted-foreground mt-1">{hint}</p> : null}
 		</div>
@@ -1426,7 +1431,7 @@ function ImageUpload({
 	const [err, setErr] = useState<string | null>(null);
 	return (
 		<div>
-			<label className="block text-sm font-semibold mb-1.5">{label}</label>
+			<span className="block text-sm font-semibold mb-1.5">{label}</span>
 			<button
 				type="button"
 				onClick={() => inputRef.current?.click()}

@@ -190,7 +190,7 @@ function OrderItemCard({ item, currency }: { item: TMenuCustom; currency: string
 		<div className="flex items-center justify-between rounded-lg border bg-card/50 p-3 transition-colors hover:bg-accent/30">
 			<div className="min-w-0 flex-1 space-y-0.5">
 				<div className="flex items-center gap-1.5">
-					<span aria-label={vegType} className={`inline-block h-2.5 w-2.5 rounded-sm border border-foreground/30 ${VEG_STYLES[vegType]}`} />
+					<span role="img" aria-label={vegType} className={`inline-block h-2.5 w-2.5 rounded-sm border border-foreground/30 ${VEG_STYLES[vegType]}`} />
 					<p className="text-sm font-medium truncate">{item.name}</p>
 				</div>
 				<p className="text-xs text-muted-foreground tabular-nums">
