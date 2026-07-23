@@ -10,8 +10,8 @@ import { weeklyDigest } from "#utils/queue/weekly-digest";
 export const runtime = "nodejs";
 
 const handler = serve({
-        client: inngest,
-        functions: [notificationDispatcher, abandonedCartReminder, dailySettlement, birthdayOffer, weeklyDigest],
+	client: inngest,
+	functions: [notificationDispatcher, abandonedCartReminder, dailySettlement, birthdayOffer, weeklyDigest],
 });
 
 export const GET = handler;
