@@ -40,8 +40,8 @@ export default function SettingsBilling() {
 	const session = useSession();
 	const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-	const accountPlan = ((session.data as Record<string, unknown>)?.plan as string) ?? "free";
-	const subscriptionActive = ((session.data as Record<string, unknown>)?.subscriptionActive as boolean) ?? false;
+	const accountPlan = ((session.data as unknown as Record<string, unknown>)?.plan as string) ?? "free";
+	const subscriptionActive = ((session.data as unknown as Record<string, unknown>)?.subscriptionActive as boolean) ?? false;
 
 	const currentPlan = PLAN_DETAILS[accountPlan] ?? PLAN_DETAILS.free;
 	const currentTableCount = tables?.length ?? 0;

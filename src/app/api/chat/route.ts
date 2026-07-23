@@ -66,7 +66,7 @@ export async function POST(req: Request) {
 		if (!session) return Response.json({ text: "Please login to chat with Jarvis", toolResults: [] }, { status: 401 });
 
 		// ── Plan enforcement: AI chat is a Pro feature ──
-		const accountPlan = (session as Record<string, unknown>)?.plan ?? "free";
+		const accountPlan = (session as unknown as Record<string, unknown>)?.plan ?? "free";
 		if (accountPlan === "free") {
 			await connectDB();
 			const freshAccount = await Accounts.findOne({ username: restaurantId });

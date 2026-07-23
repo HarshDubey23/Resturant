@@ -138,7 +138,7 @@ export default function SettingsAuditLog() {
 	}, [fetchLogs]);
 
 	// Only visible to owner and manager roles
-	const role = profile?.role;
+	const role = (profile as unknown as { role?: string })?.role;
 	if (role !== "owner" && role !== "manager" && role !== "admin") {
 		return (
 			<div className="flex flex-col items-center justify-center py-20 text-center">
@@ -173,7 +173,7 @@ export default function SettingsAuditLog() {
 					<div className="flex flex-wrap gap-3 items-end">
 						<div className="space-y-1.5 min-w-[180px]">
 							<span className="text-xs font-medium text-muted-foreground">Action type</span>
-							<Select value={actionFilter} onValueChange={setActionFilter}>
+							<Select value={actionFilter} onValueChange={(v) => setActionFilter(v ?? "")}>
 								<SelectTrigger className="w-full">
 									<SelectValue placeholder="All actions" />
 								</SelectTrigger>
