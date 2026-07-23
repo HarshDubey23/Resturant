@@ -14,6 +14,7 @@
  * falls back to whatever local/blob URL the client sent.
  */
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID;
@@ -85,4 +86,33 @@ export function buildObjectKey(params: { restaurantID: string; originalName: str
 		.slice(0, 40);
 	const suffix = params.suffix || Math.random().toString(36).slice(2, 10);
 	return `${slug}-${suffix}.${ext}`;
+}
+
+/**
+ * Generate a presigned PUT URL for client-side direct uploads to R2.
+ * The URL expires after the given number of seconds (default 5 min).
+ * Returns null when R2 is not configured.
+ */
+export async function getPresignedPutUrl(key: string, contentType: string, expiresIn = 300): Promise<string | null> {
+	const client = getClient();
+	if (!client || !R2_BUCKET_NAME) return null;
+
+	const command = new PutObjectCommand({
+		Bucket: R2_BUCKET_NAME,
+		Key: key,
+		ContentType: contentType,
+		CacheControl: "public, max-age=31536000, immutable",
+	});
+
+	return getSignedUrl(client, command, { expiresIn });
+}
+
+/**
+ * Returns the public URL for an uploaded object. This is a simple
+ * string concatenation — no API call needed. Returns null when
+ * R2_PUBLIC_URL is not configured.
+ */
+export function getPublicUrl(key: string): string | null {
+	if (!R2_PUBLIC_URL) return null;
+	return `${R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
 }

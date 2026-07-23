@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import connectDB from "#utils/database/connect";
 import { Accounts, type TAccount } from "#utils/database/models/account";
+import { recordAudit } from "#utils/helper/audit";
 import { CatchNextResponse } from "#utils/helper/common";
 import { hashPassword, verifyPassword } from "#utils/helper/passwordHelper";
 import { withPermission } from "#utils/helper/rbac";
@@ -24,6 +25,17 @@ export const POST = withPermission("settings.manage", async (req, session) => {
 		if (valid) {
 			account.password = await hashPassword(newPassword);
 			await account.save();
+
+			await recordAudit({
+				restaurantID: session.username as string,
+				session,
+				action: "password_change",
+				targetType: "account",
+				targetId: account._id.toString(),
+				ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+				userAgent: req.headers.get("user-agent") ?? undefined,
+			});
+
 			return NextResponse.json({ status: 200, message: "Password successfully changed" });
 		}
 

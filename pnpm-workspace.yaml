@@ -3,6 +3,7 @@ allowBuilds:
   '@sentry/cli': true
   bcrypt: true
   es5-ext: true
+  esbuild: true
   onnxruntime-node: true
   protobufjs: true
   sharp: true

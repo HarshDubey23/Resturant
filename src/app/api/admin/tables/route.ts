@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import QRCode from "qrcode";
+import { z } from "zod";
 
 import connectDB from "#utils/database/connect";
 import { invalidateRestaurantCache } from "#utils/database/helper/account";
@@ -57,7 +57,9 @@ export const POST = withPermission("settings.manage", async (req, session) => {
 		});
 
 		// Generate QR for immediate display
-		const baseUrl = process.env.NEXT_PUBLIC_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+		// SECURITY: never fallback to localhost — QR codes must point to the public URL.
+		const baseUrl = process.env.NEXT_PUBLIC_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+		if (!baseUrl) throw { status: 500, message: "NEXT_PUBLIC_URL is not configured. QR codes require a public base URL." };
 		const tableUrl = `${baseUrl}/${restaurantID}?table=${tableName}`;
 		const qr = await QRCode.toDataURL(tableUrl, { width: 400, margin: 2 });
 

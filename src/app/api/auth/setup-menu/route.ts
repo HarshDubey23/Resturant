@@ -4,6 +4,7 @@ import connectDB from "#utils/database/connect";
 import { invalidateRestaurantCache } from "#utils/database/helper/account";
 import { Accounts } from "#utils/database/models/account";
 import { Menus } from "#utils/database/models/menu";
+import { recordAudit } from "#utils/helper/audit";
 import { authOptions } from "#utils/helper/authHelper";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
 
@@ -33,8 +34,17 @@ export async function POST(req: Request) {
 			return Response.json({ message: "Restaurant not found" }, { status: 404 });
 		}
 
-		if (account.menus.length >= account.maxMenuItems) {
-			return Response.json({ message: `Menu item limit reached (${account.maxMenuItems})` }, { status: 403 });
+		// ── Plan enforcement: check menu item limit ──
+		const currentMenuCount = account.menus.length;
+		if (currentMenuCount >= account.maxMenuItems) {
+			return Response.json(
+				{
+					status: 402,
+					message: `You've reached the ${account.maxMenuItems}-menu item limit. Upgrade to add more items.`,
+					upgradeUrl: "/dashboard?tab=settings&subTab=billing",
+				},
+				{ status: 402 },
+			);
 		}
 
 		const menuItem = await Menus.create({
@@ -49,6 +59,16 @@ export async function POST(req: Request) {
 		});
 
 		await invalidateRestaurantCache(restaurantID);
+
+		await recordAudit({
+			restaurantID,
+			session: { username: session.username as string, role: session.role },
+			action: "menu_setup",
+			targetType: "menu",
+			targetId: menuItem._id.toString(),
+			ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			userAgent: req.headers.get("user-agent") ?? undefined,
+		});
 
 		return Response.json({ menuItem });
 	} catch (error) {

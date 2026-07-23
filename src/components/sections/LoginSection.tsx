@@ -79,7 +79,7 @@ export default function LoginSection() {
 	const address = profile?.address ?? dashboard?.address ?? session.data?.customer?.phone;
 
 	return (
-		<section id="login" className="relative py-28 sm:py-36 bg-muted/30">
+		<section id="login" className="relative py-28 sm:py-36 bg-slate-50">
 			<div className="absolute inset-0 bg-mesh pointer-events-none" />
 			<div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 				<div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -97,18 +97,16 @@ export default function LoginSection() {
 								fill
 								sizes="288px"
 							/>
-							<div className="absolute inset-0 bg-gradient-to-t from-primary/30 to-transparent" />
+							<div className="absolute inset-0 bg-gradient-to-t from-violet-600/30 to-transparent" />
 							<div className="absolute bottom-6 left-6 right-6">
 								<div className="glass rounded-2xl p-4 text-left">
-									<p className="text-sm font-semibold text-foreground">Manage everything</p>
-									<p className="text-xs text-muted-foreground">Orders, menu, analytics — all in one place</p>
+									<p className="text-sm font-semibold text-slate-900">Manage everything</p>
+									<p className="text-xs text-slate-500">Orders, menu, analytics — all in one place</p>
 								</div>
 							</div>
 						</div>
-						<h3 className="text-3xl font-black text-foreground">Welcome back!</h3>
-						<p className="text-muted-foreground mt-3 max-w-sm leading-relaxed">
-							Sign in to manage your restaurant, view orders, and access the kitchen display.
-						</p>
+						<h3 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back!</h3>
+						<p className="text-slate-500 mt-3 max-w-sm leading-relaxed">Sign in to manage your restaurant, view orders, and access the kitchen display.</p>
 					</motion.div>
 
 					<motion.div
@@ -116,8 +114,8 @@ export default function LoginSection() {
 						whileInView={{ opacity: 1, x: 0 }}
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}>
-						<Card className="border-2 shadow-xl overflow-hidden">
-							<div className="h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
+						<Card className="shadow-soft overflow-hidden">
+							<div className="h-1 bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500" />
 							<CardHeader className="text-center">
 								{profile || loggedIn ? (
 									<div className="flex items-center justify-between">
@@ -164,7 +162,7 @@ export default function LoginSection() {
 										<div className="space-y-4">
 											<button
 												onClick={() => setProfile(undefined)}
-												className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+												className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-all duration-200">
 												<ChevronLeft className="h-4 w-4" />
 												Change email
 											</button>

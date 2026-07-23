@@ -4,11 +4,11 @@ import { Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { TMenu } from "#utils/database/models/menu";
+import { currencySymbol } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { currencySymbol } from "#utils/helper/currency";
 
 interface MenuItemEditModalProps {
 	item?: TMenu;
@@ -45,7 +45,7 @@ export default function MenuItemEditModal({ item, categories, currency = "INR", 
 				setDescription(item.description ?? "");
 				setPrice(String(item.price ?? ""));
 				setTaxPercent(String(item.taxPercent ?? "5"));
-				setCategory(item.category ?? (categories[0] ?? ""));
+				setCategory(item.category ?? categories[0] ?? "");
 				setVeg(item.veg ?? "veg");
 				setFoodType(item.foodType ?? "");
 				setImage(item.image ?? "");
@@ -75,7 +75,7 @@ export default function MenuItemEditModal({ item, categories, currency = "INR", 
 		setSaving(true);
 		try {
 			const payload = {
-				...(isCreate ? {} : { itemId: item!._id.toString() }),
+				...(isCreate ? {} : { itemId: item?._id?.toString() ?? "" }),
 				name: name.trim(),
 				description: description.trim(),
 				price: priceNum,
@@ -113,13 +113,29 @@ export default function MenuItemEditModal({ item, categories, currency = "INR", 
 		}
 		setUploading(true);
 		try {
-			const fd = new FormData();
-			fd.append("file", file);
-			fd.append("bucket", "menu");
-			const res = await fetch("/api/upload", { method: "POST", body: fd });
-			const data = await res.json();
-			if (!res.ok) throw new Error(data?.message || "Upload failed");
-			setImage(data.url);
+			// Step 1: Request a presigned URL from the server
+			const presignRes = await fetch("/api/upload/presign", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					contentType: file.type || "image/jpeg",
+					fileName: file.name,
+					folder: "menu",
+				}),
+			});
+			const presignData = await presignRes.json();
+			if (!presignRes.ok) throw new Error(presignData?.message || "Failed to get upload URL");
+
+			// Step 2: Upload the file directly to R2 via the presigned PUT URL
+			const uploadRes = await fetch(presignData.uploadUrl, {
+				method: "PUT",
+				body: file,
+				headers: { "Content-Type": file.type || "image/jpeg" },
+			});
+			if (!uploadRes.ok) throw new Error("Upload to storage failed");
+
+			// Step 3: Save the public URL as the menu item's image
+			setImage(presignData.publicUrl);
 			toast.success("Image uploaded");
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Upload failed — paste a URL instead");
@@ -161,12 +177,31 @@ export default function MenuItemEditModal({ item, categories, currency = "INR", 
 					<div className="grid grid-cols-2 gap-3">
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-price">Price ({symbol})</Label>
-							<Input id="edit-price" type="number" min="1" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="0.00" />
+							<Input
+								id="edit-price"
+								type="number"
+								min="1"
+								step="0.01"
+								value={price}
+								onChange={(e) => setPrice(e.target.value)}
+								required
+								placeholder="0.00"
+							/>
 						</div>
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-tax">Tax %</Label>
 							<div className="flex gap-1.5">
-								<Input id="edit-tax" type="number" min="0" max="100" step="0.1" value={taxPercent} onChange={(e) => setTaxPercent(e.target.value)} required className="w-20" />
+								<Input
+									id="edit-tax"
+									type="number"
+									min="0"
+									max="100"
+									step="0.1"
+									value={taxPercent}
+									onChange={(e) => setTaxPercent(e.target.value)}
+									required
+									className="w-20"
+								/>
 								<select
 									value=""
 									onChange={(e) => e.target.value && setTaxPercent(e.target.value)}
@@ -185,12 +220,7 @@ export default function MenuItemEditModal({ item, categories, currency = "INR", 
 					<div className="grid grid-cols-2 gap-3">
 						<div className="space-y-1.5">
 							<Label htmlFor="edit-category">Category</Label>
-							<select
-								id="edit-category"
-								value={category}
-								onChange={(e) => setCategory(e.target.value)}
-								className={inputClass}
-								required>
+							<select id="edit-category" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass} required>
 								{categories.length === 0 && <option value="">No categories — add in Business</option>}
 								{categories.map((c) => (
 									<option key={c} value={c}>
@@ -233,6 +263,7 @@ export default function MenuItemEditModal({ item, categories, currency = "INR", 
 							<input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onUpload} className="hidden" />
 						</div>
 						{image ? (
+							// biome-ignore lint/performance/noImgElement: preview image with dynamic src from R2
 							<img
 								src={image}
 								alt="Preview"

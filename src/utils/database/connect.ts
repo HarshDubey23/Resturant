@@ -18,6 +18,7 @@ import "./models/coupon";
 import "./models/notificationQueue";
 import "./models/cartSession";
 import "./models/splitPayment";
+import "./models/auditLog";
 
 const MONGODB_CACHE = global as unknown as {
 	mongoose?: { conn: typeof import("mongoose") | null; promise: Promise<typeof import("mongoose")> | null };

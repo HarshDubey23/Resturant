@@ -13,7 +13,7 @@ services:
       - key: NEXTAUTH_URL
         value: https://orderworder.onrender.com
       - key: DEMO_MODE
-        value: "true"
+        value: "false"
       - key: AI_GROQ_KEY
         sync: false
       - key: AI_CEREBRAS_KEY

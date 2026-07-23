@@ -4,6 +4,7 @@ import { isValidThemeColor } from "xtreme-ui";
 import connectDB from "#utils/database/connect";
 import { invalidateRestaurantCache } from "#utils/database/helper/account";
 import { Profiles, type TProfile } from "#utils/database/models/profile";
+import { recordAudit } from "#utils/helper/audit";
 import { CatchNextResponse } from "#utils/helper/common";
 import { withPermission } from "#utils/helper/rbac";
 import { captureError } from "#utils/helper/sentryWrapper";
@@ -27,6 +28,17 @@ export const POST = withPermission("settings.manage", async (req, session) => {
 		profile.themeColor = themeColor;
 		await profile.save();
 		await invalidateRestaurantCache(session.username as string);
+
+		await recordAudit({
+			restaurantID: session.username as string,
+			session,
+			action: "theme_update",
+			targetType: "profile",
+			targetId: profile._id.toString(),
+			metadata: { themeColor },
+			ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			userAgent: req.headers.get("user-agent") ?? undefined,
+		});
 
 		return NextResponse.json({ status: 200, message: "Theme applied successfully" });
 	} catch (err) {

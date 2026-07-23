@@ -196,7 +196,7 @@ export default function OrderPage() {
 										<Button
 											size="sm"
 											onClick={() => increaseProductQuantity(featuredItem)}
-											className="rounded-full bg-gradient-to-r from-primary to-primary/80 shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-105 transition-all">
+											className="rounded-full bg-gradient-to-r from-violet-600 to-violet-500 shadow-soft hover:shadow-soft-hover hover:scale-105 transition-all duration-200 ease-out">
 											Order Now
 										</Button>
 									)}
@@ -210,7 +210,7 @@ export default function OrderPage() {
 				<div
 					className={cn(
 						"sticky top-0 z-20 transition-all duration-300",
-						floatHeader ? "bg-background/95 backdrop-blur-xl shadow-lg shadow-black/5 border-b border-border/60" : "bg-transparent",
+						floatHeader ? "bg-white/95 backdrop-blur-xl shadow-soft border-b border-slate-100" : "bg-transparent",
 					)}>
 					<div className="flex items-center justify-between px-4 py-3 gap-2">
 						<div className="min-w-0 flex-1">
@@ -222,10 +222,10 @@ export default function OrderPage() {
 											alt={restaurant.profile.name}
 											width={36}
 											height={36}
-											className="rounded-full ring-2 ring-primary/20 object-cover"
+											className="rounded-full ring-2 ring-violet-600/20 object-cover"
 										/>
 									) : (
-										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-white font-bold ring-2 ring-primary/20">
+										<div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-violet-500 text-white font-bold ring-2 ring-violet-600/20">
 											{restaurant.profile.name?.[0] || "R"}
 										</div>
 									)}
@@ -334,8 +334,8 @@ export default function OrderPage() {
 									className={cn(
 										"shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all duration-200",
 										category.length === 0
-											? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-											: "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+											? "bg-violet-600 text-white shadow-soft"
+											: "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700",
 									)}>
 									All
 								</button>
@@ -347,8 +347,8 @@ export default function OrderPage() {
 										className={cn(
 											"shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold capitalize transition-all duration-200",
 											category.includes(cat)
-												? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-												: "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
+												? "bg-violet-600 text-white shadow-soft"
+												: "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700",
 										)}>
 										{cat.replace(/-/g, " ")}
 									</button>
@@ -358,7 +358,7 @@ export default function OrderPage() {
 								<button
 									type="button"
 									onClick={() => scrollCategory("left")}
-									className="absolute left-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-background shadow-lg border"
+									className="absolute left-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-soft border border-slate-100"
 									aria-label="Scroll left">
 									<ChevronLeft className="h-3.5 w-3.5" />
 								</button>
@@ -367,7 +367,7 @@ export default function OrderPage() {
 								<button
 									type="button"
 									onClick={() => scrollCategory("right")}
-									className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-background shadow-lg border"
+									className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-soft border border-slate-100"
 									aria-label="Scroll right">
 									<ChevronRight className="h-3.5 w-3.5" />
 								</button>
@@ -455,7 +455,7 @@ export default function OrderPage() {
 					<button
 						type="button"
 						onClick={() => setSideSheetOpen(true)}
-						className="flex w-full items-center justify-between gap-3 rounded-2xl bg-primary px-5 py-3 text-primary-foreground shadow-2xl shadow-primary/30">
+						className="flex w-full items-center justify-between gap-3 rounded-2xl bg-violet-600 px-5 py-3 text-white shadow-soft hover:shadow-soft-hover transition-all duration-200 ease-out">
 						<div className="flex items-center gap-2">
 							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 font-bold tabular-nums">{cartCount}</div>
 							<span className="font-semibold">View cart</span>

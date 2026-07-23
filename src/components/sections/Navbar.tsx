@@ -32,11 +32,11 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 					<div className="flex items-center justify-between h-16 sm:h-20">
 						{/* Logo */}
 						<button onClick={() => scrollTo("homepage")} className="flex items-center gap-2 group">
-							<div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-								<Sparkles className="h-5 w-5 text-primary" />
+							<div className="h-9 w-9 rounded-xl bg-violet-600/10 flex items-center justify-center group-hover:bg-violet-600/20 transition-all duration-200 ease-out">
+								<Sparkles className="h-5 w-5 text-violet-600" />
 							</div>
-							<span className="text-xl font-bold tracking-tight text-foreground">
-								Order<span className="text-primary">Worder</span>
+							<span className="text-xl font-bold tracking-tight text-slate-900">
+								Order<span className="text-violet-600">Worder</span>
 							</span>
 						</button>
 
@@ -47,30 +47,30 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 									<a
 										key={item.label}
 										href={item.href}
-										className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg transition-all duration-200">
+										className="px-4 py-2 text-sm text-slate-500 hover:text-slate-900 hover:bg-violet-600/5 rounded-xl transition-all duration-200 ease-out">
 										{item.label}
 									</a>
 								) : (
 									<button
 										key={item.label}
 										onClick={() => scrollTo(item.href)}
-										className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-lg transition-all duration-200">
+										className="px-4 py-2 text-sm text-slate-500 hover:text-slate-900 hover:bg-violet-600/5 rounded-xl transition-all duration-200 ease-out">
 										{item.label}
 									</button>
 								),
 							)}
-							<div className="w-px h-6 bg-border mx-2" />
-							<a href="/signup" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors px-3 py-2">
+							<div className="w-px h-6 bg-slate-200 mx-2" />
+							<a href="/signup" className="text-sm font-semibold text-violet-600 hover:text-violet-700 transition-all duration-200 px-3 py-2">
 								Get Started
 							</a>
-							<Button size="sm" onClick={onLoginClick} className="rounded-lg h-9 px-5">
+							<Button size="sm" onClick={onLoginClick} className="rounded-xl h-9 px-5">
 								Sign In
 							</Button>
 						</nav>
 
 						{/* Mobile toggle */}
 						<button
-							className="md:hidden p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+							className="md:hidden p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-all duration-200 ease-out"
 							onClick={() => setOpen(!open)}
 							aria-label={open ? "Close menu" : "Open menu"}>
 							{open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -88,27 +88,29 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 						exit={{ opacity: 0, y: -10 }}
 						transition={{ duration: 0.2 }}
 						className="md:hidden fixed inset-x-0 top-20 z-40 mx-4">
-						<div className="glass rounded-2xl p-6 shadow-xl">
+						<div className="glass rounded-2xl p-6 shadow-soft-hover">
 							<nav className="flex flex-col gap-2">
 								{navLinks.map((item) =>
 									(item as { isLink?: boolean }).isLink ? (
 										<a
 											key={item.label}
 											href={item.href}
-											className="text-left px-4 py-3 text-base text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-xl transition-colors">
+											className="text-left px-4 py-3 text-base text-slate-500 hover:text-slate-900 hover:bg-violet-600/5 rounded-xl transition-all duration-200">
 											{item.label}
 										</a>
 									) : (
 										<button
 											key={item.label}
 											onClick={() => scrollTo(item.href)}
-											className="text-left px-4 py-3 text-base text-muted-foreground hover:text-foreground hover:bg-primary/5 rounded-xl transition-colors">
+											className="text-left px-4 py-3 text-base text-slate-500 hover:text-slate-900 hover:bg-violet-600/5 rounded-xl transition-all duration-200">
 											{item.label}
 										</button>
 									),
 								)}
-								<hr className="my-2 border-border" />
-								<a href="/signup" className="px-4 py-3 text-base font-semibold text-primary hover:bg-primary/5 rounded-xl transition-colors">
+								<hr className="my-2 border-slate-200" />
+								<a
+									href="/signup"
+									className="px-4 py-3 text-base font-semibold text-violet-600 hover:bg-violet-600/5 rounded-xl transition-all duration-200">
 									Get Started
 								</a>
 								<Button size="lg" className="mt-2 rounded-xl" onClick={onLoginClick}>

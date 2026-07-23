@@ -22,9 +22,14 @@ export async function POST(req: Request) {
 		const order = await Orders.findById<TOrder>(orderId);
 		if (!order) throw { status: 404, message: "Order not found" };
 
-		const allowedOrigins = [process.env.NEXT_PUBLIC_URL || "http://localhost:3050", "http://localhost:3050", "http://localhost:3000"].filter(Boolean);
-		const origin = req.headers.get("origin") || "http://localhost:3050";
-		if (!allowedOrigins.some((allowed) => origin.startsWith(allowed || ""))) {
+		// SECURITY: origin validation must not include localhost in production.
+		// Only allow origins from NEXT_PUBLIC_URL (set in env) or NEXTAUTH_URL.
+		const publicUrl = process.env.NEXT_PUBLIC_URL;
+		const authUrl = process.env.NEXTAUTH_URL;
+		if (!publicUrl) throw { status: 500, message: "NEXT_PUBLIC_URL not configured" };
+		const allowedOrigins = [publicUrl, authUrl].filter(Boolean);
+		const origin = req.headers.get("origin");
+		if (!origin || !allowedOrigins.some((allowed) => origin.startsWith(allowed || ""))) {
 			throw { status: 400, message: "Invalid origin" };
 		}
 		const checkoutSession = await createStripeCheckoutSession({

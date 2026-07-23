@@ -47,6 +47,7 @@ const AccountSchema = new mongoose.Schema<TAccount>(
 				isActive: { type: Boolean, default: true },
 			},
 		],
+		platformAdmin: { type: Boolean, default: false },
 	},
 	{ timestamps: true },
 );
@@ -132,4 +133,5 @@ export type TAccount = HydratedDocument<{
 	n8nWebhookUrl: string;
 	outlets: Array<{ name: string; slug: string; address?: string; phone?: string; gstin?: string; isPrimary: boolean }>;
 	staff: Array<{ user: mongoose.Types.ObjectId; role: string; outlets: string[]; permissions: string[]; isActive: boolean }>;
+	platformAdmin: boolean;
 }>;

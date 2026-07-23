@@ -269,7 +269,7 @@ export default function KitchenPage() {
 			<div className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0a] gap-4">
 				<div className="text-6xl mb-2">🔒</div>
 				<p className="text-lg text-gray-400">Please log in to access the kitchen display.</p>
-				<a href="/" className="text-orange-400 hover:underline text-sm">
+				<a href="/" className="text-violet-400 hover:underline text-sm">
 					Go to Login
 				</a>
 			</div>
@@ -284,7 +284,7 @@ export default function KitchenPage() {
 						<div className="relative">
 							<span className="text-2xl">👨‍🍳</span>
 							{orders.length > 0 && (
-								<span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+								<span className="absolute -top-1 -right-1 bg-violet-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
 									{orders.length}
 								</span>
 							)}
@@ -339,7 +339,7 @@ export default function KitchenPage() {
 								key={s.value}
 								onClick={() => setStationFilter(s.value)}
 								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-									active ? "bg-orange-500 text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
+									active ? "bg-violet-600 text-white" : "bg-white/5 text-gray-400 hover:bg-white/10"
 								}`}
 								title={s.label}>
 								<span>{s.icon}</span>
@@ -348,7 +348,7 @@ export default function KitchenPage() {
 								{count !== null && count > 0 && (
 									<span
 										className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-											active ? "bg-white/20" : "bg-orange-500/20 text-orange-400"
+											active ? "bg-white/20" : "bg-violet-600/20 text-violet-400"
 										}`}>
 										{count}
 									</span>
@@ -383,14 +383,12 @@ export default function KitchenPage() {
 											opacity: 1,
 											y: 0,
 											scale: 1,
-											borderColor: isNew ? ["rgb(251 146 60)", "rgb(251 146 60 / 0.5)", "transparent"] : undefined,
+											borderColor: isNew ? ["rgb(124 58 237)", "rgb(124 58 237 / 0.5)", "transparent"] : undefined,
 										}}
 										transition={{ duration: 0.3 }}
-										className={`rounded-xl border ${urgency.bg} overflow-hidden ${
-											isNew ? "border-orange-500 shadow-lg shadow-orange-500/20" : "border-white/5"
-										}`}>
+										className={`rounded-xl border ${urgency.bg} overflow-hidden ${isNew ? "border-violet-600 shadow-soft" : "border-white/5"}`}>
 										<div
-											className={`flex items-center justify-between p-3 border-b ${isNew ? "border-orange-500/30 bg-orange-500/10" : "border-white/5 bg-white/[0.02]"}`}>
+											className={`flex items-center justify-between p-3 border-b ${isNew ? "border-violet-600/30 bg-violet-600/10" : "border-white/5 bg-white/[0.02]"}`}>
 											<div>
 												<div className="flex items-center gap-2">
 													<span className="text-sm font-bold">Table {order.table}</span>
@@ -438,7 +436,7 @@ export default function KitchenPage() {
 														)}
 
 														{product.description && (
-															<p className="text-xs text-orange-300/80 bg-orange-500/10 rounded px-2 py-1 leading-relaxed">
+															<p className="text-xs text-violet-300/80 bg-violet-600/10 rounded px-2 py-1 leading-relaxed">
 																📝 {product.description}
 															</p>
 														)}
