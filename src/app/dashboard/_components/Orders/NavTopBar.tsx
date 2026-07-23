@@ -24,6 +24,10 @@ const subNavItems: Record<string, Array<{ label: string; route: string }>> = {
 		{ label: "menu", route: "menu" },
 		{ label: "tables", route: "tables" },
 		{ label: "ai keys", route: "ai-keys" },
+		{ label: "billing", route: "billing" },
+		{ label: "coupons", route: "coupons" },
+		{ label: "audit log", route: "audit-log" },
+		{ label: "domain", route: "domain" },
 	],
 };
 
@@ -48,10 +52,8 @@ export default function NavTopBar({ menuOpen }: NavTopBarProps) {
 					key={item.route}
 					onClick={() => queryParams.set({ subTab: item.route })}
 					className={cn(
-						"px-3 py-1.5 text-xs font-medium rounded-lg transition-all",
-						subTab === item.route
-							? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
-							: "text-muted-foreground hover:text-foreground hover:bg-muted",
+						"px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ease-out",
+						subTab === item.route ? "bg-violet-600 text-white shadow-soft" : "text-slate-500 hover:text-slate-700 hover:bg-slate-100",
 					)}>
 					{item.label}
 				</button>

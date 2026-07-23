@@ -134,7 +134,9 @@ export const authOptions: AuthOptions = {
 	callbacks: {
 		async session({ session, token }) {
 			if (token.expiresAt && Date.now() > (token.expiresAt as number)) {
-				return {} as Session;
+				// Return null-like session with explicit expiry flag so downstream
+				// checks (if (!session) / if (!session.role)) correctly reject.
+				return { expires: new Date(0).toISOString() } as Session;
 			}
 			session = {
 				...session,
@@ -154,7 +156,7 @@ export const authOptions: AuthOptions = {
 					token.user = {
 						role: user?.role,
 						themeColor: user?.themeColor,
-						...pick(user._doc, ["email", "accountActive", "subscriptionActive", "username", "verified"]),
+						...pick(user._doc, ["email", "accountActive", "subscriptionActive", "username", "verified", "platformAdmin"]),
 					};
 				}
 			}

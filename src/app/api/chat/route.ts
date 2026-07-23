@@ -3,6 +3,7 @@ import { getSystemPrompt } from "#utils/ai/prompt";
 import { smartGenerateText } from "#utils/ai/switcher";
 import connectDB from "#utils/database/connect";
 import { getRestaurantData } from "#utils/database/helper/account";
+import { Accounts } from "#utils/database/models/account";
 import AIConfig from "#utils/database/models/aiConfig";
 import { Loyalties } from "#utils/database/models/loyalty";
 import type { TMenu } from "#utils/database/models/menu";
@@ -63,6 +64,23 @@ export async function POST(req: Request) {
 
 		const session = await getServerSession(authOptions);
 		if (!session) return Response.json({ text: "Please login to chat with Jarvis", toolResults: [] }, { status: 401 });
+
+		// ── Plan enforcement: AI chat is a Pro feature ──
+		const accountPlan = (session as Record<string, unknown>)?.plan ?? "free";
+		if (accountPlan === "free") {
+			await connectDB();
+			const freshAccount = await Accounts.findOne({ username: restaurantId });
+			if (!freshAccount || freshAccount.plan === "free") {
+				return Response.json(
+					{
+						text: "AI chat is a Pro feature. Upgrade your plan to unlock Jarvis.",
+						toolResults: [],
+						upgradeUrl: "/dashboard?tab=settings&subTab=billing",
+					},
+					{ status: 402 },
+				);
+			}
+		}
 
 		const name = restaurantId.replace(/\b\w/g, (c: string) => c.toUpperCase()).replace(/[-_]/g, " ");
 		const account = await getRestaurantData(restaurantId).catch(() => null);

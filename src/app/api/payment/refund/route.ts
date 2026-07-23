@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
 import { Orders } from "#utils/database/models/order";
+import { recordAudit } from "#utils/helper/audit";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import { refundPayment } from "#utils/payment/razorpay";
@@ -29,6 +30,17 @@ export async function POST(req: Request) {
 		const refund = await refundPayment(order.paymentId);
 		order.paymentStatus = "refunded";
 		await order.save();
+
+		await recordAudit({
+			restaurantID: session.username as string,
+			session: { username: session.username as string, role: session.role },
+			action: "payment_refund",
+			targetType: "order",
+			targetId: orderId,
+			metadata: { paymentId: order.paymentId },
+			ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			userAgent: req.headers.get("user-agent") ?? undefined,
+		});
 
 		return NextResponse.json({ status: 200, message: "Refund initiated", refund });
 	} catch (err) {

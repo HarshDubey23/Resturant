@@ -1,9 +1,9 @@
 "use client";
 
-import { CheckCircle2, ChefHat, Clock, Download, Loader2, Package, Receipt, Sparkles } from "lucide-react";
+import { CheckCircle2, ChefHat, Clock, Download, Loader2, Package, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import useSWR from "swr";
 
 import { Button } from "@/components/ui/button";
@@ -98,18 +98,14 @@ function SuccessContent() {
 					</div>
 					<h1 className="text-2xl font-bold text-foreground">Order placed!</h1>
 					<p className="text-muted-foreground text-sm mt-1">
-						{order
-							? "The kitchen has been notified. Sit back and relax."
-							: "Your payment was successful. The kitchen is being notified."}
+						{order ? "The kitchen has been notified. Sit back and relax." : "Your payment was successful. The kitchen is being notified."}
 					</p>
 
 					{/* Order ID chip */}
 					{(orderId || order?._id) && (
 						<div className="mt-4 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-xs">
 							<Package className="h-3 w-3 text-muted-foreground" />
-							<span className="font-mono text-muted-foreground">
-								#{(orderId || order?._id || "").toString().slice(-8).toUpperCase()}
-							</span>
+							<span className="font-mono text-muted-foreground">#{(orderId || order?._id || "").toString().slice(-8).toUpperCase()}</span>
 						</div>
 					)}
 
@@ -175,11 +171,7 @@ function SuccessContent() {
 				{/* Actions */}
 				<div className="space-y-2">
 					{order?._id && (
-						<Button
-							onClick={handleDownloadInvoice}
-							variant="outline"
-							className="w-full gap-2"
-							loading={downloading}>
+						<Button onClick={handleDownloadInvoice} variant="outline" className="w-full gap-2" loading={downloading}>
 							<Download className="h-4 w-4" />
 							Download Invoice (PDF)
 						</Button>
@@ -200,11 +192,7 @@ function SuccessContent() {
 				</div>
 
 				{/* Payment ID footer */}
-				{paymentId && (
-					<p className="text-center text-[10px] text-muted-foreground font-mono">
-						Payment ref: {paymentId.slice(-16)}
-					</p>
-				)}
+				{paymentId && <p className="text-center text-[10px] text-muted-foreground font-mono">Payment ref: {paymentId.slice(-16)}</p>}
 			</div>
 		</div>
 	);

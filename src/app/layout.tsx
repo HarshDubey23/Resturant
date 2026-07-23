@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import CsrfProvider from "#components/base/CsrfProvider";
 import PWARegister from "#components/base/PWARegister";
 import { GlobalProvider } from "#components/context";
-import { inter, montserrat } from "#utils/helper/fontHelper";
+import { inter } from "#utils/helper/fontHelper";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL } from "#utils/seo/constants";
 import { Toaster } from "@/components/ui/sonner";
 import "./tailwind.css";
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: IRootProps) {
 	return (
-		<html lang="en" className={`${inter.variable} ${montserrat.variable}`} suppressHydrationWarning>
+		<html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
 			<body className="antialiased">
 				<GlobalProvider>
 					{children}

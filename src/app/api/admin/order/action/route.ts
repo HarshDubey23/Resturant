@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import connectDB from "#utils/database/connect";
 import { Orders, type TOrder } from "#utils/database/models/order";
+import { type AuditAction, recordAudit } from "#utils/helper/audit";
 import { CatchNextResponse } from "#utils/helper/common";
 import { withPermission } from "#utils/helper/rbac";
 
@@ -35,6 +36,23 @@ export const POST = withPermission("orders.write", async (req, session) => {
 		if (body.action === "complete") order.state = "complete";
 
 		await order.save();
+
+		const actionMap: Record<string, AuditAction> = {
+			accept: "order_accept",
+			reject: "order_reject",
+			rejectOnActive: "order_reject_on_active",
+			complete: "order_complete",
+		};
+
+		await recordAudit({
+			restaurantID: session.username as string,
+			session,
+			action: actionMap[body.action],
+			targetType: "order",
+			targetId: order._id.toString(),
+			ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			userAgent: req.headers.get("user-agent") ?? undefined,
+		});
 
 		return NextResponse.json({ status: 200, message: "Order placed successfully" });
 	} catch (err) {

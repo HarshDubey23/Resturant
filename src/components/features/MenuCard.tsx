@@ -96,9 +96,9 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
 			className={cn(
-				"group relative overflow-hidden rounded-2xl border border-border/60 bg-card transition-all duration-300",
-				"hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5",
-				isFlashing && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+				"group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-soft transition-all duration-200 ease-out",
+				"hover:border-violet-600/40 hover:shadow-soft-hover hover:-translate-y-0.5",
+				isFlashing && "ring-2 ring-violet-600 ring-offset-2 ring-offset-background",
 				restrictOrder && "opacity-90",
 				isChefSpecial && "border-amber-300/60 bg-gradient-to-br from-amber-50/40 via-card to-card",
 			)}>
@@ -211,7 +211,9 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 					<div className="space-y-1.5">
 						{/* Title + rating row */}
 						<div className="flex items-start justify-between gap-2">
-							<h3 className="text-base font-bold leading-tight text-foreground line-clamp-1 group-hover:text-primary transition-colors">{item.name}</h3>
+							<h3 className="text-base font-bold leading-tight text-slate-900 line-clamp-1 group-hover:text-violet-600 transition-all duration-200">
+								{item.name}
+							</h3>
 							{rating > 0 && (
 								<div className="flex shrink-0 items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 ring-1 ring-amber-200">
 									<Star className="h-3 w-3 fill-amber-500 text-amber-500" />
@@ -282,7 +284,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 					{/* Footer: price + add control */}
 					<div className="mt-3 flex items-end justify-between gap-2">
 						<div className="flex flex-col">
-							<span className="text-lg font-extrabold tracking-tight text-foreground">{formatCurrency(item.price)}</span>
+							<span className="text-lg font-extrabold tracking-tight text-slate-900">{formatCurrency(item.price)}</span>
 							{item.originalPrice && item.originalPrice > item.price && (
 								<span className="text-[11px] text-muted-foreground line-through">{formatCurrency(item.originalPrice)}</span>
 							)}
@@ -306,7 +308,7 @@ export default function MenuCard({ item, quantity, restrictOrder, showInfo, setS
 											key={quantity}
 											initial={{ scale: 0.7 }}
 											animate={{ scale: 1 }}
-											className="min-w-[2rem] text-center text-sm font-bold tabular-nums text-foreground">
+											className="min-w-[2rem] text-center text-sm font-bold tabular-nums text-slate-900">
 											{quantity}
 										</motion.span>
 										<button

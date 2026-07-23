@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 
 import connectDB from "#utils/database/connect";
 import { Campaigns } from "#utils/database/models/campaign";
+import { recordAudit } from "#utils/helper/audit";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
 import { sendCampaign } from "#utils/whatsapp/campaign";
@@ -61,6 +62,17 @@ export async function POST(req: Request) {
 		if (!body.scheduledAt) {
 			sendCampaign(campaign._id.toString(), restaurantID, msg).catch(() => {});
 		}
+
+		await recordAudit({
+			restaurantID,
+			session: { username: session.username as string, role: session.role },
+			action: "whatsapp_campaign_create",
+			targetType: "campaign",
+			targetId: campaign._id.toString(),
+			metadata: { title, scheduled: !!body.scheduledAt },
+			ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			userAgent: req.headers.get("user-agent") ?? undefined,
+		});
 
 		return NextResponse.json({ status: 200, message: "Campaign created", campaign });
 	} catch (err) {

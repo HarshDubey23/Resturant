@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import connectDB from "#utils/database/connect";
 import AIConfig from "#utils/database/models/aiConfig";
+import { recordAudit } from "#utils/helper/audit";
 import { CatchNextResponse } from "#utils/helper/common";
 import { encryptSecret } from "#utils/helper/crypto";
 import { withPermission } from "#utils/helper/rbac";
@@ -47,6 +48,15 @@ export const POST = withPermission("settings.manage", async (req, session) => {
 		update["providerKeys.updatedAt"] = new Date();
 
 		await AIConfig.updateOne({ restaurantID }, { $set: update }, { upsert: true });
+
+		await recordAudit({
+			restaurantID: restaurantID as string,
+			session,
+			action: "ai_keys_update",
+			targetType: "aiConfig",
+			ipAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim(),
+			userAgent: req.headers.get("user-agent") ?? undefined,
+		});
 
 		return NextResponse.json({ status: 200, message: "AI keys saved" });
 	} catch (err) {
