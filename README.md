@@ -12,29 +12,56 @@ A multi-tenant restaurant SaaS platform for contactless dining powered by AI. Cu
 
 ### Owner Dashboard (admin login required)
 
-| Dashboard Overview | Menu Management | Settings → Tables → QR Codes |
+| Dashboard Overview | Analytics — Revenue Trend & Peak Hours | Analytics — Payment Methods & Order Status |
 |---|---|---|
-| ![Dashboard Overview](public/screenshots/03-dashboard-overview.png) | ![Dashboard Menu](public/screenshots/03d-dashboard-menu.png) | ![Settings Tables QR](public/screenshots/04-settings-tables-qr.png) |
+| ![Dashboard Overview](public/screenshots/03-dashboard-overview.png) | ![Analytics Charts](public/screenshots/03a-dashboard-analytics.png) | ![Analytics Donut](public/screenshots/03a-dashboard-analytics.png) |
 
-The **Settings → Tables** page generates a downloadable QR code (PNG) for every table, plus a one-click **Print all** button so you can print every table's QR in one go. Each card shows the table number, active status, the full scan URL, a **Download PNG** button, and a delete button.
+### Analytics Dashboard (enhanced with real data)
 
-### Kitchen Display System (kitchen login)
+The Analytics tab now ships with **8 chart types** powered by Recharts, all populated with 90 days of seeded demo orders:
 
-| Kitchen Display (KDS) |
-|---|
-| ![Kitchen Display](public/screenshots/05-kitchen-display.png) |
+- **Revenue Trend** — Area chart with gradient fill, filterable by 7d / 30d / 90d
+- **Peak Hours** — Color-coded bar chart of orders by hour-of-day
+- **Revenue by Payment Method** — Donut chart (Razorpay / Stripe / Cash) with legend + percentages
+- **Order Status Breakdown** — Donut chart (Completed / Active / Cancelled / Rejected)
+- **Revenue by Category** — Horizontal bar chart ranked by revenue
+- **Orders by Weekday** — Bar chart showing busiest days of the week
+- **Top Dishes** — Progress-bar ranked list with order counts
+- **Top Customers** — Ranked table with order count + total spend
+- **Churned Customers** — Grid of at-risk customers (no orders in 30d)
+- **AI Insights** — Auto-generated business commentary from the Groq LLM
+
+![Analytics Dashboard](public/screenshots/03a-dashboard-analytics.png)
+
+### Settings → Tables → QR Codes (admin login required)
+
+![Settings Tables QR](public/screenshots/04-settings-tables-qr.png)
+
+The **Settings → Tables** page generates a downloadable QR code (PNG) for every table, plus a one-click **Print all** button. Each card shows the table number, active status, the full scan URL, a **Download PNG** button, and a delete button.
+
+### Kitchen Display System (KDS) (kitchen login)
+
+![Kitchen Display](public/screenshots/05-kitchen-display.png)
 
 The KDS shows live order tickets grouped by station (Main Kitchen / Grill / Tandoor / Bar / Pastry) with color-coded countdown timers, status filters (New / In Progress / Ready), and a Fullscreen mode for wall-mounted tablets.
 
 ### Customer-Facing Pages (no login — scanned from phone)
 
-| Empire Restaurant Menu (102 items) | Customer Table Ordering | Reviews |
+| Demo Restaurant Menu | Empire Restaurant Menu (102 items) | Customer Table Ordering |
 |---|---|---|
-| ![Empire Menu](public/screenshots/06-customer-restaurant-menu.png) | ![Customer Ordering](public/screenshots/07-customer-table-ordering.png) | ![Reviews](public/screenshots/08-customer-reviews.png) |
+| ![Demo Menu](public/screenshots/06-demo-restaurant-menu.png) | ![Empire Menu](public/screenshots/07-empire-restaurant-menu.png) | ![Customer Ordering](public/screenshots/10-customer-table-ordering.png) |
 
-| Spice Route Menu | Brewpoint Menu | Demo Restaurant Menu |
-|---|---|---|
-| ![Spice Route](public/screenshots/09-spiceroute-menu.png) | ![Brewpoint](public/screenshots/10-brewpoint-menu.png) | ![Demo](public/screenshots/11-demo-restaurant-menu.png) |
+| Spice Route Menu | Brewpoint Menu |
+|---|---|
+| ![Spice Route](public/screenshots/08-spiceroute-menu.png) | ![Brewpoint](public/screenshots/09-brewpoint-menu.png) |
+
+### Demo Data
+
+The `demo` restaurant (login: `demo@orderworder.com` / `Demo@12345`) ships pre-seeded with **150 orders across 90 days** so every analytics chart renders with real data on first boot. Re-seed anytime with:
+
+```bash
+node scripts/seed-analytics.mjs
+```
 
 ---
 

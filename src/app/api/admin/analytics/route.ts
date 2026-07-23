@@ -145,6 +145,54 @@ export const GET = withPermission("analytics.view", async (req, session) => {
 			{ $project: { _id: 0, date: "$_id", revenue: 1, orders: 1 } },
 		]);
 
+		// Payment-method breakdown (revenue by gateway: razorpay / stripe / cash)
+		const paymentMethodAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart }, state: "complete" } },
+			{ $group: { _id: "$paymentGateway", revenue: { $sum: { $add: ["$orderTotal", "$taxTotal"] } }, orders: { $sum: 1 } } },
+			{ $sort: { revenue: -1 } },
+			{ $project: { _id: 0, method: "$_id", revenue: 1, orders: 1 } },
+		]);
+
+		// Category breakdown (revenue + units sold per menu category)
+		const categoryAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart }, state: "complete" } },
+			{ $unwind: "$products" },
+			{
+				$lookup: {
+					from: "menus",
+					localField: "products.product",
+					foreignField: "_id",
+					as: "menuItem",
+				},
+			},
+			{ $unwind: { path: "$menuItem", preserveNullAndEmptyArrays: true } },
+			{
+				$group: {
+					_id: { $ifNull: ["$menuItem.category", "Uncategorized"] },
+					revenue: { $sum: { $multiply: ["$products.price", "$products.quantity"] } },
+					units: { $sum: "$products.quantity" },
+				},
+			},
+			{ $sort: { revenue: -1 } },
+			{ $project: { _id: 0, category: "$_id", revenue: 1, units: 1 } },
+		]);
+
+		// Order-status breakdown (complete / active / cancel / reject)
+		const orderStatusAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart } } },
+			{ $group: { _id: "$state", count: { $sum: 1 } } },
+			{ $sort: { count: -1 } },
+			{ $project: { _id: 0, status: "$_id", count: 1 } },
+		]);
+
+		// Weekday breakdown (orders by day of week)
+		const weekdayAgg = await Orders.aggregate([
+			{ $match: { restaurantID, createdAt: { $gte: rangeStart } } },
+			{ $group: { _id: { $dayOfWeek: "$createdAt" }, count: { $sum: 1 }, revenue: { $sum: { $add: ["$orderTotal", "$taxTotal"] } } } },
+			{ $sort: { _id: 1 } },
+			{ $project: { _id: 0, day: "$_id", count: 1, revenue: 1 } },
+		]);
+
 		const todayData = todayAgg[0] || { revenue: 0, count: 0, gst: 0 };
 		const weekData = weekAgg[0] || { revenue: 0, count: 0 };
 		const monthData = monthAgg[0] || { revenue: 0, count: 0, gst: 0 };
@@ -183,6 +231,10 @@ export const GET = withPermission("analytics.view", async (req, session) => {
 			topCustomers,
 			churnedCustomers: churned,
 			dailyRevenue: dailyRevenueAgg,
+			paymentMethods: paymentMethodAgg,
+			categories: categoryAgg,
+			orderStatus: orderStatusAgg,
+			weekdays: weekdayAgg,
 			aiCommentary,
 		};
 
