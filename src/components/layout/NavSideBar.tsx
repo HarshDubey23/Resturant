@@ -59,8 +59,9 @@ export default function NavSideBar({ navItems, defaultTab, head, foot }: NavSide
 						<button
 							key={item.value}
 							onClick={() => onNavClick(item.value)}
+							aria-current={active ? "page" : undefined}
 							className={cn(
-								"relative flex flex-col items-center gap-1.5 rounded-xl p-2 w-14 lg:w-16 transition-all duration-200",
+								"relative flex flex-col items-center gap-1.5 rounded-xl p-2 w-14 lg:w-16 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 								active ? "bg-primary/10 text-primary shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
 							)}
 							title={item.label}>

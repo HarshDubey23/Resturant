@@ -1,4 +1,5 @@
 "use client";
+import { Inbox, MousePointerClick } from "lucide-react";
 
 import { type UIEvent, useEffect, useState } from "react";
 import { useAdmin } from "#components/context/useContext";
@@ -35,7 +36,11 @@ export default function OrderRequests({ onScroll }: OrderRequestsProps) {
 		<div className="flex gap-4 h-full">
 			<div className="w-72 shrink-0 space-y-2 overflow-auto" onScroll={onScroll}>
 				{orderRequest?.length === 0 ? (
-					<p className="text-sm text-muted-foreground py-8 text-center">No order requests</p>
+					<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+							<Inbox className="h-8 w-8 text-muted-foreground/40" />
+							<p className="text-sm font-medium">No new requests</p>
+							<p className="text-xs text-muted-foreground">New orders will appear here</p>
+						</div>
 				) : (
 					orderRequest?.map?.((data) => (
 						<OrdersCard
@@ -57,7 +62,11 @@ export default function OrderRequests({ onScroll }: OrderRequestsProps) {
 			</div>
 			<div className="flex-1 overflow-auto">
 				{!activeCardData ? (
-					<p className="text-sm text-muted-foreground py-8 text-center">Select an order to view details</p>
+					<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+							<MousePointerClick className="h-8 w-8 text-muted-foreground/40" />
+							<p className="text-sm font-medium">No order selected</p>
+							<p className="text-xs text-muted-foreground">Click an order from the list to see details</p>
+						</div>
 				) : (
 					<OrderDetail
 						actions

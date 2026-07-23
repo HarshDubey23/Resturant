@@ -1,4 +1,5 @@
 "use client";
+import { History, MousePointerClick } from "lucide-react";
 
 import { type UIEvent, useEffect, useMemo, useState } from "react";
 import { useAdmin } from "#components/context/useContext";
@@ -39,7 +40,11 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 		<div className="flex gap-4 h-full">
 			<div className="w-72 shrink-0 space-y-2 overflow-auto" onScroll={onScroll}>
 				{orderHistory.length === 0 ? (
-					<p className="text-sm text-muted-foreground py-8 text-center">No order history</p>
+					<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+							<History className="h-8 w-8 text-muted-foreground/40" />
+							<p className="text-sm font-medium">No order history</p>
+							<p className="text-xs text-muted-foreground">Completed and cancelled orders will appear here</p>
+						</div>
 				) : (
 					orderHistory.map((data) => {
 						const stateInfo = states[data.state] ?? { label: data.state, variant: "outline" as const };
@@ -68,7 +73,11 @@ export default function OrderHistory({ onScroll }: OrderHistoryProps) {
 
 			<div className="flex-1 overflow-auto">
 				{!activeData ? (
-					<p className="text-sm text-muted-foreground py-8 text-center">Select an order to view details</p>
+					<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+							<MousePointerClick className="h-8 w-8 text-muted-foreground/40" />
+							<p className="text-sm font-medium">No order selected</p>
+							<p className="text-xs text-muted-foreground">Click an order from the list to see details</p>
+						</div>
 				) : (
 					<Card>
 						<CardHeader>
