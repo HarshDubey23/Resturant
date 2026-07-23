@@ -2,7 +2,7 @@
 
 import { Activity, Bot, Calendar, CreditCard, DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, type TooltipValueType, XAxis, YAxis } from "recharts";
 import { useAdmin } from "#components/context/useContext";
 import { currencySymbol, formatCurrency } from "#utils/helper/currency";
 
@@ -299,8 +299,8 @@ export default function Analytics() {
 											borderRadius: "8px",
 											fontSize: "12px",
 										}}
-										formatter={(value: number, _name, entry) => {
-											const pct = totalPaymentRevenue > 0 ? ((value / totalPaymentRevenue) * 100).toFixed(1) : "0";
+										formatter={(value: TooltipValueType | undefined, _name, entry) => {
+											const pct = totalPaymentRevenue > 0 ? ((Number(value) / totalPaymentRevenue) * 100).toFixed(1) : "0";
 											return [`${formatCurrency(Number(value), currency)} (${pct}%)`, entry?.payload?.name ?? ""];
 										}}
 									/>
@@ -359,9 +359,9 @@ export default function Analytics() {
 											borderRadius: "8px",
 											fontSize: "12px",
 										}}
-										formatter={(value: number, _name, entry) => {
-											const pct = totalStatusCount > 0 ? ((value / totalStatusCount) * 100).toFixed(1) : "0";
-											return [`${value} orders (${pct}%)`, entry?.payload?.name ?? ""];
+										formatter={(value: TooltipValueType | undefined, _name, entry) => {
+											const pct = totalStatusCount > 0 ? ((Number(value) / totalStatusCount) * 100).toFixed(1) : "0";
+											return [`${Number(value)} orders (${pct}%)`, entry?.payload?.name ?? ""];
 										}}
 									/>
 								</PieChart>
@@ -447,8 +447,8 @@ export default function Analytics() {
 										borderRadius: "8px",
 										fontSize: "12px",
 									}}
-									formatter={(value: number, name) => {
-										if (name === "count") return [`${value} orders`, "Orders"];
+									formatter={(value: TooltipValueType | undefined, name) => {
+										if (name === "count") return [`${Number(value)} orders`, "Orders"];
 										return [formatCurrency(Number(value), currency), "Revenue"];
 									}}
 								/>
