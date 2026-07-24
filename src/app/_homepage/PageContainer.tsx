@@ -32,6 +32,7 @@ import StickyCTABar from "@/components/sections/StickyCTABar";
 import TeamSection from "@/components/sections/TeamSection";
 import TestimonialsSection from "@/components/sections/TestimonialsSection";
 import TrustBadges from "@/components/sections/TrustBadges";
+import RestaurantTypeSelector from "@/components/sections/RestaurantTypeSelector";
 import ChatBot from "@/components/chatbot/ChatBotWidget";
 
 export default function PageContainer() {
@@ -54,6 +55,7 @@ export default function PageContainer() {
                                 <HowItWorksSection />
                                 <MenuSection />
                                 <TestimonialsSection />
+                                <RestaurantTypeSelector />
                                 <PricingSection />
                                 <PricingFAQSection />
                                 <ComparisonSection />

@@ -67,7 +67,7 @@ function OrderWorderCell({ value, sentiment }: ComparisonCell) {
         return (
                 <div className="flex items-center justify-center gap-2 text-center">
                         {sentiment === "positive" ? (
-                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30">
+                                <span aria-label="Available" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/30">
                                         <Check className="h-3 w-3 text-white" strokeWidth={3} />
                                 </span>
                         ) : null}
@@ -82,11 +82,11 @@ function AggregatorCell({ value, sentiment }: ComparisonCell) {
         return (
                 <div className="flex items-center justify-center gap-2 text-center">
                         {sentiment === "negative" ? (
-                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200">
+                                <span aria-label="Not available" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 ring-1 ring-slate-200">
                                         <X className="h-3 w-3 text-slate-500" strokeWidth={3} />
                                 </span>
                         ) : sentiment === "positive" ? (
-                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 ring-1 ring-violet-200">
+                                <span aria-label="Available" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 ring-1 ring-violet-200">
                                         <Check className="h-3 w-3 text-violet-600" strokeWidth={3} />
                                 </span>
                         ) : null}

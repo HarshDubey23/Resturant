@@ -78,7 +78,7 @@ export default function MenuSection() {
 
         useEffect(() => {
                 let cancelled = false;
-                fetch("/api/landing-menu")
+                fetch("/api/menu")
                         .then((r) => {
                                 if (!r.ok) throw new Error("Failed to load menu");
                                 return r.json();
@@ -155,7 +155,7 @@ export default function MenuSection() {
                                         <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
                                                 Browse our signature dishes
                                         </h2>
-                                        <p className="mt-4 text-base text-slate-600 sm:text-lg">
+                                        <p className="mt-4 text-base text-slate-700 sm:text-lg">
                                                 From smoky tandoor starters to soulful biryanis and decadent desserts — every dish is crafted with fresh ingredients and authentic spices.
                                         </p>
                                 </motion.div>

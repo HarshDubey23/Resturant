@@ -92,7 +92,7 @@ export default function TestimonialsSection() {
                                                 <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900">
                                                         Loved by <span className="text-gradient">restaurant owners</span>
                                                 </h2>
-                                                <p className="mt-6 text-lg text-slate-600 max-w-2xl leading-relaxed">
+                                                <p className="mt-6 text-lg text-slate-700 max-w-2xl leading-relaxed">
                                                         See what restaurant owners and chefs say about OrderWorder.
                                                 </p>
                                         </motion.div>

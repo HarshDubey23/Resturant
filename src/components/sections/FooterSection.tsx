@@ -63,7 +63,7 @@ export default function FooterSection() {
                                                                 Order<span className="text-violet-600">Worder</span>
                                                         </span>
                                                 </div>
-                                                <p className="text-sm text-slate-600 max-w-sm leading-relaxed">
+                                                <p className="text-sm text-slate-700 max-w-sm leading-relaxed">
                                                         Contactless restaurant ordering made simple. Scan, order, and enjoy — no app download needed.
                                                 </p>
 
