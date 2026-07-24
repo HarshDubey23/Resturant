@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  category    String
+  price       Float
+  taxPercent  Float    @default(5)
+  veg         Boolean  @default(true)
+  foodType    String   @default("indian")
+  description String
+  spiceLevel  Int      @default(1)
+  rating      Float    @default(4.5)
+  tags        String   @default("")
+  image       String   @default("")
+  popular     Boolean  @default(false)
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Reservation {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  date      String
+  time      String
+  guests    Int      @default(2)
+  message   String   @default("")
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  customerName  String   @default("")
+  customerPhone String   @default("")
+  items         String   @default("") // JSON string of order items
+  total         Float    @default(0)
+  taxTotal      Float    @default(0)
+  tip           Float    @default(0)
+  status        String   @default("pending")
+  paymentMethod String   @default("cash")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("customer")
+  password  String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("homepage")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FaqFeedback {
+  id        String   @id @default(cuid())
+  question  String
+  helpful   Boolean
+  createdAt DateTime @default(now())
+}
+
+model LeadCapture {
+  id             String   @id @default(cuid())
+  name           String
+  email          String
+  phone          String
+  restaurantName String?
+  cartItems      String // JSON stringified
+  total          Float    @default(0)
+  source         String   @default("cart_checkout")
+  createdAt      DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+}

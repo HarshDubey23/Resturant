@@ -203,6 +203,138 @@
 	}
 }
 
+/* ------------------------------------------------------------------
+   Dark mode overrides for the homepage.
+   The landing page uses hardcoded Tailwind utilities (bg-white,
+   text-slate-900, etc.) instead of semantic tokens, so we selectively
+   re-skin those classes when the `.dark` class is on <html>.
+   These rules sit OUTSIDE any @layer so they win against Tailwind's
+   layered utilities in the cascade (unlayered > layered).
+   ------------------------------------------------------------------ */
+.dark .bg-white {
+        background-color: hsl(215 15% 10%) !important;
+}
+.dark .bg-slate-50 {
+        background-color: hsl(215 15% 7%) !important;
+}
+.dark .bg-slate-100 {
+        background-color: hsl(215 15% 12%) !important;
+}
+.dark .bg-slate-950 {
+        background-color: hsl(215 20% 4%) !important;
+}
+.dark .bg-slate-950\/95 {
+        background-color: hsl(215 20% 6% / 0.95) !important;
+}
+.dark .text-slate-900 {
+        color: hsl(215 25% 96%) !important;
+}
+.dark .text-slate-800 {
+        color: hsl(215 20% 88%) !important;
+}
+.dark .text-slate-700 {
+        color: hsl(215 18% 78%) !important;
+}
+.dark .text-slate-600 {
+        color: hsl(215 15% 68%) !important;
+}
+.dark .text-slate-500 {
+        color: hsl(215 12% 58%) !important;
+}
+.dark .text-slate-400 {
+        color: hsl(215 12% 50%) !important;
+}
+.dark .border-slate-200 {
+        border-color: hsl(215 15% 22%) !important;
+}
+.dark .border-slate-100 {
+        border-color: hsl(215 15% 18%) !important;
+}
+.dark .border-white\/10 {
+        border-color: hsl(0 0% 100% / 0.08) !important;
+}
+.dark .border-white\/15 {
+        border-color: hsl(0 0% 100% / 0.1) !important;
+}
+.dark .border-white\/20 {
+        border-color: hsl(0 0% 100% / 0.12) !important;
+}
+/* Gradient stops — features, menu, etc. use bg-gradient-to-b from-white */
+.dark .from-white {
+        --tw-gradient-from: hsl(215 15% 10%) !important;
+        --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position)) !important;
+}
+.dark .to-white {
+        --tw-gradient-to: hsl(215 15% 10%) !important;
+}
+.dark .via-violet-50\/40 {
+        --tw-gradient-via: hsl(263 50% 20% / 0.4) !important;
+}
+/* Semi-transparent white surfaces — Navbar, StickyCTABar, cards */
+.dark .bg-white\/80 {
+        background-color: hsl(215 15% 10% / 0.8) !important;
+}
+.dark .bg-white\/90 {
+        background-color: hsl(215 15% 10% / 0.9) !important;
+}
+.dark .bg-white\/95 {
+        background-color: hsl(215 15% 10% / 0.95) !important;
+}
+.dark .bg-white\/60 {
+        background-color: hsl(215 15% 10% / 0.6) !important;
+}
+.dark .bg-white\/70 {
+        background-color: hsl(215 15% 10% / 0.7) !important;
+}
+.dark .bg-white\/10 {
+        background-color: hsl(0 0% 100% / 0.06) !important;
+}
+.dark .bg-white\/5 {
+        background-color: hsl(0 0% 100% / 0.04) !important;
+}
+/* Violet-tinted backgrounds */
+.dark .bg-violet-50 {
+        background-color: hsl(263 30% 14%) !important;
+}
+.dark .bg-violet-50\/30 {
+        background-color: hsl(263 30% 14% / 0.3) !important;
+}
+.dark .bg-violet-50\/50 {
+        background-color: hsl(263 30% 14% / 0.5) !important;
+}
+.dark .bg-violet-50\/60 {
+        background-color: hsl(263 30% 14% / 0.6) !important;
+}
+.dark .bg-violet-50\/80 {
+        background-color: hsl(263 30% 14% / 0.8) !important;
+}
+.dark .bg-violet-100 {
+        background-color: hsl(263 30% 18%) !important;
+}
+.dark .border-violet-100 {
+        border-color: hsl(263 30% 22%) !important;
+}
+.dark .border-violet-200 {
+        border-color: hsl(263 30% 26%) !important;
+}
+.dark .border-violet-200\/60 {
+        border-color: hsl(263 30% 26% / 0.6) !important;
+}
+/* Cards & containers that explicitly use bg-white with backdrop */
+.dark .glass {
+        background: rgba(20, 22, 30, 0.7) !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+}
+/* Headline gradient stays vibrant on dark */
+.dark .text-gradient {
+        background: linear-gradient(135deg, hsl(263 80% 70%), hsl(280 75% 75%), hsl(300 70% 70%));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+}
+
+/* Custom utilities */
+
 /* Custom utilities */
 @layer utilities {
 	.text-gradient {

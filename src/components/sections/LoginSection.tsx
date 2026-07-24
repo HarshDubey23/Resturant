@@ -1,251 +1,278 @@
 "use client";
 
-import { ArrowRight, Bot, ChevronLeft, KeyRound, LogOut } from "lucide-react";
+import { ArrowRight, Bot, ChevronLeft, KeyRound, LogIn, LogOut, CalendarCheck, CalendarDays, Clock, Users, Phone, Mail, User, MessageSquare } from "lucide-react";
 import { motion } from "motion/react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
 import type { ChangeEvent } from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import { Avatar, useXTheme } from "xtreme-ui";
-
-import { useAdmin } from "#components/context/useContext";
-import { DEFAULT_THEME_COLOR } from "#utils/constants/common";
-import type { TProfile } from "#utils/database/models/profile";
-import { isEmailValid } from "#utils/helper/common";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function LoginSection() {
-	const { setThemeColor } = useXTheme();
-	const router = useRouter();
-	const session = useSession();
-	const { profile: dashboard } = useAdmin();
-	const loggedIn = session.status === "authenticated";
+        const [identifier, setIdentifier] = useState("");
+        const [kitchenUsername, setKitchenUsername] = useState("");
+        const [showKitchen, setShowKitchen] = useState(false);
+        const [password, setPassword] = useState("");
+        const [step, setStep] = useState<"identifier" | "password">("identifier");
+        const [loading, setLoading] = useState(false);
+        const [loggedIn, setLoggedIn] = useState(false);
+        const [profileName, setProfileName] = useState("");
 
-	const [logoutLoading, setLogoutLoading] = useState(false);
-	const [profile, setProfile] = useState<TProfile>();
-	const [nextLoading, setNextLoading] = useState(false);
-	// Identifier accepts EITHER an email OR a restaurant slug (restaurantID).
-	// The credentials provider's authorize callback looks up the account via
-	// `{ $or: [{ email }, { username }] }` so either form resolves the same account.
-	const [identifier, setIdentifier] = useState("");
-	const [kitchenUsername, setKitchenUsername] = useState("");
-	const [showKitchen, setShowKitchen] = useState(false);
-	const [password, setPassword] = useState("");
+        const onNext = async () => {
+                setLoading(true);
+                try {
+                        if (step === "identifier") {
+                                // Try to fetch profile preview from our API
+                                const res = await fetch(`/api/auth/profile?email=${encodeURIComponent(identifier)}`);
+                                const data = await res.json();
+                                if (data.name) {
+                                        setProfileName(data.name);
+                                } else {
+                                        setProfileName(identifier);
+                                }
+                                setStep("password");
+                        } else {
+                                // Sign in via our auth API
+                                const res = await fetch("/api/auth/login", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                                email: identifier,
+                                                password,
+                                                kitchenUsername: showKitchen ? kitchenUsername : undefined,
+                                        }),
+                                });
+                                const data = await res.json();
+                                if (res.ok) {
+                                        toast.success("Signed in successfully!");
+                                        setLoggedIn(true);
+                                        setProfileName(data.user?.name || identifier);
+                                } else {
+                                        toast.error(data.error || "Invalid credentials");
+                                        setPassword("");
+                                }
+                        }
+                } catch {
+                        toast.error("Network error. Please try again.");
+                } finally {
+                        setLoading(false);
+                }
+        };
 
-	const onNext = async () => {
-		setNextLoading(true);
-		if (!profile) {
-			if (isEmailValid(identifier)) {
-				// Email login: fetch the profile preview (baseProfile resolves by email).
-				const res = await fetch(`/api/baseProfile?email=${encodeURIComponent(identifier)}`);
-				const profileData = await res.json();
-				if (profileData.status === 404) {
-					toast.error("Account does not exist!");
-					setNextLoading(false);
-					return;
-				}
-				setProfile(profileData);
-			} else {
-				// Restaurant ID (slug) login: baseProfile only resolves by email, so we
-				// skip the preview. The authorize callback will look the account up by
-				// username; if it doesn't exist, signIn returns an error and we surface
-				// a toast on the password step.
-				setProfile({} as TProfile);
-			}
-		} else {
-			const res = await signIn("restaurant", {
-				redirect: false,
-				username: identifier,
-				...(showKitchen && { kitchen: kitchenUsername }),
-				password,
-				callbackUrl: `${window.location.origin}`,
-			});
-			if (res?.error) {
-				// authorize returns null on any failure (NextAuth convention) → the
-				// generic "CredentialsSignin" error lands here. Surface a single,
-				// user-friendly message instead of leaking whether the account exists.
-				toast.error("Invalid credentials. Check your Restaurant ID and password.");
-				setPassword("");
-				setNextLoading(false);
-				return;
-			}
-			if (kitchenUsername) router.push("/kitchen");
-			else router.push("/dashboard");
-		}
-		setNextLoading(false);
-	};
+        // Reservation form state
+        const [resData, setResData] = useState({ name: "", email: "", phone: "", date: "", time: "", guests: "2", message: "" });
+        const [resLoading, setResLoading] = useState(false);
 
-	const logout = () => {
-		setThemeColor(DEFAULT_THEME_COLOR);
-		if (!loggedIn) return setProfile(undefined);
-		setLogoutLoading(true);
-		router.push("/logout");
-	};
+        const handleResChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                // Map form IDs to state keys
+                const idMap: Record<string, string> = { "res-name": "name", "res-email": "email", "res-phone": "phone", "res-date": "date", "res-time": "time", "res-guests": "guests", "res-message": "message" };
+                const key = idMap[e.target.id] || e.target.id;
+                setResData((prev) => ({ ...prev, [key]: e.target.value }));
+        };
 
-	useEffect(() => {
-		const newColor = profile?.themeColor ?? dashboard?.themeColor;
-		if (newColor) setThemeColor(profile?.themeColor ?? dashboard?.themeColor);
-	}, [profile, dashboard, setThemeColor]);
+        const handleResSubmit = async (e: React.FormEvent) => {
+                e.preventDefault();
+                setResLoading(true);
+                try {
+                        const res = await fetch("/api/reservation", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(resData),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                                toast.success("Reservation confirmed! We'll send you a confirmation email.");
+                                setResData({ name: "", email: "", phone: "", date: "", time: "", guests: "2", message: "" });
+                        } else {
+                                toast.error(data.error || "Failed to make reservation.");
+                        }
+                } catch {
+                        toast.error("Network error. Please try again.");
+                } finally {
+                        setResLoading(false);
+                }
+        };
 
-	const name = profile?.name ?? dashboard?.name ?? (session.data?.user?.customer ? `${session.data.user.customer.fname} ${session.data.user.customer.lname}` : "");
-	const avatarUrl = profile?.avatar ?? dashboard?.avatar ?? session.data?.user?.restaurant?.avatar ?? "";
-	const address = profile?.address ?? dashboard?.address ?? session.data?.user?.customer?.phone;
+        const logout = () => {
+                setLoggedIn(false);
+                setProfileName("");
+                setStep("identifier");
+                setIdentifier("");
+                setPassword("");
+                toast.success("Signed out");
+        };
 
-	return (
-		<section id="login" className="relative py-28 sm:py-36 bg-slate-50">
-			<div className="absolute inset-0 bg-mesh pointer-events-none" />
-			<div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-				<div className="grid lg:grid-cols-2 gap-16 items-center">
-					<motion.div
-						initial={{ opacity: 0, x: -30 }}
-						whileInView={{ opacity: 1, x: 0 }}
-						viewport={{ once: true, margin: "-100px" }}
-						transition={{ duration: 0.6, ease: "easeOut" }}
-						className="hidden lg:flex flex-col items-center justify-center text-center">
-						<div className="relative w-72 h-80 rounded-3xl overflow-hidden shadow-2xl glow-primary mb-8">
-							<Image
-								src="https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&h=800&fit=crop"
-								alt="Restaurant kitchen"
-								className="w-full h-full object-cover"
-								fill
-								sizes="288px"
-							/>
-							<div className="absolute inset-0 bg-gradient-to-t from-violet-600/30 to-transparent" />
-							<div className="absolute bottom-6 left-6 right-6">
-								<div className="glass rounded-2xl p-4 text-left">
-									<p className="text-sm font-semibold text-slate-900">Manage everything</p>
-									<p className="text-xs text-slate-500">Orders, menu, analytics — all in one place</p>
-								</div>
-							</div>
-						</div>
-						<h3 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back!</h3>
-						<p className="text-slate-500 mt-3 max-w-sm leading-relaxed">Sign in to manage your restaurant, view orders, and access the kitchen display.</p>
-					</motion.div>
+        return (
+                <section id="login" className="relative py-28 sm:py-36 bg-slate-50">
+                        <div className="absolute inset-0 bg-mesh pointer-events-none" />
+                        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+                                <div className="grid lg:grid-cols-2 gap-16 items-center">
+                                        <motion.div
+                                                initial={{ opacity: 0, x: -30 }}
+                                                whileInView={{ opacity: 1, x: 0 }}
+                                                viewport={{ once: true, margin: "-100px" }}
+                                                transition={{ duration: 0.6, ease: "easeOut" }}>
+                                                <div className="rounded-2xl border border-slate-100 bg-white shadow-soft overflow-hidden">
+                                                        <div className="h-1.5 bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500" />
+                                                        <div className="p-6 sm:p-8">
+                                                                <div className="text-center mb-6">
+                                                                        <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">Reserve Your Table</h3>
+                                                                        <p className="text-sm text-slate-500 mt-2">Book a dining experience at our restaurant</p>
+                                                                </div>
+                                                                <form onSubmit={handleResSubmit} className="[&_input::placeholder]:text-slate-500 [&_textarea::placeholder]:text-slate-500 space-y-4">
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                                <div className="space-y-2">
+                                                                                        <Label htmlFor="res-name" className="flex items-center gap-1.5"><User className="h-3.5 w-3.5 text-slate-400" />Name</Label>
+                                                                                        <Input id="res-name" value={resData.name} onChange={handleResChange} placeholder="Your name" required />
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                        <Label htmlFor="res-email" className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5 text-slate-400" />Email</Label>
+                                                                                        <Input id="res-email" type="email" value={resData.email} onChange={handleResChange} placeholder="you@email.com" required />
+                                                                                </div>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                                <div className="space-y-2">
+                                                                                        <Label htmlFor="res-phone" className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-slate-400" />Phone</Label>
+                                                                                        <Input id="res-phone" type="tel" value={resData.phone} onChange={handleResChange} placeholder="+91 9876543210" required />
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                        <Label htmlFor="res-guests" className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-slate-400" />Guests</Label>
+                                                                                        <Input id="res-guests" type="number" min="1" max="20" value={resData.guests} onChange={handleResChange} placeholder="2" required />
+                                                                                </div>
+                                                                        </div>
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                                <div className="space-y-2">
+                                                                                        <Label htmlFor="res-date" className="flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-slate-400" />Date</Label>
+                                                                                        <Input id="res-date" type="date" value={resData.date} onChange={handleResChange} required />
+                                                                                </div>
+                                                                                <div className="space-y-2">
+                                                                                        <Label htmlFor="res-time" className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-slate-400" />Time</Label>
+                                                                                        <Input id="res-time" type="time" value={resData.time} onChange={handleResChange} required />
+                                                                                </div>
+                                                                        </div>
+                                                                        <div className="space-y-2">
+                                                                                <Label htmlFor="res-message" className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5 text-slate-400" />Special requests (optional)</Label>
+                                                                                <textarea id="res-message" value={resData.message} onChange={handleResChange} placeholder="Any dietary requirements, seating preferences..." className="w-full min-h-[80px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-500 focus:border-violet-500 focus:ring-violet-500/20 focus:outline-none resize-none" />
+                                                                        </div>
+                                                                        <Button type="submit" className="w-full h-12 text-base rounded-xl bg-violet-600 hover:bg-violet-700" disabled={resLoading}>
+                                                                                {resLoading ? "Reserving..." : <>Reserve Table <CalendarCheck className="ml-2 h-4 w-4" /></>}
+                                                                        </Button>
+                                                                        <p className="text-xs text-slate-400 text-center">Free reservation — no payment required</p>
+                                                                </form>
+                                                        </div>
+                                                </div>
+                                        </motion.div>
 
-					<motion.div
-						initial={{ opacity: 0, x: 24 }}
-						whileInView={{ opacity: 1, x: 0 }}
-						viewport={{ once: true, margin: "-100px" }}
-						transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}>
-						<Card className="shadow-soft overflow-hidden">
-							<div className="h-1 bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500" />
-							<CardHeader className="text-center">
-								{profile || loggedIn ? (
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											{avatarUrl && <Avatar src={avatarUrl} size="mini" />}
-											<div className="text-left">
-												<CardTitle className="text-base">{name || "OrderWorder"}</CardTitle>
-												{address && <CardDescription>{address}</CardDescription>}
-											</div>
-										</div>
-										<Button variant="ghost" size="icon" onClick={logout} loading={logoutLoading} aria-label="Sign out">
-											<LogOut className="h-4 w-4" />
-										</Button>
-									</div>
-								) : (
-									<>
-										<CardTitle>Sign in</CardTitle>
-										<CardDescription>Enter your credentials to access the dashboard</CardDescription>
-									</>
-								)}
-							</CardHeader>
+                                        <motion.div
+                                                initial={{ opacity: 0, x: 24 }}
+                                                whileInView={{ opacity: 1, x: 0 }}
+                                                viewport={{ once: true, margin: "-100px" }}
+                                                transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}>
+                                                <Card className="shadow-soft overflow-hidden min-h-[480px] border border-slate-100 rounded-2xl bg-white">
+                                                        <div className="h-1 bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500" />
+                                                        <CardHeader className="text-center">
+                                                                {loggedIn ? (
+                                                                        <div className="flex items-center justify-between">
+                                                                                <div className="text-left">
+                                                                                        <CardTitle className="text-base">{profileName}</CardTitle>
+                                                                                        <CardDescription>Restaurant Owner</CardDescription>
+                                                                                </div>
+                                                                                <Button variant="ghost" size="icon" onClick={logout} aria-label="Sign out">
+                                                                                        <LogOut className="h-4 w-4" />
+                                                                                </Button>
+                                                                        </div>
+                                                                ) : (
+                                                                        <>
+                                                                                <LogIn className="h-8 w-8 text-violet-600 mx-auto mb-2" />
+                                                                                <CardTitle>Sign in</CardTitle>
+                                                                                <CardDescription>Enter your credentials to access the dashboard</CardDescription>
+                                                                        </>
+                                                                )}
+                                                        </CardHeader>
 
-							<CardContent>
-								{!loggedIn ? (
-									!profile ? (
-										<div className="space-y-4">
-											<div className="space-y-2">
-												<Label htmlFor="login-identifier">Email or Restaurant ID</Label>
-												<Input
-													id="login-identifier"
-													type="text"
-													placeholder="you@restaurant.com or your-restaurant"
-													value={identifier}
-													onChange={(e: ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value.trim())}
-													onKeyDown={(e) => e.key === "Enter" && onNext()}
-													autoComplete="username"
-												/>
-											</div>
-											<Button className="w-full" onClick={onNext} loading={nextLoading}>
-												Next
-												<ArrowRight className="ml-2 h-4 w-4" />
-											</Button>
-										</div>
-									) : (
-										<div className="space-y-4">
-											<button
-												onClick={() => setProfile(undefined)}
-												className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-all duration-200">
-												<ChevronLeft className="h-4 w-4" />
-												Change login
-											</button>
+                                                        <CardContent>
+                                                                {!loggedIn ? (
+                                                                        step === "identifier" ? (
+                                                                                <div className="space-y-4">
+                                                                                        <div className="space-y-2">
+                                                                                                <Label htmlFor="login-identifier">Email or Restaurant ID</Label>
+                                                                                                <Input
+                                                                                                        id="login-identifier"
+                                                                                                        type="text"
+                                                                                                        placeholder="you@restaurant.com or your-restaurant"
+                                                                                                        value={identifier}
+                                                                                                        onChange={(e: ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value.trim())}
+                                                                                                        onKeyDown={(e) => e.key === "Enter" && onNext()}
+                                                                                                        autoComplete="username"
+                                                                                                />
+                                                                                        </div>
+                                                                                        <Button className="w-full" onClick={onNext} disabled={loading}>
+                                                                                                Next
+                                                                                                <ArrowRight className="ml-2 h-4 w-4" />
+                                                                                        </Button>
+                                                                                </div>
+                                                                        ) : (
+                                                                                <div className="space-y-4">
+                                                                                        <button
+                                                                                                onClick={() => { setStep("identifier"); setPassword(""); }}
+                                                                                                className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-all duration-200">
+                                                                                                <ChevronLeft className="h-4 w-4" />
+                                                                                                Change login
+                                                                                        </button>
 
-											{showKitchen && (
-												<div className="space-y-2">
-													<Label htmlFor="kitchen-username">Kitchen username</Label>
-													<Input
-														id="kitchen-username"
-														placeholder="Enter kitchen username"
-														value={kitchenUsername}
-														onChange={(e: ChangeEvent<HTMLInputElement>) => setKitchenUsername(e.target.value)}
-													/>
-												</div>
-											)}
+                                                                                        {showKitchen && (
+                                                                                                <div className="space-y-2">
+                                                                                                        <Label htmlFor="kitchen-username">Kitchen username</Label>
+                                                                                                        <Input
+                                                                                                                id="kitchen-username"
+                                                                                                                placeholder="Enter kitchen username"
+                                                                                                                value={kitchenUsername}
+                                                                                                                onChange={(e: ChangeEvent<HTMLInputElement>) => setKitchenUsername(e.target.value)}
+                                                                                                        />
+                                                                                                </div>
+                                                                                        )}
 
-											<div className="space-y-2">
-												<Label htmlFor="login-password">Password</Label>
-												<Input
-													id="login-password"
-													type="password"
-													placeholder={`Enter ${showKitchen ? "kitchen" : "admin"} password`}
-													value={password}
-													onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-													onKeyDown={(e) => e.key === "Enter" && onNext()}
-													autoComplete="current-password"
-												/>
-											</div>
+                                                                                        <div className="space-y-2">
+                                                                                                <Label htmlFor="login-password">Password</Label>
+                                                                                                <Input
+                                                                                                        id="login-password"
+                                                                                                        type="password"
+                                                                                                        placeholder={`Enter ${showKitchen ? "kitchen" : "admin"} password`}
+                                                                                                        value={password}
+                                                                                                        onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                                                                                                        onKeyDown={(e) => e.key === "Enter" && onNext()}
+                                                                                                        autoComplete="current-password"
+                                                                                                />
+                                                                                        </div>
 
-											<Button variant="outline" className="w-full" onClick={() => setShowKitchen((v) => !v)}>
-												<Bot className="mr-2 h-4 w-4" />
-												{showKitchen ? "Sign in as admin" : "Sign in to kitchen"}
-											</Button>
+                                                                                        <Button variant="outline" className="w-full" onClick={() => setShowKitchen((v) => !v)}>
+                                                                                                <Bot className="mr-2 h-4 w-4" />
+                                                                                                {showKitchen ? "Sign in as admin" : "Sign in to kitchen"}
+                                                                                        </Button>
 
-											<Button className="w-full" onClick={onNext} loading={nextLoading}>
-												<KeyRound className="mr-2 h-4 w-4" />
-												Sign In
-											</Button>
-										</div>
-									)
-								) : (
-									<div className="space-y-3">
-										{session.data?.user?.role === "admin" && (
-											<Button className="w-full" onClick={() => router.push("/dashboard")}>
-												Open dashboard
-											</Button>
-										)}
-										{(session.data?.user?.role === "admin" || session.data?.user?.role === "kitchen") && (
-											<Button variant="outline" className="w-full" onClick={() => router.push("/kitchen")}>
-												Open kitchen display
-											</Button>
-										)}
-										{session.data?.user?.role === "customer" && (
-											<Button className="w-full" onClick={() => router.push(`/${session.data?.user?.restaurant?.username}`)}>
-												Open restaurant menu
-											</Button>
-										)}
-									</div>
-								)}
-							</CardContent>
-						</Card>
-					</motion.div>
-				</div>
-			</div>
-		</section>
-	);
+                                                                                        <Button className="w-full" onClick={onNext} disabled={loading}>
+                                                                                                <KeyRound className="mr-2 h-4 w-4" />
+                                                                                                Sign In
+                                                                                        </Button>
+                                                                                </div>
+                                                                        )
+                                                                ) : (
+                                                                        <div className="space-y-3">
+                                                                                <Button className="w-full">
+                                                                                        Open dashboard
+                                                                                </Button>
+                                                                                <Button variant="outline" className="w-full">
+                                                                                        Open kitchen display
+                                                                                </Button>
+                                                                        </div>
+                                                                )}
+                                                        </CardContent>
+                                                </Card>
+                                        </motion.div>
+                                </div>
+                        </div>
+                </section>
+        );
 }
