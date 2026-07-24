@@ -13,7 +13,7 @@ const HERO_STATS = [
         { to: 500, suffix: "+", label: "Restaurants" },
         { to: 2, suffix: "M+", label: "Orders" },
         { to: 48, prefix: "₹", suffix: "Cr+", label: "GST filed" },
-        { to: 0, label: "Bills deleted" },
+        { to: 100, suffix: "%", label: "Bill integrity" },
 ];
 
 const FLOATING_DISHES = [

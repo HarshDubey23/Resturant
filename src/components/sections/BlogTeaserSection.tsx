@@ -26,7 +26,7 @@ const ARTICLES: BlogArticle[] = [
                 title: "5 Ways QR Ordering Boosts Revenue by 30%",
                 category: "Growth",
                 categoryColor: "bg-violet-600 text-white",
-                date: "Jul 2026",
+                date: "Jan 2025",
                 excerpt:
                         "Discover how restaurants across India are using QR ordering to increase average order value and reduce wait times.",
                 image: "/blog-qr-ordering-revenue.png",
@@ -40,7 +40,7 @@ const ARTICLES: BlogArticle[] = [
                 title: "The Complete Guide to GST Compliance for Restaurants",
                 category: "Compliance",
                 categoryColor: "bg-emerald-600 text-white",
-                date: "Jun 2026",
+                date: "Dec 2024",
                 excerpt:
                         "Everything you need to know about GST filing, e-invoicing, and tax compliance for your restaurant business.",
                 image: "/blog-gst-compliance-guide.png",
@@ -54,7 +54,7 @@ const ARTICLES: BlogArticle[] = [
                 title: "WhatsApp Marketing: From Birthday Offers to Loyalty",
                 category: "Marketing",
                 categoryColor: "bg-amber-500 text-white",
-                date: "May 2026",
+                date: "Nov 2024",
                 excerpt:
                         "Learn how to set up automated WhatsApp campaigns that bring customers back without spending on ads.",
                 image: "/blog-whatsapp-marketing.png",
@@ -90,7 +90,7 @@ export default function BlogTeaserSection() {
                                         <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
                                                 Latest from our <span className="text-gradient">kitchen</span>
                                         </h2>
-                                        <p className="mt-4 text-base text-slate-600 sm:text-lg">
+                                        <p className="mt-4 text-base text-slate-700 sm:text-lg">
                                                 Tips, trends, and success stories for restaurant owners.
                                         </p>
                                 </motion.div>

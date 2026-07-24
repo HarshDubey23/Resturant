@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import FeatureComparisonModal from "@/components/sections/FeatureComparisonModal";
 
 const plans = [
         {
@@ -198,17 +199,18 @@ export default function PricingSection() {
                                         ))}
                                 </div>
 
-                                {/* Money-back guarantee badge */}
+                                {/* Money-back guarantee badge + Feature comparison */}
                                 <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true, margin: "-80px" }}
                                         transition={{ duration: 0.5, delay: 0.3 }}
-                                        className="mt-12 flex justify-center">
+                                        className="mt-12 flex flex-col items-center gap-4">
                                         <div className="inline-flex items-center gap-2.5 rounded-full border border-emerald-200 bg-emerald-50/80 px-5 py-2.5 text-sm font-semibold text-emerald-700 shadow-soft backdrop-blur-sm">
                                                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
                                                 30-day money-back guarantee
                                         </div>
+                                        <FeatureComparisonModal />
                                 </motion.div>
                         </div>
                 </section>
