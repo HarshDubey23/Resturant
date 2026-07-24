@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle, Download, Loader2, PackageOpen, ShieldCheck } from "lucide-react";
 /** @file VarianceReport — the theft-detection dashboard. Date picker drives the
  *    variance table; recharts line chart shows 30-day per-item trend, bar chart
  *    shows top-5 theft-suspect items. Total variance ₹ value animates up via
@@ -8,10 +9,10 @@
  * @audit-finding n/a
  */
 import { animate, motion, useMotionValue } from "motion/react";
-import { AlertTriangle, Download, Loader2, PackageOpen, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
+import { formatCurrency } from "#utils/helper/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatCurrency } from "#utils/helper/currency";
 
 interface VarianceRow {
 	inventoryId: string;
@@ -70,7 +70,7 @@ function buildTrend(rows: VarianceRow[]): TrendPoint[] {
 		// Pseudo-random but stable per (name, day) so the chart looks plausible.
 		for (const [name, base] of itemMap.entries()) {
 			const seed = (i + name.length) % 7;
-			const jitter = base * (0.6 + ((seed + 1) / 10));
+			const jitter = base * (0.6 + (seed + 1) / 10);
 			point[name] = Number(jitter.toFixed(2));
 		}
 		trend.push(point);
@@ -152,10 +152,7 @@ export default function VarianceReport() {
 		fetchVariance(date);
 	}, [date, fetchVariance]);
 
-	const totalVarianceRupees = useMemo(
-		() => rows.reduce((sum, r) => sum + Math.abs(r.varianceRupees), 0),
-		[rows],
-	);
+	const totalVarianceRupees = useMemo(() => rows.reduce((sum, r) => sum + Math.abs(r.varianceRupees), 0), [rows]);
 	const flaggedCount = useMemo(() => rows.filter((r) => r.threshold).length, [rows]);
 	const trend = useMemo(() => buildTrend(rows), [rows]);
 	const topFive = useMemo(
@@ -166,10 +163,7 @@ export default function VarianceReport() {
 				.map((r) => ({ name: r.name, value: Math.abs(r.varianceRupees) })),
 		[rows],
 	);
-	const trendItemNames = useMemo(
-		() => Array.from(new Set(trend.flatMap((p) => Object.keys(p).filter((k) => k !== "date")))),
-		[trend],
-	);
+	const trendItemNames = useMemo(() => Array.from(new Set(trend.flatMap((p) => Object.keys(p).filter((k) => k !== "date")))), [trend]);
 
 	const handleRetry = () => fetchVariance(date);
 
@@ -178,23 +172,14 @@ export default function VarianceReport() {
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
 				<div>
 					<h2 className="text-lg font-bold tracking-tight">Variance & Theft Report</h2>
-					<p className="text-sm text-muted-foreground">
-						Theoretical consumption vs actual usage. Positive variance = missing stock.
-					</p>
+					<p className="text-sm text-muted-foreground">Theoretical consumption vs actual usage. Positive variance = missing stock.</p>
 				</div>
 				<div className="flex items-end gap-2">
 					<div className="space-y-1.5">
 						<Label htmlFor="variance-date" className="text-xs font-medium text-muted-foreground">
 							Date
 						</Label>
-						<Input
-							id="variance-date"
-							type="date"
-							value={date}
-							max={today}
-							onChange={(e) => setDate(e.target.value || today)}
-							className="w-[180px]"
-						/>
+						<Input id="variance-date" type="date" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} className="w-[180px]" />
 					</div>
 					<Button variant="outline" size="sm" onClick={() => downloadCsv(rows, date)} disabled={loading || rows.length === 0}>
 						<Download className="h-4 w-4 mr-1" />
@@ -289,11 +274,7 @@ export default function VarianceReport() {
 												initial={{ opacity: 0, y: 6 }}
 												animate={{ opacity: 1, y: 0 }}
 												transition={{ delay: Math.min(i * 0.025, 0.4), duration: 0.25 }}
-												className={
-													r.threshold
-														? "bg-destructive/5 hover:bg-destructive/10"
-														: "hover:bg-muted/40"
-												}>
+												className={r.threshold ? "bg-destructive/5 hover:bg-destructive/10" : "hover:bg-muted/40"}>
 												<TableCell className="font-medium">{r.name}</TableCell>
 												<TableCell className="text-right tabular-nums">
 													{r.theoretical.toFixed(2)} <span className="text-muted-foreground text-[10px]">{r.unit}</span>
@@ -305,7 +286,8 @@ export default function VarianceReport() {
 													{r.varianceQty > 0 ? "+" : ""}
 													{r.varianceQty.toFixed(2)}
 												</TableCell>
-												<TableCell className={`text-right tabular-nums ${Math.abs(r.variancePercent) > 3 ? "text-destructive font-semibold" : ""}`}>
+												<TableCell
+													className={`text-right tabular-nums ${Math.abs(r.variancePercent) > 3 ? "text-destructive font-semibold" : ""}`}>
 													{r.variancePercent > 0 ? "+" : ""}
 													{r.variancePercent.toFixed(1)}%
 												</TableCell>
@@ -354,14 +336,7 @@ export default function VarianceReport() {
 										/>
 										<Legend wrapperStyle={{ fontSize: "10px" }} />
 										{trendItemNames.map((name, idx) => (
-											<Line
-												key={name}
-												type="monotone"
-												dataKey={name}
-												stroke={idx % 2 === 0 ? COLOR_THEFT : COLOR_OK}
-												strokeWidth={2}
-												dot={false}
-											/>
+											<Line key={name} type="monotone" dataKey={name} stroke={idx % 2 === 0 ? COLOR_THEFT : COLOR_OK} strokeWidth={2} dot={false} />
 										))}
 									</LineChart>
 								</ResponsiveContainer>

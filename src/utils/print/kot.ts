@@ -98,22 +98,11 @@ export function buildKot(input: BuildKotInput): Buffer {
 	const itemBuffers = input.items.map((item) => {
 		const qtyTag = `${item.qty}x`;
 		const nameLine = `${qtyTag.padEnd(4)}${item.name}\n`;
-		const modLines = (item.modifiers ?? [])
-			.map((m) => `     [${m}]\n`)
-			.join("");
+		const modLines = (item.modifiers ?? []).map((m) => `     [${m}]\n`).join("");
 		return compose(text(nameLine), text(modLines));
 	});
 
-	const footer = compose(
-		text(rule(width)),
-		text("\n"),
-		bold(true),
-		text(`KOT #: ${input.kotSerial}`),
-		text("\n"),
-		bold(false),
-		feed(3),
-		cut(true),
-	);
+	const footer = compose(text(rule(width)), text("\n"), bold(true), text(`KOT #: ${input.kotSerial}`), text("\n"), bold(false), feed(3), cut(true));
 
 	return compose(header, text(metaRow), text(stewardRow), divider, ...itemBuffers, footer);
 }

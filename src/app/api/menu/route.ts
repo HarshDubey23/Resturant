@@ -22,7 +22,13 @@ function buildPublicProfile(profile: Record<string, unknown> | null | undefined)
 	// area/city to confirm they are at the right restaurant, but a full
 	// postal address (with pin code) is PII that a public menu endpoint
 	// has no reason to expose.
-	const address = typeof profile.address === "string" ? profile.address.replace(/\b\d{6}\b/g, "").replace(/\s{2,}/g, " ").trim() : profile.address;
+	const address =
+		typeof profile.address === "string"
+			? profile.address
+					.replace(/\b\d{6}\b/g, "")
+					.replace(/\s{2,}/g, " ")
+					.trim()
+			: profile.address;
 	return {
 		name: profile.name,
 		description: profile.description,
@@ -53,15 +59,29 @@ export async function GET(req: Request) {
 		if (!account) throw { status: 404, message: `Account with restaurant id: ${username} is not found` };
 
 		const payload = {
-			...omit(account, ["__v", "_id", "kitchens", "password", "profile", "menus", "tables", "email", "stripeCustomerId", "stripeAccountId", "razorpayContactId", "razorpayFundAccountId", "razorpayAccountId", "n8nWebhookUrl", "platformAdmin"]),
+			...omit(account, [
+				"__v",
+				"_id",
+				"kitchens",
+				"password",
+				"profile",
+				"menus",
+				"tables",
+				"email",
+				"stripeCustomerId",
+				"stripeAccountId",
+				"razorpayContactId",
+				"razorpayFundAccountId",
+				"razorpayAccountId",
+				"n8nWebhookUrl",
+				"platformAdmin",
+			]),
 			profile: buildPublicProfile(account?.profile as Record<string, unknown> | null | undefined),
 			// FIX (audit C1): filter out hidden menu items so a draft /
 			// disabled item is never surfaced to customers ordering from
 			// the public menu. The admin menu editor still sees them via
 			// the /api/admin/menu route.
-			menus: (account?.menus ?? [])
-				.filter((v: TMenu) => !v?.hidden)
-				.map((v: TMenu) => omit(v, ["__v"])),
+			menus: (account?.menus ?? []).filter((v: TMenu) => !v?.hidden).map((v: TMenu) => omit(v, ["__v"])),
 			tables: account?.tables.map((v: TTable) => omit(v, ["__v", "_id"])),
 		};
 

@@ -12,8 +12,8 @@ import { Avatar, useXTheme } from "xtreme-ui";
 
 import { useAdmin } from "#components/context/useContext";
 import { DEFAULT_THEME_COLOR } from "#utils/constants/common";
-import { isEmailValid } from "#utils/helper/common";
 import type { TProfile } from "#utils/database/models/profile";
+import { isEmailValid } from "#utils/helper/common";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

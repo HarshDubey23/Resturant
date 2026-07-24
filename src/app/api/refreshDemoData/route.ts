@@ -96,7 +96,10 @@ export async function GET() {
 		}
 
 		if (process.env.DEMO_MODE !== "true") {
-			return new Response(JSON.stringify({ message: "Demo mode is disabled. Set DEMO_MODE=true to seed demo data." }), { status: 403, headers: { "Content-Type": "application/json" } });
+			return new Response(JSON.stringify({ message: "Demo mode is disabled. Set DEMO_MODE=true to seed demo data." }), {
+				status: 403,
+				headers: { "Content-Type": "application/json" },
+			});
 		}
 
 		await connectDB();

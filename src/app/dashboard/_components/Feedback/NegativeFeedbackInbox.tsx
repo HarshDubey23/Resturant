@@ -17,13 +17,13 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { formatCurrency } from "#utils/helper/currency";
+import { captureError } from "#utils/helper/sentryWrapper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "#utils/helper/currency";
-import { captureError } from "#utils/helper/sentryWrapper";
 
 interface FeedbackRow {
 	_id: string;
@@ -179,9 +179,7 @@ export default function NegativeFeedbackInbox() {
 					<p className="text-xs text-muted-foreground mt-0.5">Reviews with rating ≤ 2 stars. Generate refund codes to make it right.</p>
 				</div>
 				<div className="flex items-center gap-2">
-					<Badge variant={totalCount === 0 ? "secondary" : "destructive"}>
-						{totalCount} open
-					</Badge>
+					<Badge variant={totalCount === 0 ? "secondary" : "destructive"}>{totalCount} open</Badge>
 					{refundedCount > 0 && <Badge variant="outline">{refundedCount} refunded</Badge>}
 					<Button variant="outline" size="sm" onClick={fetchList} disabled={loading} aria-label="Refresh feedback list">
 						<RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -223,11 +221,7 @@ export default function NegativeFeedbackInbox() {
 												<div className="min-w-0 flex-1">
 													<div className="flex items-center gap-2 flex-wrap">
 														<span className="text-sm font-semibold text-foreground">{customerName(row)}</span>
-														{phone && (
-															<span className="text-xs text-muted-foreground tabular-nums" aria-label="Customer phone (last 4 digits)">
-																{phone}
-															</span>
-														)}
+														{phone && <span className="text-xs text-muted-foreground tabular-nums">{phone}</span>}
 													</div>
 													<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
 														<span className="font-mono">#{shortId(orderIdOf(row))}</span>
@@ -236,11 +230,14 @@ export default function NegativeFeedbackInbox() {
 													</div>
 												</div>
 												<div className="flex items-center gap-2 shrink-0">
-													<div className="flex items-center gap-0.5" aria-label={`Rating: ${row.rating} of 5`}>
+													<div className="flex items-center gap-0.5" role="img" aria-label={`Rating: ${row.rating} of 5`}>
 														{[1, 2, 3, 4, 5].map((v) => (
 															<Star
 																key={`rstar-${id}-${v.toString()}`}
-																className={cn("h-3.5 w-3.5", v <= row.rating ? "fill-rose-500 text-rose-500" : "text-muted-foreground/20")}
+																className={cn(
+																	"h-3.5 w-3.5",
+																	v <= row.rating ? "fill-rose-500 text-rose-500" : "text-muted-foreground/20",
+																)}
 															/>
 														))}
 													</div>
@@ -263,7 +260,9 @@ export default function NegativeFeedbackInbox() {
 											{row.tags && row.tags.length > 0 && (
 												<div className="flex flex-wrap gap-1.5">
 													{row.tags.map((t) => (
-														<span key={`tag-${id}-${t}`} className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+														<span
+															key={`tag-${id}-${t}`}
+															className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
 															{t}
 														</span>
 													))}
@@ -275,7 +274,9 @@ export default function NegativeFeedbackInbox() {
 													<Gift className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
 													<div className="min-w-0 flex-1">
 														<p className="text-[11px] text-muted-foreground">Refund code</p>
-														<code className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300 break-all">{row.refundCode}</code>
+														<code className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300 break-all">
+															{row.refundCode}
+														</code>
 													</div>
 													{typeof row.refundAmount === "number" && row.refundAmount > 0 && (
 														<span className="text-sm font-semibold text-foreground tabular-nums shrink-0">
@@ -355,7 +356,9 @@ function EmptyState() {
 					</motion.div>
 					<div>
 						<p className="text-base font-semibold text-foreground">No negative feedback. Great service!</p>
-						<p className="text-sm text-muted-foreground mt-1 max-w-sm">When a customer rates their visit 2 stars or below, they'll show up here so you can make it right with a refund code.</p>
+						<p className="text-sm text-muted-foreground mt-1 max-w-sm">
+							When a customer rates their visit 2 stars or below, they'll show up here so you can make it right with a refund code.
+						</p>
 					</div>
 				</CardContent>
 			</Card>

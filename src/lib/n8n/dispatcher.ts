@@ -88,8 +88,7 @@ export async function dispatchN8nEvent(eventType: string, data: unknown): Promis
 			// Cumulative so multiple partial refunds from n8n accumulate correctly
 			// (the inbound payload carries the delta, not the running total).
 			const newRefunded = priorRefunded + Number(refundAmount);
-			const paymentStatus: "refunded" | "partially_refunded" =
-				total > 0 && newRefunded >= total ? "refunded" : "partially_refunded";
+			const paymentStatus: "refunded" | "partially_refunded" = total > 0 && newRefunded >= total ? "refunded" : "partially_refunded";
 
 			await Orders.findByIdAndUpdate(orderId, {
 				$set: {
@@ -156,10 +155,7 @@ export async function dispatchN8nEvent(eventType: string, data: unknown): Promis
 			// persistence model field is `whatsappOptIn` — map explicitly.
 			const optInWhatsApp = Boolean(body.optInWhatsApp);
 
-			const result = await Customers.findOneAndUpdate(
-				{ phone: customerPhone, restaurantID },
-				{ $set: { whatsappOptIn: optInWhatsApp } },
-			);
+			const result = await Customers.findOneAndUpdate({ phone: customerPhone, restaurantID }, { $set: { whatsappOptIn: optInWhatsApp } });
 			if (!result) fail(404, "Customer not found");
 			break;
 		}

@@ -23,9 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const shiftOpenSchema = z.object({
-	openingCash: z
-		.number({ invalid_type_error: "Enter a numeric amount" })
-		.min(0.01, "Opening cash must be greater than 0"),
+	openingCash: z.number({ error: "Enter a numeric amount" }).min(0.01, "Opening cash must be greater than 0"),
 });
 type ShiftOpenValues = z.infer<typeof shiftOpenSchema>;
 

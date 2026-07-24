@@ -6,10 +6,11 @@
  * @phase 2
  * @audit-finding n/a
  */
+
+import connectDB from "#utils/database/connect";
 import { BillAuditChains } from "#utils/database/models/billAuditChain";
 import { Invoices } from "#utils/database/models/invoice";
 import { Profiles } from "#utils/database/models/profile";
-import connectDB from "#utils/database/connect";
 import { captureError } from "#utils/helper/sentryWrapper";
 
 const RATES = [0, 5, 12, 18, 28] as const;
@@ -201,21 +202,19 @@ export async function exportGstr1(restaurantID: string, month: string): Promise<
 		// HSN summary bucket per rate.
 		const hsn = hsnForInvoice();
 		const hsnKey = `${hsn}|${rate}`;
-		const hsnRow =
-			hsnByRate.get(hsnKey) ??
-			({
-				num: hsnByRate.size + 1,
-				hsn_sc: hsn,
-				desc: "Aggregated sales",
-				uqc: "NOS",
-				qty: 0,
-				txval: 0,
-				iamt: 0,
-				camt: 0,
-				samt: 0,
-				csamt: 0,
-				rt: rate,
-			});
+		const hsnRow = hsnByRate.get(hsnKey) ?? {
+			num: hsnByRate.size + 1,
+			hsn_sc: hsn,
+			desc: "Aggregated sales",
+			uqc: "NOS",
+			qty: 0,
+			txval: 0,
+			iamt: 0,
+			camt: 0,
+			samt: 0,
+			csamt: 0,
+			rt: rate,
+		};
 		hsnRow.qty += 1;
 		hsnRow.txval += taxable;
 		hsnRow.iamt += igst;

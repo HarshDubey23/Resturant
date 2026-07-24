@@ -57,7 +57,7 @@ export async function POST(req: Request) {
 		}
 
 		const openedAt = new Date();
-		const shift = await Shifts.create<TShift>({
+		const shift = await Shifts.create({
 			restaurantID,
 			cashierId,
 			cashierName,

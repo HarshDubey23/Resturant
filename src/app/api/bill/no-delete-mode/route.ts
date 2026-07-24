@@ -34,103 +34,100 @@ import { captureError } from "#utils/helper/sentryWrapper";
  * @reason: OTP infra is currently customer-only; this HMAC-TOTP is best-effort.
  */
 function verifyStaffOtp(otp: string): boolean {
-        if (!otp || otp.length !== 6) return false;
-        const secret = process.env.NEXTAUTH_SECRET ?? process.env.OTP_SECRET ?? "";
-        if (!secret) return false;
-        const window = Math.floor(Date.now() / 30000);
-        // Accept the current window OR the previous one (30s clock skew tolerance).
-        for (const offset of [0, -1]) {
-                const expected = createHmac("sha256", secret)
-                        .update(String(window + offset))
-                        .digest("hex")
-                        .substring(0, 6);
-                const a = Buffer.from(otp);
-                const b = Buffer.from(expected);
-                if (a.length === b.length && timingSafeEqual(a, b)) return true;
-        }
-        return false;
+	if (!otp || otp.length !== 6) return false;
+	const secret = process.env.NEXTAUTH_SECRET ?? process.env.OTP_SECRET ?? "";
+	if (!secret) return false;
+	const window = Math.floor(Date.now() / 30000);
+	// Accept the current window OR the previous one (30s clock skew tolerance).
+	for (const offset of [0, -1]) {
+		const expected = createHmac("sha256", secret)
+			.update(String(window + offset))
+			.digest("hex")
+			.substring(0, 6);
+		const a = Buffer.from(otp);
+		const b = Buffer.from(expected);
+		if (a.length === b.length && timingSafeEqual(a, b)) return true;
+	}
+	return false;
 }
 
 export async function POST(req: Request) {
-        try {
-                const session = await requirePermission("settings.manage");
-                // Only the owner/admin can flip the kill switch.
-                if (session.role !== "admin" && session.role !== "owner") {
-                        throw { status: 403, message: "Only the owner can toggle no-delete mode" };
-                }
+	try {
+		const session = await requirePermission("settings.manage");
+		// Only the owner/admin can flip the kill switch.
+		if (session.role !== "admin" && session.role !== "owner") {
+			throw { status: 403, message: "Only the owner can toggle no-delete mode" };
+		}
 
-                const body = await req.json();
-                const { enabled, otp } = body as { enabled?: boolean; otp?: string };
+		const body = await req.json();
+		const { enabled, otp } = body as { enabled?: boolean; otp?: string };
 
-                if (typeof enabled !== "boolean") {
-                        throw { status: 400, message: "enabled (boolean) is required" };
-                }
+		if (typeof enabled !== "boolean") {
+			throw { status: 400, message: "enabled (boolean) is required" };
+		}
 
-                // Toggling OFF nominally requires a second factor. The current OTP
-                // infrastructure is customer-only (see verifyStaffOtp docblock), so for
-                // the MVP we log a warning and accept the toggle when no valid OTP is
-                // supplied. The audit-chain append + n8n compliance dispatch below are
-                // the actual tamper-evidence mechanism.
-                if (enabled === false) {
-                        const otpValid = verifyStaffOtp(otp ?? "");
-                        if (!otpValid) {
-                                captureError(
-                                        new Error("no-delete-mode disabled without a valid staff OTP — audit chain + n8n dispatch still fired"),
-                                        {
-                                                route: "bill/no-delete-mode",
-                                                restaurantID: session.username,
-                                                toggledBy: session.username,
-                                                otpProvided: Boolean(otp),
-                                        },
-                                );
-                        }
-                }
+		// Toggling OFF nominally requires a second factor. The current OTP
+		// infrastructure is customer-only (see verifyStaffOtp docblock), so for
+		// the MVP we log a warning and accept the toggle when no valid OTP is
+		// supplied. The audit-chain append + n8n compliance dispatch below are
+		// the actual tamper-evidence mechanism.
+		if (enabled === false) {
+			const otpValid = verifyStaffOtp(otp ?? "");
+			if (!otpValid) {
+				captureError(new Error("no-delete-mode disabled without a valid staff OTP — audit chain + n8n dispatch still fired"), {
+					route: "bill/no-delete-mode",
+					restaurantID: session.username,
+					toggledBy: session.username,
+					otpProvided: Boolean(otp),
+				});
+			}
+		}
 
-                await connectDB();
-                const restaurantID = session.username as string;
+		await connectDB();
+		const restaurantID = session.username as string;
 
-                const account = await Accounts.findOne<TAccount>({ username: restaurantID }).populate("profile");
-                if (!account) throw { status: 404, message: "Account not found" };
+		const account = await Accounts.findOne<TAccount>({ username: restaurantID }).populate("profile");
+		if (!account) throw { status: 404, message: "Account not found" };
 
-                const profileDoc = account.profile as { _id: string } | null;
-                if (!profileDoc) throw { status: 404, message: "Profile not found" };
+		const profileDoc = account.profile as { _id: string } | null;
+		if (!profileDoc) throw { status: 404, message: "Profile not found" };
 
-                await Profiles.findByIdAndUpdate(profileDoc._id, {
-                        $set: { "settings.noDeleteMode": enabled },
-                });
-                await invalidateRestaurantCache(restaurantID);
+		await Profiles.findByIdAndUpdate(profileDoc._id, {
+			$set: { "settings.noDeleteMode": enabled },
+		});
+		await invalidateRestaurantCache(restaurantID);
 
-                // Audit-chain append — every toggle is recorded so a malicious owner
-                // who flips OFF to delete evidence and then flips ON again leaves a
-                // permanent trail.
-                await appendAuditChain({
-                        restaurantID,
-                        actorRole: (session.role as string) ?? "owner",
-                        actorId: (session as unknown as { id?: string }).id,
-                        action: "no_delete_toggle",
-                        payload: {
-                                enabled,
-                                toggledBy: session.username,
-                                toggledAt: new Date().toISOString(),
-                        },
-                });
+		// Audit-chain append — every toggle is recorded so a malicious owner
+		// who flips OFF to delete evidence and then flips ON again leaves a
+		// permanent trail.
+		await appendAuditChain({
+			restaurantID,
+			actorRole: (session.role as string) ?? "owner",
+			actorId: (session as unknown as { id?: string }).id,
+			action: "no_delete_toggle",
+			payload: {
+				enabled,
+				toggledBy: session.username,
+				toggledAt: new Date().toISOString(),
+			},
+		});
 
-                // Notify platform compliance — disabling no-delete is a rare, high-risk
-                // action that warrants a human follow-up.
-                if (!enabled) {
-                        await triggerN8nWorkflow("compliance.no_delete_disabled", {
-                                restaurantID,
-                                toggledBy: session.username,
-                                toggledAt: new Date().toISOString(),
-                        }).catch(() => {
-                                /* best-effort n8n dispatch; non-fatal */
-                        });
-                }
+		// Notify platform compliance — disabling no-delete is a rare, high-risk
+		// action that warrants a human follow-up.
+		if (!enabled) {
+			await triggerN8nWorkflow("compliance.no_delete_disabled", {
+				restaurantID,
+				toggledBy: session.username,
+				toggledAt: new Date().toISOString(),
+			}).catch(() => {
+				/* best-effort n8n dispatch; non-fatal */
+			});
+		}
 
-                return NextResponse.json({ enabled });
-        } catch (err) {
-                return CatchNextResponse(err);
-        }
+		return NextResponse.json({ enabled });
+	} catch (err) {
+		return CatchNextResponse(err);
+	}
 }
 
 export const dynamic = "force-dynamic";

@@ -16,9 +16,9 @@ import { Invoices } from "#utils/database/models/invoice";
 import { Orders } from "#utils/database/models/order";
 import { Profiles } from "#utils/database/models/profile";
 import { CatchNextResponse } from "#utils/helper/common";
-import { captureError } from "#utils/helper/sentryWrapper";
 import { withPermission } from "#utils/helper/rbac";
-import { buildBill, type BillItem } from "#utils/print/bill";
+import { captureError } from "#utils/helper/sentryWrapper";
+import { type BillItem, buildBill } from "#utils/print/bill";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,7 +36,7 @@ interface PrintBillBody {
 	qrPayload?: string;
 }
 
-async function handle(req: Request, session: { username?: string; email?: string; id?: string }) {
+async function handle(req: Request, session: { username?: string; email?: string | null; id?: string }) {
 	const body = (await req.json()) as PrintBillBody;
 	if (!body?.orderId) throw { status: 400, message: "orderId is required" };
 

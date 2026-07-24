@@ -178,7 +178,7 @@ export const authOptions: AuthOptions = {
 			// @reason: the jwt callback's `user` param is `User | AdapterUser`; the
 			// cast guarantees `_doc` access regardless of which union member next-auth
 			// resolves at the type level.
-			const u = user as (typeof user) & { _doc?: Record<string, unknown> };
+			const u = user as typeof user & { _doc?: Record<string, unknown> };
 
 			if (account?.provider === "restaurant") {
 				if (user) {

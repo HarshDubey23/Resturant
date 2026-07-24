@@ -17,7 +17,7 @@ import "../src/utils/database/models/menu";
 import "../src/utils/database/models/account";
 
 import { Menus } from "../src/utils/database/models/menu";
-import { uploadImage, isR2Configured } from "../src/utils/storage/r2";
+import { isR2Configured, uploadImage } from "../src/utils/storage/r2";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 if (!MONGODB_URI) {

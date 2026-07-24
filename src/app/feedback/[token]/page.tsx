@@ -129,7 +129,9 @@ export default function FeedbackPage({ params }: { params: Promise<{ token: stri
 						unoptimized
 					/>
 				) : (
-					<div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold ring-2 ring-primary/20 shrink-0" aria-hidden="true">
+					<div
+						className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold ring-2 ring-primary/20 shrink-0"
+						aria-hidden="true">
 						{(meta?.restaurantName ?? "R").charAt(0).toUpperCase()}
 					</div>
 				)}
@@ -145,7 +147,7 @@ export default function FeedbackPage({ params }: { params: Promise<{ token: stri
 					{view === "error" && <ErrorState key="error" message={errorMsg} />}
 					{view === "already" && <AlreadyState key="already" restaurantName={meta?.restaurantName ?? "the restaurant"} />}
 					{view === "success" && <SuccessState key="success" restaurantName={meta?.restaurantName ?? "the restaurant"} rating={rating} />}
-					{view === "ready" && (
+					{(view === "ready" || view === "submitting") && (
 						<motion.form
 							key="form"
 							initial={{ opacity: 0, y: 12 }}
@@ -160,10 +162,7 @@ export default function FeedbackPage({ params }: { params: Promise<{ token: stri
 							{/* Star rating */}
 							<fieldset className="space-y-3">
 								<legend className="text-base font-semibold text-foreground text-center w-full">Rate your experience</legend>
-								<div
-									role="radiogroup"
-									aria-label="Star rating"
-									className="flex items-center justify-center gap-2 pt-1">
+								<div role="radiogroup" aria-label="Star rating" className="flex items-center justify-center gap-2 pt-1">
 									{[1, 2, 3, 4, 5].map((value) => {
 										const filled = value <= (hoverRating || rating);
 										return (
@@ -264,9 +263,7 @@ export default function FeedbackPage({ params }: { params: Promise<{ token: stri
 								)}
 							</Button>
 
-							<p className="text-center text-[11px] text-muted-foreground">
-								Your feedback goes directly to the restaurant — no third parties.
-							</p>
+							<p className="text-center text-[11px] text-muted-foreground">Your feedback goes directly to the restaurant — no third parties.</p>
 						</motion.form>
 					)}
 				</AnimatePresence>
@@ -297,10 +294,7 @@ function LoadingState() {
 
 function ErrorState({ message }: { message: string }) {
 	return (
-		<motion.div
-			initial={{ opacity: 0, y: 12 }}
-			animate={{ opacity: 1, y: 0 }}
-			className="flex flex-col items-center justify-center text-center py-12 px-4 gap-3">
+		<motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center text-center py-12 px-4 gap-3">
 			<div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
 				<Star className="h-8 w-8 text-destructive" />
 			</div>
@@ -313,17 +307,12 @@ function ErrorState({ message }: { message: string }) {
 
 function AlreadyState({ restaurantName }: { restaurantName: string }) {
 	return (
-		<motion.div
-			initial={{ opacity: 0, y: 12 }}
-			animate={{ opacity: 1, y: 0 }}
-			className="flex flex-col items-center justify-center text-center py-12 px-4 gap-3">
+		<motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center text-center py-12 px-4 gap-3">
 			<div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
 				<CheckCircle2 className="h-8 w-8 text-primary" />
 			</div>
 			<h2 className="text-lg font-semibold text-foreground">Already submitted</h2>
-			<p className="text-sm text-muted-foreground max-w-xs">
-				You've already rated your visit to {restaurantName}. Thanks for taking the time!
-			</p>
+			<p className="text-sm text-muted-foreground max-w-xs">You've already rated your visit to {restaurantName}. Thanks for taking the time!</p>
 		</motion.div>
 	);
 }
@@ -331,10 +320,7 @@ function AlreadyState({ restaurantName }: { restaurantName: string }) {
 function SuccessState({ restaurantName, rating }: { restaurantName: string; rating: number }) {
 	const reduced = prefersReducedMotion();
 	return (
-		<motion.div
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1 }}
-			className="flex flex-col items-center justify-center text-center py-12 px-4 gap-5">
+		<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center py-12 px-4 gap-5">
 			<div className="relative">
 				<motion.div
 					initial={{ scale: 0, rotate: -90 }}

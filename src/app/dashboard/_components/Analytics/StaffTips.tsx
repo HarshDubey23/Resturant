@@ -10,19 +10,19 @@
  */
 "use client";
 
-import { animate, motion, useMotionValue } from "motion/react";
 import { Banknote, CheckCircle2, Clock, HandCoins, TrendingUp, Users } from "lucide-react";
+import { animate, motion, useMotionValue } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
+import { useAdmin } from "#components/context/useContext";
+import { currencySymbol, formatCurrency } from "#utils/helper/currency";
+import { captureError } from "#utils/helper/sentryWrapper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useAdmin } from "#components/context/useContext";
-import { currencySymbol, formatCurrency } from "#utils/helper/currency";
-import { captureError } from "#utils/helper/sentryWrapper";
 
 type TipRange = "today" | "week" | "month";
 
@@ -62,22 +62,14 @@ function CountUp({ value, currency }: { value: number; currency: string }) {
 		});
 		return controls.stop;
 	}, [mv, value, currency]);
-	return <motion.span className="tabular-nums" suppressHydrationWarning>{display}</motion.span>;
+	return (
+		<motion.span className="tabular-nums" suppressHydrationWarning>
+			{display}
+		</motion.span>
+	);
 }
 
-function StatTile({
-	icon: Icon,
-	label,
-	value,
-	sub,
-	accent,
-}: {
-	icon: typeof Banknote;
-	label: string;
-	value: string;
-	sub?: string;
-	accent: string;
-}) {
+function StatTile({ icon: Icon, label, value, sub, accent }: { icon: typeof Banknote; label: string; value: string; sub?: string; accent: string }) {
 	return (
 		<Card>
 			<CardHeader className="pb-2">
@@ -104,32 +96,29 @@ export default function StaffTips() {
 	const [error, setError] = useState<string | null>(null);
 	const [markingId, setMarkingId] = useState<string | null>(null);
 
-	const fetchTips = useCallback(
-		async (selected: TipRange) => {
-			setLoading(true);
-			setError(null);
-			try {
-				const res = await fetch(`/api/tips?range=${selected}`, { cache: "no-store" });
-				if (res.status === 404) {
-					// 3-E1's tips API not yet deployed — surface a friendly hint
-					// instead of crashing the dashboard tab.
-					setData(null);
-					setError("Tips API not configured. Once /api/tips is deployed, per-waiter tip totals will appear here.");
-					return;
-				}
-				const json = (await res.json()) as TipsResponse;
-				if (!res.ok) throw new Error(json?.message ?? "Failed to load tips");
-				setData(json);
-			} catch (err) {
-				const msg = err instanceof Error ? err.message : "Failed to load tips";
-				setError(msg);
-				captureError(err, { route: "StaffTips.fetchTips", range: selected });
-			} finally {
-				setLoading(false);
+	const fetchTips = useCallback(async (selected: TipRange) => {
+		setLoading(true);
+		setError(null);
+		try {
+			const res = await fetch(`/api/tips?range=${selected}`, { cache: "no-store" });
+			if (res.status === 404) {
+				// 3-E1's tips API not yet deployed — surface a friendly hint
+				// instead of crashing the dashboard tab.
+				setData(null);
+				setError("Tips API not configured. Once /api/tips is deployed, per-waiter tip totals will appear here.");
+				return;
 			}
-		},
-		[],
-	);
+			const json = (await res.json()) as TipsResponse;
+			if (!res.ok) throw new Error(json?.message ?? "Failed to load tips");
+			setData(json);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Failed to load tips";
+			setError(msg);
+			captureError(err, { route: "StaffTips.fetchTips", range: selected });
+		} finally {
+			setLoading(false);
+		}
+	}, []);
 
 	useEffect(() => {
 		fetchTips(range);
@@ -200,10 +189,21 @@ export default function StaffTips() {
 			</header>
 
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-				<StatTile icon={HandCoins} label="Total tips" value={loading ? "—" : formatCurrency(totalTips, currency)} sub={`${waiterCount} waiters`} accent="text-violet-500" />
+				<StatTile
+					icon={HandCoins}
+					label="Total tips"
+					value={loading ? "—" : formatCurrency(totalTips, currency)}
+					sub={`${waiterCount} waiters`}
+					accent="text-violet-500"
+				/>
 				<StatTile icon={CheckCircle2} label="Paid out" value={loading ? "—" : formatCurrency(paidOut, currency)} accent="text-emerald-500" />
 				<StatTile icon={Clock} label="Pending payout" value={loading ? "—" : formatCurrency(pending, currency)} accent="text-amber-500" />
-				<StatTile icon={Users} label="Avg / waiter" value={loading ? "—" : formatCurrency(waiterCount > 0 ? totalTips / waiterCount : 0, currency)} accent="text-sky-500" />
+				<StatTile
+					icon={Users}
+					label="Avg / waiter"
+					value={loading ? "—" : formatCurrency(waiterCount > 0 ? totalTips / waiterCount : 0, currency)}
+					accent="text-sky-500"
+				/>
 			</div>
 
 			{loading ? (
@@ -240,11 +240,7 @@ export default function StaffTips() {
 								<BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
 									<CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
 									<XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" interval={0} />
-									<YAxis
-										tick={{ fontSize: 11 }}
-										stroke="hsl(var(--muted-foreground))"
-										tickFormatter={(v) => `${currencySymbol(currency)}${v}`}
-									/>
+									<YAxis tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `${currencySymbol(currency)}${v}`} />
 									<Tooltip
 										cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
 										contentStyle={{

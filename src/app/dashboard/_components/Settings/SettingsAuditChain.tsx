@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Search, ShieldCheck } from "lucide-react";
 /** @file SettingsAuditChain — paginated table of billAuditChain entries with a
  *    verify button that calls /api/audit-chain/verify. Green/red banner shows
  *    the verification result. Filter by billId is supported.
@@ -7,7 +8,6 @@
  * @audit-finding n/a
  */
 import { motion } from "motion/react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Search, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -79,22 +79,25 @@ export default function SettingsAuditChain() {
 	const [verifying, setVerifying] = useState(false);
 	const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
 
-	const fetchEntries = useCallback(async (page: number) => {
-		setLoading(true);
-		try {
-			const params = new URLSearchParams({ page: String(page), limit: "25" });
-			if (billIdFilter) params.set("billId", billIdFilter);
-			const res = await fetch(`/api/audit-chain?${params.toString()}`);
-			const data = await res.json();
-			if (!res.ok) throw new Error(data?.message ?? "Failed to fetch audit chain");
-			setEntries(data.entries ?? []);
-			setPagination(data.pagination ?? { page: 1, limit: 25, total: 0, totalPages: 0 });
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : "Failed to fetch audit chain");
-		} finally {
-			setLoading(false);
-		}
-	}, [billIdFilter]);
+	const fetchEntries = useCallback(
+		async (page: number) => {
+			setLoading(true);
+			try {
+				const params = new URLSearchParams({ page: String(page), limit: "25" });
+				if (billIdFilter) params.set("billId", billIdFilter);
+				const res = await fetch(`/api/audit-chain?${params.toString()}`);
+				const data = await res.json();
+				if (!res.ok) throw new Error(data?.message ?? "Failed to fetch audit chain");
+				setEntries(data.entries ?? []);
+				setPagination(data.pagination ?? { page: 1, limit: 25, total: 0, totalPages: 0 });
+			} catch (err) {
+				toast.error(err instanceof Error ? err.message : "Failed to fetch audit chain");
+			} finally {
+				setLoading(false);
+			}
+		},
+		[billIdFilter],
+	);
 
 	useEffect(() => {
 		fetchEntries(1);
@@ -133,8 +136,8 @@ export default function SettingsAuditChain() {
 				</CardHeader>
 				<CardContent className="space-y-3">
 					<p className="text-xs text-muted-foreground">
-						Every bill create/edit/cancel/refund/void, shift close, stock adjust and no-delete toggle is
-						hash-chained here. Deletes are blocked at the model layer — this table is append-only.
+						Every bill create/edit/cancel/refund/void, shift close, stock adjust and no-delete toggle is hash-chained here. Deletes are blocked at the model
+						layer — this table is append-only.
 					</p>
 
 					{verifyResult && (
@@ -178,7 +181,9 @@ export default function SettingsAuditChain() {
 								/>
 							</div>
 						</div>
-						<Button size="sm" variant="outline" onClick={() => fetchEntries(1)}>Apply</Button>
+						<Button size="sm" variant="outline" onClick={() => fetchEntries(1)}>
+							Apply
+						</Button>
 					</div>
 				</CardContent>
 			</Card>
@@ -225,17 +230,16 @@ export default function SettingsAuditChain() {
 												initial={{ opacity: 0, y: 4 }}
 												animate={{ opacity: 1, y: 0 }}
 												transition={{ delay: Math.min(i * 0.02, 0.3), duration: 0.2 }}
-												className="hover:bg-muted/40 font-mono text-xs"
-											>
+												className="hover:bg-muted/40 font-mono text-xs">
 												<TableCell className="font-semibold tabular-nums">{e.sequenceNo}</TableCell>
 												<TableCell>
-													<Badge className={`text-[10px] ${ACTION_COLORS[e.action] ?? "bg-muted text-muted-foreground"}`}>
-														{e.action}
-													</Badge>
+													<Badge className={`text-[10px] ${ACTION_COLORS[e.action] ?? "bg-muted text-muted-foreground"}`}>{e.action}</Badge>
 												</TableCell>
 												<TableCell className="font-sans">{e.actorRole}</TableCell>
 												<TableCell className="text-muted-foreground">{e.billId ? truncate(e.billId.toString(), 10) : "—"}</TableCell>
-												<TableCell className="text-muted-foreground" title={e.hash}>{truncate(e.hash, 14)}</TableCell>
+												<TableCell className="text-muted-foreground" title={e.hash}>
+													{truncate(e.hash, 14)}
+												</TableCell>
 												<TableCell className="text-muted-foreground" title={e.prevHash}>
 													{e.prevHash === "GENESIS" ? "GENESIS" : truncate(e.prevHash, 10)}
 												</TableCell>
@@ -248,16 +252,22 @@ export default function SettingsAuditChain() {
 							{pagination.totalPages > 1 && (
 								<div className="flex items-center justify-between px-4 py-3 border-t">
 									<p className="text-xs text-muted-foreground">
-										Showing {(pagination.page - 1) * pagination.limit + 1}–
-										{Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total}
+										Showing {(pagination.page - 1) * pagination.limit + 1}–{Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+										{pagination.total}
 									</p>
 									<div className="flex items-center gap-2">
 										<Button variant="outline" size="sm" disabled={pagination.page <= 1 || loading} onClick={() => fetchEntries(pagination.page - 1)}>
 											<ChevronLeft className="h-3.5 w-3.5" />
 											Prev
 										</Button>
-										<span className="text-xs tabular-nums">{pagination.page} / {pagination.totalPages}</span>
-										<Button variant="outline" size="sm" disabled={pagination.page >= pagination.totalPages || loading} onClick={() => fetchEntries(pagination.page + 1)}>
+										<span className="text-xs tabular-nums">
+											{pagination.page} / {pagination.totalPages}
+										</span>
+										<Button
+											variant="outline"
+											size="sm"
+											disabled={pagination.page >= pagination.totalPages || loading}
+											onClick={() => fetchEntries(pagination.page + 1)}>
 											Next
 											<ChevronRight className="h-3.5 w-3.5" />
 										</Button>

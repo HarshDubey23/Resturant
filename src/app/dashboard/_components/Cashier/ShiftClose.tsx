@@ -19,19 +19,17 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { formatCurrency } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "#utils/helper/currency";
 import ShiftZReport from "./ShiftZReport";
 
 const closeSchema = z.object({
-	countedCash: z
-		.number({ invalid_type_error: "Enter a numeric amount" })
-		.min(0, "Counted cash cannot be negative"),
+	countedCash: z.number({ error: "Enter a numeric amount" }).min(0, "Counted cash cannot be negative"),
 });
 type CloseValues = z.infer<typeof closeSchema>;
 
@@ -176,7 +174,9 @@ export default function ShiftClose({ open, onClosed, onCancel }: ShiftCloseProps
 
 								<div
 									className={`flex items-center gap-2 rounded-xl border p-3 text-sm ${
-										flagged ? "border-destructive/30 bg-destructive/10 text-destructive" : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+										flagged
+											? "border-destructive/30 bg-destructive/10 text-destructive"
+											: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
 									}`}>
 									{flagged ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
 									<div className="flex-1">
@@ -190,7 +190,10 @@ export default function ShiftClose({ open, onClosed, onCancel }: ShiftCloseProps
 								{flagged && (
 									<div className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-xs text-destructive">
 										<XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-										<p>Closing will flag this shift and dispatch a <code>cash.shift_short</code> alert to n8n for manager review. The shift cannot be reopened.</p>
+										<p>
+											Closing will flag this shift and dispatch a <code>cash.shift_short</code> alert to n8n for manager review. The shift cannot be
+											reopened.
+										</p>
 									</div>
 								)}
 

@@ -73,9 +73,5 @@ export async function clawbackPointsAtomic(restaurantID: string, customer: Custo
 	if (safePoints <= 0) return null;
 	// $max: [0, "$points"] floors the result at 0 — concurrent clawbacks can
 	// never drive the balance negative even if multiple refunds race.
-	return Loyalties.findOneAndUpdate(
-		{ restaurantID, customer },
-		[{ $set: { points: { $max: [0, { $subtract: ["$points", safePoints] }] } } }],
-		{ new: true },
-	);
+	return Loyalties.findOneAndUpdate({ restaurantID, customer }, [{ $set: { points: { $max: [0, { $subtract: ["$points", safePoints] }] } } }], { new: true });
 }

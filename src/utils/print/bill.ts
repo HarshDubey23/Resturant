@@ -9,7 +9,7 @@
  * (e-invoice compliance per GSTN spec).
  */
 
-import { align, bold, compose, cut, feed, init, padColumn, type PrintWidth, qr, size, text } from "./escpos";
+import { align, bold, compose, cut, feed, init, type PrintWidth, padColumn, qr, size, text } from "./escpos";
 
 export interface BillItem {
 	name: string;
@@ -84,19 +84,8 @@ export function buildBill(input: BuildBillInput): Buffer {
 	const width = input.width ?? 80;
 	const ts = formatTimestamp(input.timestamp);
 
-	const header = compose(
-		init(),
-		align("center"),
-		bold(true),
-		size(1, 1),
-		text(input.restaurantName.toUpperCase()),
-		text("\n"),
-		size(0, 0),
-		bold(false),
-	);
-	const addressLines = input.address
-		? compose(text(input.address), text("\n"))
-		: Buffer.alloc(0);
+	const header = compose(init(), align("center"), bold(true), size(1, 1), text(input.restaurantName.toUpperCase()), text("\n"), size(0, 0), bold(false));
+	const addressLines = input.address ? compose(text(input.address), text("\n")) : Buffer.alloc(0);
 	const gstinLine = input.gstin ? compose(text(`GSTIN: ${input.gstin}`), text("\n")) : Buffer.alloc(0);
 
 	const divider = compose(align("left"), text(rule(width)), text("\n"));
@@ -127,16 +116,9 @@ export function buildBill(input: BuildBillInput): Buffer {
 		return compose(text(`${qty}${name}${price}${total}`), text("\n"));
 	});
 
-	const totalsBlock = compose(
-		text(rule(width)),
-		text("\n"),
-		text(padColumn("Subtotal", money(input.subtotal), COLUMNS[width])),
-		text("\n"),
-	);
+	const totalsBlock = compose(text(rule(width)), text("\n"), text(padColumn("Subtotal", money(input.subtotal), COLUMNS[width])), text("\n"));
 
-	const discountLine = input.discount
-		? compose(text(padColumn("Discount", `- ${money(input.discount)}`, COLUMNS[width])), text("\n"))
-		: Buffer.alloc(0);
+	const discountLine = input.discount ? compose(text(padColumn("Discount", `- ${money(input.discount)}`, COLUMNS[width])), text("\n")) : Buffer.alloc(0);
 
 	const cgstLine = input.cgst ? compose(text(padColumn("CGST", money(input.cgst), COLUMNS[width])), text("\n")) : Buffer.alloc(0);
 	const sgstLine = input.sgst ? compose(text(padColumn("SGST", money(input.sgst), COLUMNS[width])), text("\n")) : Buffer.alloc(0);
@@ -164,13 +146,9 @@ export function buildBill(input: BuildBillInput): Buffer {
 		text("Thank you for dining with us!\n"),
 	);
 
-	const irnBlock = input.irn
-		? compose(align("left"), text(`IRN: ${input.irn}\n`))
-		: Buffer.alloc(0);
+	const irnBlock = input.irn ? compose(align("left"), text(`IRN: ${input.irn}\n`)) : Buffer.alloc(0);
 
-	const qrBlock = input.qrPayload
-		? compose(align("center"), qr(input.qrPayload), feed(2))
-		: Buffer.alloc(0);
+	const qrBlock = input.qrPayload ? compose(align("center"), qr(input.qrPayload), feed(2)) : Buffer.alloc(0);
 
 	const footer = compose(feed(3), cut(true));
 

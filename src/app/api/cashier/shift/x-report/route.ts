@@ -24,143 +24,143 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export interface XReportResponse {
-        status: number;
-        shift: TShift | null;
-        metrics: {
-                cashSales: number;
-                upiSales: number;
-                cardSales: number;
-                totalSales: number;
-                voids: { count: number; amount: number };
-                discounts: { count: number; amount: number };
-                refunds: { count: number; amount: number };
-                kotCount: number;
-                tips: number;
-                expectedCash: number;
-                tolerance: number;
-        };
+	status: number;
+	shift: TShift | null;
+	metrics: {
+		cashSales: number;
+		upiSales: number;
+		cardSales: number;
+		totalSales: number;
+		voids: { count: number; amount: number };
+		discounts: { count: number; amount: number };
+		refunds: { count: number; amount: number };
+		kotCount: number;
+		tips: number;
+		expectedCash: number;
+		tolerance: number;
+	};
 }
 
-export async function GET(): Promise<NextResponse<XReportResponse>> {
-        try {
-                const session = await getServerSession(authOptions);
-                if (!session) throw { status: 401, message: "Authentication required" };
+export async function GET(): Promise<Response> {
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session) throw { status: 401, message: "Authentication required" };
 
-                const restaurantID = (session.username as string) ?? "";
-                if (!restaurantID) throw { status: 400, message: "Restaurant username missing from session" };
+		const restaurantID = (session.username as string) ?? "";
+		if (!restaurantID) throw { status: 400, message: "Restaurant username missing from session" };
 
-                await connectDB();
+		await connectDB();
 
-                const account = await Accounts.findOne({ username: restaurantID }).select("_id").lean();
-                const profile = (await Profiles.findOne({ restaurantID }).lean()) as { settings?: { cashTolerance?: number } } | null;
-                const tolerance = Number(profile?.settings?.cashTolerance ?? 0);
-                if (!account) {
-                        return NextResponse.json<XReportResponse>({
-                                status: 200,
-                                shift: null,
-                                metrics: {
-                                        cashSales: 0,
-                                        upiSales: 0,
-                                        cardSales: 0,
-                                        totalSales: 0,
-                                        voids: { count: 0, amount: 0 },
-                                        discounts: { count: 0, amount: 0 },
-                                        refunds: { count: 0, amount: 0 },
-                                        kotCount: 0,
-                                        tips: 0,
-                                        expectedCash: 0,
-                                        tolerance,
-                                },
-                        });
-                }
+		const account = await Accounts.findOne({ username: restaurantID }).select("_id").lean();
+		const profile = (await Profiles.findOne({ restaurantID }).lean()) as { settings?: { cashTolerance?: number } } | null;
+		const tolerance = Number(profile?.settings?.cashTolerance ?? 0);
+		if (!account) {
+			return NextResponse.json<XReportResponse>({
+				status: 200,
+				shift: null,
+				metrics: {
+					cashSales: 0,
+					upiSales: 0,
+					cardSales: 0,
+					totalSales: 0,
+					voids: { count: 0, amount: 0 },
+					discounts: { count: 0, amount: 0 },
+					refunds: { count: 0, amount: 0 },
+					kotCount: 0,
+					tips: 0,
+					expectedCash: 0,
+					tolerance,
+				},
+			});
+		}
 
-                const shift = await Shifts.findOne<TShift>({ restaurantID, cashierId: account._id, status: "open" }).lean();
-                if (!shift) {
-                        return NextResponse.json<XReportResponse>({
-                                status: 200,
-                                shift: null,
-                                metrics: {
-                                        cashSales: 0,
-                                        upiSales: 0,
-                                        cardSales: 0,
-                                        totalSales: 0,
-                                        voids: { count: 0, amount: 0 },
-                                        discounts: { count: 0, amount: 0 },
-                                        refunds: { count: 0, amount: 0 },
-                                        kotCount: 0,
-                                        tips: 0,
-                                        expectedCash: 0,
-                                        tolerance,
-                                },
-                        });
-                }
+		const shift = await Shifts.findOne<TShift>({ restaurantID, cashierId: account._id, status: "open" }).lean();
+		if (!shift) {
+			return NextResponse.json<XReportResponse>({
+				status: 200,
+				shift: null,
+				metrics: {
+					cashSales: 0,
+					upiSales: 0,
+					cardSales: 0,
+					totalSales: 0,
+					voids: { count: 0, amount: 0 },
+					discounts: { count: 0, amount: 0 },
+					refunds: { count: 0, amount: 0 },
+					kotCount: 0,
+					tips: 0,
+					expectedCash: 0,
+					tolerance,
+				},
+			});
+		}
 
-                const orders = await Orders.find({ restaurantID, createdAt: { $gte: shift.openedAt } }).lean();
+		const orders = await Orders.find({ restaurantID, createdAt: { $gte: shift.openedAt } }).lean();
 
-                const acc = orders.reduce(
-                        (a, o) => {
-                                const order = o as unknown as {
-                                        paymentGateway?: string;
-                                        state?: string;
-                                        orderTotal?: number;
-                                        taxTotal?: number;
-                                        discountAmount?: number;
-                                        refundedAmount?: number;
-                                        products?: Array<{ adminApproved?: boolean }>;
-                                };
-                                const total = Number(order.orderTotal ?? 0) + Number(order.taxTotal ?? 0) - Number(order.discountAmount ?? 0);
-                                if (order.state === "cancel") {
-                                        a.voids.count += 1;
-                                        a.voids.amount += total;
-                                        return a;
-                                }
-                                if (order.paymentGateway === "cash") a.cashSales += total;
-                                else if (order.paymentGateway === "razorpay") a.upiSales += total;
-                                else if (order.paymentGateway === "stripe") a.cardSales += total;
-                                if (order.discountAmount && order.discountAmount > 0) {
-                                        a.discounts.count += 1;
-                                        a.discounts.amount += Number(order.discountAmount);
-                                }
-                                if (order.refundedAmount && order.refundedAmount > 0) {
-                                        a.refunds.count += 1;
-                                        a.refunds.amount += Number(order.refundedAmount);
-                                }
-                                if (order.products?.some((p) => p.adminApproved)) a.kotCount += 1;
-                                return a;
-                        },
-                        {
-                                cashSales: 0,
-                                upiSales: 0,
-                                cardSales: 0,
-                                voids: { count: 0, amount: 0 },
-                                discounts: { count: 0, amount: 0 },
-                                refunds: { count: 0, amount: 0 },
-                                kotCount: 0,
-                                tips: 0,
-                        },
-                );
+		const acc = orders.reduce(
+			(a, o) => {
+				const order = o as unknown as {
+					paymentGateway?: string;
+					state?: string;
+					orderTotal?: number;
+					taxTotal?: number;
+					discountAmount?: number;
+					refundedAmount?: number;
+					products?: Array<{ adminApproved?: boolean }>;
+				};
+				const total = Number(order.orderTotal ?? 0) + Number(order.taxTotal ?? 0) - Number(order.discountAmount ?? 0);
+				if (order.state === "cancel") {
+					a.voids.count += 1;
+					a.voids.amount += total;
+					return a;
+				}
+				if (order.paymentGateway === "cash") a.cashSales += total;
+				else if (order.paymentGateway === "razorpay") a.upiSales += total;
+				else if (order.paymentGateway === "stripe") a.cardSales += total;
+				if (order.discountAmount && order.discountAmount > 0) {
+					a.discounts.count += 1;
+					a.discounts.amount += Number(order.discountAmount);
+				}
+				if (order.refundedAmount && order.refundedAmount > 0) {
+					a.refunds.count += 1;
+					a.refunds.amount += Number(order.refundedAmount);
+				}
+				if (order.products?.some((p) => p.adminApproved)) a.kotCount += 1;
+				return a;
+			},
+			{
+				cashSales: 0,
+				upiSales: 0,
+				cardSales: 0,
+				voids: { count: 0, amount: 0 },
+				discounts: { count: 0, amount: 0 },
+				refunds: { count: 0, amount: 0 },
+				kotCount: 0,
+				tips: 0,
+			},
+		);
 
-                const expectedCash = Number(shift.openingCash) + acc.cashSales;
+		const expectedCash = Number(shift.openingCash) + acc.cashSales;
 
-                return NextResponse.json<XReportResponse>({
-                        status: 200,
-                        shift,
-                        metrics: {
-                                cashSales: acc.cashSales,
-                                upiSales: acc.upiSales,
-                                cardSales: acc.cardSales,
-                                totalSales: acc.cashSales + acc.upiSales + acc.cardSales,
-                                voids: acc.voids,
-                                discounts: acc.discounts,
-                                refunds: acc.refunds,
-                                kotCount: acc.kotCount,
-                                tips: acc.tips,
-                                expectedCash,
-                                tolerance,
-                        },
-                });
-        } catch (err) {
-                captureError(err, { route: "/api/cashier/shift/x-report" });
-                return CatchNextResponse(err);
-        }
+		return NextResponse.json<XReportResponse>({
+			status: 200,
+			shift,
+			metrics: {
+				cashSales: acc.cashSales,
+				upiSales: acc.upiSales,
+				cardSales: acc.cardSales,
+				totalSales: acc.cashSales + acc.upiSales + acc.cardSales,
+				voids: acc.voids,
+				discounts: acc.discounts,
+				refunds: acc.refunds,
+				kotCount: acc.kotCount,
+				tips: acc.tips,
+				expectedCash,
+				tolerance,
+			},
+		});
+	} catch (err) {
+		captureError(err, { route: "/api/cashier/shift/x-report" });
+		return CatchNextResponse(err);
+	}
 }

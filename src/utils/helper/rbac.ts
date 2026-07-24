@@ -42,7 +42,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 	kitchen: ["orders.read", "kds.view", "kds.action"],
 };
 
-type SessionWithRole = Session & { role?: string; permissions?: string[] };
+export type SessionWithRole = Session & { role?: string; permissions?: string[] };
 
 export async function requirePermission(permission: Permission): Promise<SessionWithRole> {
 	const session = (await getServerSession(authOptions)) as SessionWithRole | null;

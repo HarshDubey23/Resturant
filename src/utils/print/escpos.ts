@@ -125,9 +125,7 @@ export function barcode(data: string, type: BarcodeType = "CODE128"): Buffer {
 
 /** Concatenate an arbitrary number of ESC/POS buffers into one ticket. */
 export function compose(...buffers: Array<Buffer | Uint8Array>): Buffer {
-	return Buffer.concat(
-		buffers.map((b) => (Buffer.isBuffer(b) ? b : Buffer.from(b))),
-	);
+	return Buffer.concat(buffers.map((b) => (Buffer.isBuffer(b) ? b : Buffer.from(b))));
 }
 
 /**

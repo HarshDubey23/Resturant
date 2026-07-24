@@ -178,12 +178,7 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 					</>
 				)}
 
-				<Button
-					className="w-full"
-					size="lg"
-					loading={placingOrder}
-					onClick={onOrderAction}
-					disabled={selectedProducts.length === 0}>
+				<Button className="w-full" size="lg" loading={placingOrder} onClick={onOrderAction} disabled={selectedProducts.length === 0}>
 					{selectedProducts.length > 0
 						? `Place Order — ${formatCurrency(selectionTotal + tipAmount, currency)}`
 						: order?.products?.length
@@ -227,7 +222,8 @@ function TipSelector({ currency, tipPreset, customTip, tipAmount, onSelectPreset
 								"min-h-[44px] rounded-full px-4 text-sm font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
 								selected ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted",
 							)}>
-							{currency === "INR" ? "₹" : ""}{amount}
+							{currency === "INR" ? "₹" : ""}
+							{amount}
 						</motion.button>
 					);
 				})}
@@ -242,7 +238,9 @@ function TipSelector({ currency, tipPreset, customTip, tipAmount, onSelectPreset
 					transition={{ duration: 0.12, ease: "easeOut" }}
 					className={cn(
 						"min-h-[44px] rounded-full px-4 text-sm font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-						tipPreset === "none" ? "bg-muted text-foreground border-foreground/30" : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+						tipPreset === "none"
+							? "bg-muted text-foreground border-foreground/30"
+							: "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground",
 					)}>
 					No tip
 				</motion.button>

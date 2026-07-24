@@ -28,18 +28,17 @@ export const POST = withPermission("settings.manage", async (req, session) => {
 		const restaurantID = session.username as string;
 		const body = await req.json();
 
-		const { name, sku, unit, currentStock, openingStock, reorderLevel, reorderQty, costPerUnit, supplier } =
-			body as {
-				name?: string;
-				sku?: string;
-				unit?: string;
-				currentStock?: number;
-				openingStock?: number;
-				reorderLevel?: number;
-				reorderQty?: number;
-				costPerUnit?: number;
-				supplier?: string;
-			};
+		const { name, sku, unit, currentStock, openingStock, reorderLevel, reorderQty, costPerUnit, supplier } = body as {
+			name?: string;
+			sku?: string;
+			unit?: string;
+			currentStock?: number;
+			openingStock?: number;
+			reorderLevel?: number;
+			reorderQty?: number;
+			costPerUnit?: number;
+			supplier?: string;
+		};
 
 		if (!name || !unit) throw { status: 400, message: "name and unit are required" };
 

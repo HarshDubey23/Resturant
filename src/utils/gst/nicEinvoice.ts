@@ -33,13 +33,7 @@ export interface NicAuthResult {
  * enhancement that requires per-tenant certificate management. Mock mode
  * short-circuits with a deterministic-looking token.
  */
-export async function authNic(
-	asn: string,
-	user: string,
-	password: string,
-	gstin: string,
-	env?: string,
-): Promise<NicAuthResult> {
+export async function authNic(asn: string, user: string, password: string, gstin: string, env?: string): Promise<NicAuthResult> {
 	if (isMockMode() || !asn || !user || !password) {
 		captureError(new Error("NIC e-invoice mock mode active — returning fake auth token"), {
 			route: "nicEinvoice/authNic/mock",
@@ -59,10 +53,10 @@ export async function authNic(
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
-				"aspid": asn,
-				"user_name": user,
-				"password": password,
-				"gstin": gstin,
+				aspid: asn,
+				user_name: user,
+				password: password,
+				gstin: gstin,
 			},
 			body: JSON.stringify({ ForceRefresh: true }),
 		});
@@ -95,10 +89,7 @@ export interface NicIrnResult {
  * here and forward it verbatim — validation is NIC's responsibility). Mock
  * mode returns a stable-shaped fake IRN so the order/invoice UI can be tested.
  */
-export async function generateIrn(
-	authToken: string,
-	invoicePayload: Record<string, unknown>,
-): Promise<NicIrnResult> {
+export async function generateIrn(authToken: string, invoicePayload: Record<string, unknown>): Promise<NicIrnResult> {
 	if (isMockMode()) {
 		captureError(new Error("NIC e-invoice mock mode active — returning fake IRN"), {
 			route: "nicEinvoice/generateIrn/mock",
@@ -152,11 +143,7 @@ export interface NicCancelResult {
  * Cancels a previously generated IRN. NIC requires a reason code (1-6) plus a
  * free-text remark.
  */
-export async function cancelIrn(
-	authToken: string,
-	irn: string,
-	reason: { code: string; remark: string },
-): Promise<NicCancelResult> {
+export async function cancelIrn(authToken: string, irn: string, reason: { code: string; remark: string }): Promise<NicCancelResult> {
 	if (isMockMode()) {
 		captureError(new Error("NIC e-invoice mock mode active — returning fake cancel"), {
 			route: "nicEinvoice/cancelIrn/mock",

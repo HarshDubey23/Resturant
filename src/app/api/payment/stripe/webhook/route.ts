@@ -49,7 +49,7 @@ export async function POST(req: Request) {
 				await order.save();
 
 				const claimed = await Orders.findOneAndUpdate({ _id: orderId, loyaltyAwarded: false }, { $set: { loyaltyAwarded: true } }, { new: true });
-				if (claimed && claimed.restaurantID && claimed.customer) {
+				if (claimed?.restaurantID && claimed.customer) {
 					try {
 						const award = await awardPointsAtomic(claimed.restaurantID, claimed.customer, claimed.orderTotal || 0);
 						if (award?.tierUpgraded) {

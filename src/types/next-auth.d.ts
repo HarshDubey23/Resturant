@@ -55,6 +55,27 @@ declare module "next-auth" {
 	interface Session {
 		user: User;
 		expires: string;
+		// Backward-compatible flat aliases. The `session` callback in
+		// `authHelper.ts` spreads the JWT user fields onto BOTH the session
+		// root and `session.user`, so these fields exist at runtime. They are
+		// declared optional here so the many existing `session.role` /
+		// `session.username` / `session.restaurant` / `session.customer` call
+		// sites type-check. New code SHOULD prefer `session.user.X`.
+		role?: User["role"];
+		username?: User["username"];
+		restaurantID?: User["restaurantID"];
+		restaurant?: User["restaurant"];
+		customer?: User["customer"];
+		themeColor?: User["themeColor"];
+		outletId?: User["outletId"];
+		permissions?: User["permissions"];
+		accountActive?: User["accountActive"];
+		subscriptionActive?: User["subscriptionActive"];
+		verified?: User["verified"];
+		platformAdmin?: User["platformAdmin"];
+		name?: User["name"];
+		email?: User["email"];
+		image?: User["image"];
 	}
 }
 

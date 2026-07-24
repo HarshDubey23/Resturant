@@ -117,7 +117,7 @@ const ScannerClient = () => {
 		return () => {
 			if (checkInterval.current) clearInterval(checkInterval.current);
 		};
-	}, [devices, enumerateDevices, hasPermission, MAX_CAPABILITY_RETRIES]);
+	}, [devices, enumerateDevices, hasPermission]);
 
 	const handleScan = (detectedCodes: unknown) => {
 		const codes = detectedCodes as IDetectedBarcode[];

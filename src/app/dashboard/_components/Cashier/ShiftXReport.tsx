@@ -17,12 +17,12 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { toast } from "sonner";
+import { formatCurrency } from "#utils/helper/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "#utils/helper/currency";
 
 interface XMetrics {
 	cashSales: number;
@@ -140,12 +140,20 @@ export default function ShiftXReport({ open, onClose }: ShiftXReportProps) {
 										<div className="flex items-center gap-4">
 											<ResponsiveContainer width={120} height={120}>
 												<PieChart>
-													<Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={28} outerRadius={48} paddingAngle={2}>
+													<Pie
+														data={pieData}
+														dataKey="value"
+														nameKey="name"
+														cx="50%"
+														cy="50%"
+														innerRadius={28}
+														outerRadius={48}
+														paddingAngle={2}>
 														{pieData.map((_, i) => (
 															<Cell key={`cell-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
 														))}
 													</Pie>
-													<Tooltip formatter={(v: number) => formatCurrency(v)} />
+													<Tooltip formatter={(v) => formatCurrency(Number(v))} />
 												</PieChart>
 											</ResponsiveContainer>
 											<div className="flex-1 space-y-1 text-sm">

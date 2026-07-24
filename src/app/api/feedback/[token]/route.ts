@@ -167,9 +167,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ token: 
 
 		// Resolve the customer's phone so the negative-feedback n8n workflow can
 		// message the owner with a clickable customer reference.
-		const customerDoc = order.customer
-			? await Customers.findById(order.customer).select("phone fname lname").lean()
-			: null;
+		const customerDoc = order.customer ? await Customers.findById(order.customer).select("phone fname lname").lean() : null;
 		const customerPhone = customerDoc?.phone ?? "";
 		const customerName = customerDoc ? `${customerDoc.fname ?? ""} ${customerDoc.lname ?? ""}`.trim() : "Guest";
 

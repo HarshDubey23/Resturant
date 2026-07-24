@@ -3,15 +3,8 @@ import { z } from "zod";
 import connectDB from "#utils/database/connect";
 import { Coupons } from "#utils/database/models/coupon";
 import { recordAudit } from "#utils/helper/audit";
-import { withPermission } from "#utils/helper/rbac";
+import { type SessionWithRole, withPermission } from "#utils/helper/rbac";
 import { captureError } from "#utils/helper/sentryWrapper";
-
-type SessionWithRole = {
-	username?: string;
-	email?: string;
-	role?: string;
-	permissions?: string[];
-};
 
 // ─── GET: list coupons (paginated) ────────────────────────────
 async function handleGet(req: Request, session: SessionWithRole): Promise<Response> {

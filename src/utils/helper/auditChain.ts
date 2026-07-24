@@ -135,9 +135,7 @@ export async function verifyAuditChain(restaurantID: string): Promise<VerifyAudi
 		if (entry.prevHash !== previousHash) {
 			return { ok: false, brokenAt: sequence, totalEntries: entries.length };
 		}
-		const recomputed = sha256(
-			`${entry.prevHash}|${entry.payloadHash}|${entry.sequenceNo}|${restaurantID}|${new Date(entry.timestamp).toISOString()}`,
-		);
+		const recomputed = sha256(`${entry.prevHash}|${entry.payloadHash}|${entry.sequenceNo}|${restaurantID}|${new Date(entry.timestamp).toISOString()}`);
 		if (recomputed !== entry.hash) {
 			return { ok: false, brokenAt: sequence, totalEntries: entries.length };
 		}

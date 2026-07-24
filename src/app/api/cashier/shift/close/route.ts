@@ -124,7 +124,7 @@ export async function POST(req: Request) {
 		const account = await Accounts.findOne({ username: restaurantID }).select("_id").lean();
 		if (!account) throw { status: 404, message: "Cashier account not found" };
 		const cashierId = account._id;
-		const cashierName = (session.email as string) ?? restaurantID;
+		const _cashierName = (session.email as string) ?? restaurantID;
 
 		const shift = await Shifts.findOne<TShift>({ restaurantID, cashierId, status: "open" });
 		if (!shift) throw { status: 404, message: "No open shift found for this cashier" };

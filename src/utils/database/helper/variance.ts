@@ -30,10 +30,7 @@ export type TheoreticalConsumptionMap = Record<string, TheoreticalConsumptionEnt
  * placed on the given date. Reads recipe + orders models, joins menu item _ids
  * to recipes, and aggregates ingredient quantities per inventory item.
  */
-export async function computeTheoreticalConsumption(
-	restaurantID: string,
-	date: string,
-): Promise<TheoreticalConsumptionMap> {
+export async function computeTheoreticalConsumption(restaurantID: string, date: string): Promise<TheoreticalConsumptionMap> {
 	await connectDB();
 
 	const start = new Date(`${date}T00:00:00.000Z`);
@@ -63,14 +60,13 @@ export async function computeTheoreticalConsumption(
 	const recipes = await Recipes.find({
 		restaurantID,
 		menuItem: { $in: menuItemIds },
-	})
-		.lean();
+	}).lean();
 
 	const recipeByMenu = new Map<string, Array<{ inventoryItem: ObjectIdLike; quantity: number }>>();
 	for (const r of recipes) {
 		recipeByMenu.set(
 			(r.menuItem as ObjectIdLike).toString(),
-			(r.ingredients ?? []).map((ing) => ({
+			(r.ingredients ?? []).map((ing: { inventoryItem: ObjectIdLike; quantity?: number }) => ({
 				inventoryItem: ing.inventoryItem as ObjectIdLike,
 				quantity: ing.quantity ?? 0,
 			})),
@@ -124,10 +120,7 @@ export type ActualConsumptionMap = Record<string, ActualConsumptionEntry>;
  * the closing balance implied by the journals — when compared to theoretical
  * consumption, the gap is the theft signal.
  */
-export async function computeActualConsumption(
-	restaurantID: string,
-	date: string,
-): Promise<ActualConsumptionMap> {
+export async function computeActualConsumption(restaurantID: string, date: string): Promise<ActualConsumptionMap> {
 	await connectDB();
 
 	const start = new Date(`${date}T00:00:00.000Z`);
@@ -140,19 +133,19 @@ export async function computeActualConsumption(
 		const idStr = item._id.toString();
 		const opening = (item.openingStock as number) ?? 0;
 		const stockInToday = (item.stockIn ?? [])
-			.filter((s) => {
+			.filter((s: { date?: Date; qty?: number }) => {
 				const d = new Date(s.date ?? 0);
 				return d >= start && d <= end;
 			})
-			.reduce((sum, s) => sum + (s.qty ?? 0), 0);
+			.reduce((sum: number, s: { qty?: number }) => sum + (s.qty ?? 0), 0);
 		const wastageToday = (item.wastage ?? [])
-			.filter((w) => {
+			.filter((w: { date?: Date; qty?: number }) => {
 				const d = new Date(w.date ?? 0);
 				return d >= start && d <= end;
 			})
-			.reduce((sum, w) => sum + (w.qty ?? 0), 0);
+			.reduce((sum: number, w: { qty?: number }) => sum + (w.qty ?? 0), 0);
 		const lastCount = (item.physicalCount ?? []).slice(-1)[0];
-		const closingPhysical = lastCount ? lastCount.qty ?? 0 : (item.currentStock as number) ?? 0;
+		const closingPhysical = lastCount ? (lastCount.qty ?? 0) : ((item.currentStock as number) ?? 0);
 
 		const actual = opening + stockInToday - wastageToday - closingPhysical;
 		result[idStr] = {
@@ -205,7 +198,7 @@ export async function computeVariance(restaurantID: string, date: string): Promi
 	const invMeta = new Map<string, { name: string; unit: string; rate: number }>();
 	for (const inv of invDocs) {
 		const lastStockIn = (inv.stockIn ?? []).slice(-1)[0];
-		const rate = lastStockIn ? lastStockIn.rate ?? inv.costPerUnit ?? 0 : inv.costPerUnit ?? 0;
+		const rate = lastStockIn ? (lastStockIn.rate ?? inv.costPerUnit ?? 0) : (inv.costPerUnit ?? 0);
 		invMeta.set(inv._id.toString(), { name: inv.name, unit: inv.unit, rate });
 	}
 
@@ -218,8 +211,7 @@ export async function computeVariance(restaurantID: string, date: string): Promi
 		const meta = invMeta.get(idStr);
 		const rate = meta?.rate ?? 0;
 		const varianceRupees = Math.abs(varianceQty) * rate;
-		const threshold =
-			Math.abs(variancePercent) > thresholdPercent || varianceRupees > thresholdRupees;
+		const threshold = Math.abs(variancePercent) > thresholdPercent || varianceRupees > thresholdRupees;
 
 		rows.push({
 			inventoryId: idStr,
@@ -248,11 +240,7 @@ export async function computeVariance(restaurantID: string, date: string): Promi
  * Fires `inventory.theft_suspected` to n8n for every flagged row. Best-effort —
  * a failed dispatch is captured to Sentry but does not block the caller.
  */
-export async function dispatchTheftAlert(
-	restaurantID: string,
-	date: string,
-	variances: VarianceRow[],
-): Promise<void> {
+export async function dispatchTheftAlert(restaurantID: string, date: string, variances: VarianceRow[]): Promise<void> {
 	const flagged = variances.filter((v) => v.threshold);
 	if (flagged.length === 0) return;
 
