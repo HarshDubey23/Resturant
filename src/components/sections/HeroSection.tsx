@@ -13,7 +13,7 @@ const HERO_STATS = [
         { to: 500, suffix: "+", label: "Restaurants" },
         { to: 2, suffix: "M+", label: "Orders" },
         { to: 48, prefix: "₹", suffix: "Cr+", label: "GST filed" },
-        { to: 100, suffix: "%", label: "Bill integrity" },
+        { to: 0, label: "Bills deleted" },
 ];
 
 const FLOATING_DISHES = [
@@ -263,8 +263,8 @@ export default function HeroSection() {
                                                                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                                                                 className="absolute -top-4 -right-4 md:-right-8 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md p-3 shadow-soft-hover z-20">
                                                                 <div className="flex items-center gap-2">
-                                                                        <div className="h-8 w-8 rounded-lg bg-white/15 flex items-center justify-center overflow-hidden">
-                                                                                <Image src="/food-images/qr-scanning.png" alt="QR scan" width={32} height={32} className="rounded" />
+                                                                        <div className="h-8 w-8 rounded-lg bg-white/15 flex items-center justify-center overflow-hidden relative">
+                                                                                <Image src="/food-images/qr-scanning.png" alt="QR scan" fill sizes="32px" className="rounded object-contain" />
                                                                         </div>
                                                                         <div>
                                                                                 <p className="text-xs font-semibold text-white">Scan to Order</p>

@@ -1,4 +1,4 @@
-/* eslint-disable max-len */
+ 
 import mongoose from "mongoose";
 import { ID_SUFFIX, REF_BREWPOINT, TYPE_ACCOUNT, TYPE_KITCHEN, TYPE_PROFILE, TYPE_TABLE } from "../constants";
 import { menus } from "./brewpointMenu";

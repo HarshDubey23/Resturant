@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 /* OrderWorder Workbox service worker — offline caching, push, background sync */
 
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/7.0.0/workbox-sw.js");
