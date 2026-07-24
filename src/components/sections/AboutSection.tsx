@@ -2,6 +2,7 @@
 
 import { Globe, Quote, Shield, Zap } from "lucide-react";
 import { motion } from "motion/react";
+import Image from "next/image";
 
 const stats = [
 	{ value: "100%", label: "Contactless", icon: Shield },
@@ -11,7 +12,7 @@ const stats = [
 
 export default function AboutSection() {
 	return (
-		<section id="about" className="relative py-28 sm:py-36 bg-white">
+		<section id="about" className="relative py-28 sm:py-36 bg-white overflow-hidden">
 			<div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
 				<div className="grid md:grid-cols-2 gap-16 md:gap-20 items-center">
 					<motion.div
@@ -47,21 +48,69 @@ export default function AboutSection() {
 						</div>
 					</motion.div>
 
+					{/* Split-screen visual: floor + kitchen, with the quote card overlaid */}
 					<motion.div
 						initial={{ opacity: 0, x: 30 }}
 						whileInView={{ opacity: 1, x: 0 }}
 						viewport={{ once: true, margin: "-100px" }}
 						transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
 						className="relative">
-						<div className="rounded-2xl border border-slate-100 bg-white shadow-soft p-6 transition-all duration-200 ease-out hover:shadow-soft-hover glow-primary">
+						<div className="grid grid-rows-2 gap-4 h-[460px] sm:h-[540px]">
+							<motion.div
+								initial={{ opacity: 0, scale: 0.97 }}
+								whileInView={{ opacity: 1, scale: 1 }}
+								viewport={{ once: true, margin: "-100px" }}
+								transition={{ duration: 0.6, delay: 0.2 }}
+								className="relative rounded-2xl overflow-hidden shadow-soft ring-1 ring-slate-200/60">
+								<Image
+									src="/food-images/ambiance/restaurant-interior.png"
+									alt="The restaurant interior — warm lighting and set tables"
+									fill
+									sizes="(max-width: 768px) 100vw, 560px"
+									className="object-cover"
+								/>
+								<div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
+								<div className="absolute bottom-3 left-4 right-4">
+									<div className="text-[10px] uppercase tracking-[0.2em] text-violet-300 font-semibold">The room</div>
+									<p className="text-sm font-semibold text-white">Every table its own QR</p>
+								</div>
+							</motion.div>
+							<motion.div
+								initial={{ opacity: 0, scale: 0.97 }}
+								whileInView={{ opacity: 1, scale: 1 }}
+								viewport={{ once: true, margin: "-100px" }}
+								transition={{ duration: 0.6, delay: 0.32 }}
+								className="relative rounded-2xl overflow-hidden shadow-soft ring-1 ring-slate-200/60">
+								<Image
+									src="/food-images/ambiance/kitchen-team.png"
+									alt="The kitchen team working the line"
+									fill
+									sizes="(max-width: 768px) 100vw, 560px"
+									className="object-cover"
+								/>
+								<div className="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent" />
+								<div className="absolute bottom-3 left-4 right-4">
+									<div className="text-[10px] uppercase tracking-[0.2em] text-violet-300 font-semibold">The engine</div>
+									<p className="text-sm font-semibold text-white">Every ticket audit-logged</p>
+								</div>
+							</motion.div>
+						</div>
+
+						{/* Overlaid quote card */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true, margin: "-100px" }}
+							transition={{ duration: 0.6, delay: 0.45 }}
+							className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-[88%] rounded-2xl border border-slate-100 bg-white shadow-soft-hover p-5 glow-primary">
 							<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 via-violet-500 to-fuchsia-500 rounded-t-2xl" />
-							<Quote className="h-10 w-10 text-violet-600/30 mb-6" />
-							<blockquote className="text-xl sm:text-2xl text-slate-900 leading-relaxed font-medium tracking-tight">
+							<Quote className="h-8 w-8 text-violet-600/30 mb-3" />
+							<blockquote className="text-base sm:text-lg text-slate-900 leading-relaxed font-medium tracking-tight">
 								&ldquo;OrderWorder eliminated the friction between our customers and the kitchen. Setup took minutes, and our staff adapted
 								immediately.&rdquo;
 							</blockquote>
-							<div className="mt-8 flex items-center gap-4">
-								<div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-sm font-bold text-white shadow-soft">
+							<div className="mt-5 flex items-center gap-3">
+								<div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 flex items-center justify-center text-xs font-bold text-white shadow-soft">
 									RK
 								</div>
 								<div>
@@ -69,7 +118,7 @@ export default function AboutSection() {
 									<div className="text-xs text-slate-500">Beta Tester</div>
 								</div>
 							</div>
-						</div>
+						</motion.div>
 					</motion.div>
 				</div>
 			</div>
