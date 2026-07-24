@@ -807,7 +807,7 @@ Every revenue-affecting action — bill create, edit, void, refund, shift close,
 ### 10.1 Security Advisory (READ THIS — it affects the owner's account safety)
 The GitHub Personal Access Token used to push this Master Prompt to the repository was transmitted in plaintext in the originating request. **This token MUST be rotated immediately** after the push completes:
 1. Go to https://github.com/settings/tokens (fine-grained PATs).
-2. Locate the token beginning with `github_pat_11BNXWNYQ...`.
+2. Locate the fine-grained PAT scoped to the `Resturant` repository (the one used for this push).
 3. Click **Revoke**.
 4. Generate a new fine-grained PAT scoped to only the `Resturant` repo, with only `Contents: write` + `Metadata: read`, expiring in ≤30 days.
 5. Store the new token in a secret manager (1Password, Vault, GitHub Actions secret) — never in a chat, a doc, or a `.env` committed to the repo.
