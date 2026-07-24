@@ -1,0 +1,151 @@
+{
+	"name": "OrderWorder — 11 PM Owner Report",
+	"active": true,
+	"nodes": [
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "cronExpression",
+							"expression": "0 19 * * *"
+						}
+					]
+				}
+			},
+			"id": "cron-11pm-ist",
+			"name": "11 PM IST Cron (19:00 UTC)",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1,
+			"position": [0, 0]
+		},
+		{
+			"parameters": {
+				"method": "GET",
+				"url": "={{ $env.ORDERWORDER_API }}/api/internal/restaurants/active",
+				"sendHeaders": true,
+				"headerParameters": {
+					"parameters": [
+						{
+							"name": "X-N8N-Secret",
+							"value": "={{ $env.N8N_WEBHOOK_SECRET }}"
+						}
+					]
+				},
+				"options": {}
+			},
+			"id": "list-restaurants",
+			"name": "List Active Restaurants",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"fieldToSplitOut": "restaurants",
+				"options": {}
+			},
+			"id": "split",
+			"name": "Split By Restaurant",
+			"type": "n8n-nodes-base.splitOut",
+			"typeVersion": 1,
+			"position": [440, 0]
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "={{ $env.ORDERWORDER_API }}/api/internal/daily-summary",
+				"sendHeaders": true,
+				"headerParameters": {
+					"parameters": [
+						{
+							"name": "X-N8N-Secret",
+							"value": "={{ $env.N8N_WEBHOOK_SECRET }}"
+						},
+						{
+							"name": "Content-Type",
+							"value": "application/json"
+						}
+					]
+				},
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\"restaurantID\":\"{{ $json.restaurantID }}\",\"date\":\"{{ $today.toISODate() }}\"}",
+				"options": {}
+			},
+			"id": "fetch-summary",
+			"name": "Fetch Daily Summary",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [660, 0]
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "whatsappCloudApi",
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"messaging_product\":\"whatsapp\",\n  \"to\":\"{{ $('Split By Restaurant').item.json.ownerPhone }}\",\n  \"type\":\"template\",\n  \"template\":{\n    \"name\":\"daily_owner_report\",\n    \"language\":{\"code\":\"en\"},\n    \"components\":[\n      {\"type\":\"body\",\"parameters\":[\n        {\"type\":\"text\",\"text\":\"{{ $json.date }}\"},\n        {\"type\":\"text\",\"text\":\"{{ $json.totalBills }}\"},\n        {\"type\":\"text\",\"text\":\"₹{{ $json.netSales }}\"},\n        {\"type\":\"text\",\"text\":\"₹{{ Number($json.cgst) + Number($json.sgst) + Number($json.igst) }}\"},\n        {\"type\":\"text\",\"text\":\"{{ $json.lowStockItems.length }}\"},\n        {\"type\":\"text\",\"text\":\"{{ $json.theftAlerts.length }}\"},\n        {\"type\":\"text\",\"text\":\"₹{{ $json.shiftVariance }}\"}\n      ]}\n    ]\n  }\n}",
+				"options": {}
+			},
+			"id": "send-wa",
+			"name": "Send WhatsApp Report",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [880, 0]
+		}
+	],
+	"connections": {
+		"11 PM IST Cron (19:00 UTC)": {
+			"main": [
+				[
+					{
+						"node": "List Active Restaurants",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"List Active Restaurants": {
+			"main": [
+				[
+					{
+						"node": "Split By Restaurant",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Split By Restaurant": {
+			"main": [
+				[
+					{
+						"node": "Fetch Daily Summary",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Fetch Daily Summary": {
+			"main": [
+				[
+					{
+						"node": "Send WhatsApp Report",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

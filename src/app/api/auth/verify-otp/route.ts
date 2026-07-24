@@ -12,6 +12,16 @@ const MAX_OTP_ATTEMPTS = 5; // per OTP lifetime
 const VERIFY_RATE_LIMIT = 10; // per hour per phone
 const VERIFY_RATE_WINDOW_MS = 60 * 60 * 1000;
 
+// Demo mode mirrors the guard in authHelper's customer authorize and the
+// send-otp route: DEMO_MODE=true AND restaurant="demo" AND non-production.
+// In demo mode we short-circuit verification and return a signed token so the
+// flow works end-to-end without a real OTP. The client normally skips this
+// route in demo mode (send-otp returns demoMode:true → straight to details),
+// but we handle it here for defense-in-depth.
+function isDemoMode(restaurant: string): boolean {
+	return restaurant === "demo" && process.env.NODE_ENV !== "production" && process.env.DEMO_MODE === "true";
+}
+
 export async function POST(req: Request) {
 	try {
 		const body = await req.json();
@@ -23,12 +33,39 @@ export async function POST(req: Request) {
 		const verifyLimit = await rateLimit(`verify-otp:${restaurant}:${phone}`, VERIFY_RATE_LIMIT, VERIFY_RATE_WINDOW_MS);
 		if (!verifyLimit.ok) {
 			return NextResponse.json(
-				{ message: "Too many verification attempts. Please try again later." },
+				{ status: 429, message: "Too many verification attempts. Please try again later." },
 				{ status: 429, headers: { "Retry-After": String(Math.ceil(verifyLimit.resetIn / 1000)) } },
 			);
 		}
 
 		await connectDB();
+
+		// Demo mode short-circuit: skip OTP check, issue a signed verificationToken
+		// so the customer authorize callback (which also skips in demo mode) can
+		// proceed. demoMode is ONLY returned under the strict guard above.
+		if (isDemoMode(restaurant)) {
+			let demoCustomer = await Customers.findOne({ phone, restaurantID: restaurant });
+			if (!demoCustomer) {
+				demoCustomer = await Customers.create({
+					fname: fname?.trim() || "Guest",
+					lname: lname?.trim() || "User",
+					phone,
+					restaurantID: restaurant,
+				});
+			}
+			const verificationToken = generateVerificationToken(demoCustomer._id.toString());
+			return NextResponse.json({
+				status: 200,
+				demoMode: true,
+				verificationToken,
+				customer: {
+					_id: demoCustomer._id,
+					fname: demoCustomer.fname,
+					lname: demoCustomer.lname,
+					phone: demoCustomer.phone,
+				},
+			});
+		}
 
 		const redis = getRedis();
 		const storedOtp = await redis.get<string>(`otp:${restaurant}:${phone}`);

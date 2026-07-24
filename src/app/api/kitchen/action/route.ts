@@ -11,6 +11,14 @@ import { sendOrderReadyNotification, sendProductReadyNotification } from "#utils
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// Roles permitted to call this route (take any kitchen action).
+const STAFF_ROLES = ["admin", "owner", "manager", "cashier", "kitchen", "chef"];
+
+// Roles permitted to mark an order `complete`. Kitchen/chef can only advance
+// items to `ready` — final completion requires a front-of-house role so an
+// unpaid order can never be silently closed out.
+const COMPLETION_ROLES = ["admin", "owner", "manager", "cashier"];
+
 export async function POST(req: Request) {
 	try {
 		const session = await getServerSession(authOptions);
@@ -18,11 +26,11 @@ export async function POST(req: Request) {
 
 		// Broken access control fix: only staff-level roles may transition
 		// kitchen order states. Customers must receive 403, not silent success.
-		const staffRoles = ["admin", "kitchen"];
-		if (!staffRoles.includes(session.role as string)) {
-			captureError(new Error(`Forbidden kitchen action attempt by role '${session.role}'`), {
+		const role = session.role as string;
+		if (!STAFF_ROLES.includes(role)) {
+			captureError(new Error(`Forbidden kitchen action attempt by role '${role}'`), {
 				route: "/api/kitchen/action",
-				role: session.role as string,
+				role,
 			});
 			throw { status: 403, message: "Forbidden: staff access required" };
 		}
@@ -47,6 +55,17 @@ export async function POST(req: Request) {
 		const sessionRestaurant = session.restaurant?.username || session.username;
 		if (order.restaurantID !== sessionRestaurant) throw { status: 403, message: "Access denied. Order belongs to another restaurant." };
 
+		// FIX (audit B5): the kitchen must never auto-complete an unpaid order.
+		// Previously, once every item was `fulfilled`, the route set
+		// `order.state = "complete"` regardless of payment status — letting
+		// customers walk out without paying. Now completion requires BOTH
+		// payment in `paid` state AND a front-of-house role (admin/owner/
+		// manager/cashier). Kitchen-only staff advancing the last item to
+		// `ready` leave the order in an "Awaiting Payment" state.
+		if (order.state === "pending_payment") {
+			throw { status: 409, message: "Order is awaiting payment confirmation and cannot be processed by the kitchen yet." };
+		}
+
 		const product = order.products.find((p: { _id?: { toString(): string } }) => p._id?.toString() === productId);
 		if (!product) throw { status: 404, message: "Product not found in order" };
 
@@ -57,8 +76,22 @@ export async function POST(req: Request) {
 		}
 
 		const allFulfilled = order.products.every((p: { fulfilled: boolean }) => p.fulfilled);
+
+		let awaitingPayment = false;
+		let completionBlocked = false;
+
 		if (allFulfilled) {
-			order.state = "complete";
+			if (order.paymentStatus === "paid" && COMPLETION_ROLES.includes(role)) {
+				order.state = "complete";
+			} else if (order.paymentStatus !== "paid") {
+				// Unpaid but all items ready — hold in the current state so the
+				// cashier can collect payment before the order closes.
+				awaitingPayment = true;
+			} else {
+				// Paid but the acting role is kitchen-only — they cannot close
+				// the order; a manager/cashier must do it.
+				completionBlocked = true;
+			}
 		}
 
 		await order.save();
@@ -68,11 +101,18 @@ export async function POST(req: Request) {
 			sendProductReadyNotification(orderId, order.restaurantID, productName).catch((e: unknown) => captureError(e, { context: "sendProductReadyNotification" }));
 		}
 
-		if (allFulfilled && order.restaurantID) {
+		if (allFulfilled && order.restaurantID && !awaitingPayment && !completionBlocked) {
 			sendOrderReadyNotification(orderId, order.restaurantID).catch((e: unknown) => captureError(e, { context: "sendOrderReadyNotification" }));
 		}
 
-		return NextResponse.json({ status: 200, message: `Product marked as ${action}` });
+		let message = `Product marked as ${action}`;
+		if (awaitingPayment) {
+			message = `Product marked as ${action}. Order is awaiting payment — a cashier must collect payment before the order can be completed.`;
+		} else if (completionBlocked) {
+			message = `Product marked as ${action}. Order completion requires an admin, owner, manager, or cashier.`;
+		}
+
+		return NextResponse.json({ status: 200, message, awaitingPayment, completionBlocked });
 	} catch (err) {
 		return CatchNextResponse(err);
 	}

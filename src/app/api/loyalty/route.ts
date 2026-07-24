@@ -8,6 +8,7 @@ import { Loyalties } from "#utils/database/models/loyalty";
 import { Orders } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { captureError } from "#utils/helper/sentryWrapper";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,7 +35,7 @@ export async function GET() {
 
 		throw { status: 403, message: "Access denied" };
 	} catch (err) {
-		console.log(err);
+		captureError(err, { route: "/api/loyalty GET" });
 		return CatchNextResponse(err);
 	}
 }
@@ -54,6 +55,13 @@ export async function POST(req: Request) {
 		if (!restaurantID || !customerId) throw { status: 400, message: "Customer and restaurant required" };
 
 		if (action === "award") {
+			// Single source of truth for loyalty award is the payment-success
+			// webhook (/api/payment/webhook, /api/payment/verify, /api/payment/stripe/webhook).
+			// This endpoint exists as a fallback for orders that completed
+			// before the webhook fired (e.g. legacy data). The loyaltyAwarded
+			// gate below makes it a no-op once points have been minted —
+			// concurrent callers and double-fires from the webhook all
+			// collapse to a single award.
 			const awardSchema = z.object({ orderId: z.string().min(1), amount: z.number().positive() });
 			const parsed = awardSchema.safeParse(body);
 			if (!parsed.success) throw { status: 400, message: parsed.error.issues[0].message };
@@ -92,7 +100,7 @@ export async function POST(req: Request) {
 
 		throw { status: 400, message: "Invalid action" };
 	} catch (err) {
-		console.log(err);
+		captureError(err, { route: "/api/loyalty POST" });
 		return CatchNextResponse(err);
 	}
 }

@@ -19,48 +19,52 @@ import "./models/notificationQueue";
 import "./models/cartSession";
 import "./models/splitPayment";
 import "./models/auditLog";
+import "./models/shift";
+import "./models/supplier";
+import "./models/billAuditChain";
+import "./models/tipLedger";
 
 const MONGODB_CACHE = global as unknown as {
-	mongoose?: { conn: typeof import("mongoose") | null; promise: Promise<typeof import("mongoose")> | null };
+        mongoose?: { conn: typeof import("mongoose") | null; promise: Promise<typeof import("mongoose")> | null };
 };
 
 if (!MONGODB_CACHE.mongoose) {
-	MONGODB_CACHE.mongoose = { conn: null, promise: null };
+        MONGODB_CACHE.mongoose = { conn: null, promise: null };
 }
 
 async function connectDB() {
-	const mc = MONGODB_CACHE.mongoose;
-	if (!mc) return null;
-	if (mc.conn) return mc.conn;
+        const mc = MONGODB_CACHE.mongoose;
+        if (!mc) return null;
+        if (mc.conn) return mc.conn;
 
-	if (!process.env.MONGODB_URI) {
-		const err = new Error("MONGODB_URI environment variable is not set. " + "Add it to .env.local (dev) or your hosting provider's env vars (prod).");
-		(err as Error & { status?: number }).status = 500;
-		throw err;
-	}
+        if (!process.env.MONGODB_URI) {
+                const err = new Error("MONGODB_URI environment variable is not set. " + "Add it to .env.local (dev) or your hosting provider's env vars (prod).");
+                (err as Error & { status?: number }).status = 500;
+                throw err;
+        }
 
-	if (!mc.promise) {
-		const options = { autoIndex: false, bufferCommands: false };
-		mc.promise = connect(process.env.MONGODB_URI, options)
-			.then((mongoose) => {
-				console.log("🍃 Mongo Connection Established");
-				return mongoose;
-			})
-			.catch((error) => {
-				console.error("🍂 MongoDB Connection Failed: ", error.message);
-				mc.promise = null;
-				throw error;
-			});
-	}
+        if (!mc.promise) {
+                const options = { autoIndex: false, bufferCommands: false };
+                mc.promise = connect(process.env.MONGODB_URI, options)
+                        .then((mongoose) => {
+                                console.log("🍃 Mongo Connection Established");
+                                return mongoose;
+                        })
+                        .catch((error) => {
+                                console.error("🍂 MongoDB Connection Failed: ", error.message);
+                                mc.promise = null;
+                                throw error;
+                        });
+        }
 
-	try {
-		mc.conn = await mc.promise;
-	} catch (e) {
-		mc.promise = null;
-		throw e;
-	}
+        try {
+                mc.conn = await mc.promise;
+        } catch (e) {
+                mc.promise = null;
+                throw e;
+        }
 
-	return mc.conn;
+        return mc.conn;
 }
 
 export default connectDB;

@@ -61,3 +61,21 @@ export async function awardPointsAtomic(restaurantID: string, customer: Customer
 export async function redeemPointsAtomic(restaurantID: string, customer: CustomerRef, points: number): Promise<TLoyalty | null> {
 	return Loyalties.findOneAndUpdate({ restaurantID, customer, points: { $gte: points } }, { $inc: { points: -points } }, { new: true });
 }
+
+/**
+ * Clawback previously-awarded points when an order is cancelled or refunded.
+ * The points balance is floored at 0 (never negative) via the query guard.
+ * `lifetimePoints` is NOT decremented — it remains a historical record of
+ * total spend engagement, which is the standard loyalty-program behavior.
+ */
+export async function clawbackPointsAtomic(restaurantID: string, customer: CustomerRef, points: number): Promise<TLoyalty | null> {
+	const safePoints = Math.max(0, Math.floor(points));
+	if (safePoints <= 0) return null;
+	// $max: [0, "$points"] floors the result at 0 — concurrent clawbacks can
+	// never drive the balance negative even if multiple refunds race.
+	return Loyalties.findOneAndUpdate(
+		{ restaurantID, customer },
+		[{ $set: { points: { $max: [0, { $subtract: ["$points", safePoints] }] } } }],
+		{ new: true },
+	);
+}

@@ -1,0 +1,179 @@
+{
+	"name": "OrderWorder — Commission Saver (D+3 WhatsApp)",
+	"active": true,
+	"nodes": [
+		{
+			"parameters": {
+				"httpMethod": "POST",
+				"path": "orderworder/customer-acquired",
+				"responseMode": "responseNode",
+				"options": {}
+			},
+			"id": "acquired-webhook",
+			"name": "Customer Acquired",
+			"type": "n8n-nodes-base.webhook",
+			"typeVersion": 1.1,
+			"position": [0, 0],
+			"webhookId": "orderworder-customer-acquired"
+		},
+		{
+			"parameters": {
+				"rule": {
+					"interval": [
+						{
+							"field": "seconds",
+							"secondsInterval": 259200
+						}
+					]
+				}
+			},
+			"id": "schedule-d3",
+			"name": "Wait 3 Days",
+			"type": "n8n-nodes-base.scheduleTrigger",
+			"typeVersion": 1,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "={{ $env.ORDERWORDER_API }}/api/internal/customer/eligibility",
+				"sendHeaders": true,
+				"headerParameters": {
+					"parameters": [
+						{
+							"name": "X-N8N-Secret",
+							"value": "={{ $env.N8N_WEBHOOK_SECRET }}"
+						},
+						{
+							"name": "Content-Type",
+							"value": "application/json"
+						}
+					]
+				},
+				"sendBody": true,
+				"specifyBody": "json",
+				"jsonBody": "={\"customerPhone\":\"{{ $json.body.customerPhone }}\",\"restaurantID\":\"{{ $json.body.restaurantID }}\"}",
+				"options": {}
+			},
+			"id": "check-eligible",
+			"name": "Check Eligibility (no repeat order)",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [440, 0]
+		},
+		{
+			"parameters": {
+				"conditions": {
+					"boolean": [
+						{
+							"value1": "={{ $json.eligible }}",
+							"value2": true
+						}
+					]
+				}
+			},
+			"id": "if-eligible",
+			"name": "Eligible?",
+			"type": "n8n-nodes-base.if",
+			"typeVersion": 1,
+			"position": [660, 0]
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "whatsappCloudApi",
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"messaging_product\": \"whatsapp\",\n  \"to\": \"{{ $json.customerPhone }}\",\n  \"type\": \"template\",\n  \"template\": {\n    \"name\": \"direct_order_offer\",\n    \"language\": { \"code\": \"en\" },\n    \"components\": [{ \"type\": \"body\", \"parameters\": [{ \"type\": \"text\", \"text\": \"{{ $json.offerCode }}\" }, { \"type\": \"text\", \"text\": \"{{ $json.directOrderUrl }}\" }] }]\n  }\n}",
+				"options": {}
+			},
+			"id": "send-wa",
+			"name": "Send WhatsApp Offer",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [880, -100]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseBody": "={\"status\":\"scheduled\"}",
+				"options": {}
+			},
+			"id": "respond",
+			"name": "Respond",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [880, 100]
+		}
+	],
+	"connections": {
+		"Customer Acquired": {
+			"main": [
+				[
+					{
+						"node": "Wait 3 Days",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Wait 3 Days": {
+			"main": [
+				[
+					{
+						"node": "Check Eligibility (no repeat order)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Check Eligibility (no repeat order)": {
+			"main": [
+				[
+					{
+						"node": "Eligible?",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Eligible?": {
+			"main": [
+				[
+					{
+						"node": "Send WhatsApp Offer",
+						"type": "main",
+						"index": 0
+					}
+				],
+				[
+					{
+						"node": "Respond",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Send WhatsApp Offer": {
+			"main": [
+				[
+					{
+						"node": "Respond",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

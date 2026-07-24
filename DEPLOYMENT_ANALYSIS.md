@@ -1,5 +1,9 @@
 # Deployment & Cost Analysis (Phases 3-5)
 
+> **Canonical source of truth for env vars:** `.env.example` (repo root).
+> **Canonical source of truth for deployment steps:** `docs/DEPLOYMENT_RUNBOOK.md`.
+> This file is a cost/architecture analysis only — for current env-var names and ports, defer to the runbook and `.env.example`.
+
 ## Phase 3: Zero-Cost Deployment Options
 
 Every service has a free tier sufficient for MVP/demo:
@@ -41,11 +45,13 @@ Every service has a free tier sufficient for MVP/demo:
 
 Three demo restaurants are fully seeded via `POST /api/refreshDemoData`:
 
-| Restaurant | Slug | Admin Email | Password | Menu Items |
-|------------|------|-------------|----------|------------|
-| **The Spice Route** | `spiceroute` | `admin@spiceroute.com` | `spiceroute@demo123` | 18 items across 5 categories |
-| **Empire Restaurant** | `empire` | `admin@empire.com` | `empire@demo123` | ~20 items across categories |
-| **Brewpoint** | `brewpoint` | `admin@brewpoint.com` | `brewpoint@demo123` | ~15 items across categories |
+| Restaurant | Slug | Admin Email | Menu Items |
+|------------|------|-------------|------------|
+| **The Spice Route** | `spiceroute` | `admin@spiceroute.com` | 18 items across 5 categories |
+| **Empire Restaurant** | `empire` | `admin@empire.com` | ~20 items across categories |
+| **Brewpoint** | `brewpoint` | `admin@brewpoint.com` | ~15 items across categories |
 
-**Gate**: `DEMO_MODE=true` env var required. Production default is `false`.
+**Demo credentials are seeded and shown on first run; rotate immediately.** Do NOT hardcode demo passwords in docs, tickets, or chats — the seed scripts (`src/app/api/refreshDemoData/_data/*`) define the initial values, but they MUST be rotated on any non-local deployment. The previous versions of this doc listed hardcoded passwords (`empire@demo123` / `brewpoint@demo123`) that did not even match the code (`empire@123` / `brewpoint@123`) — that mismatch is audit finding G-01, now fixed by removing the passwords entirely.
+
+**Gate**: `DEMO_MODE=true` env var required for the demo auth bypass, AND `NODE_ENV !== "production"` (hard-disabled in prod regardless of `DEMO_MODE` — see `src/utils/helper/authHelper.ts:81`).
 **Auth**: All admin routes require session with `role === "admin"`.

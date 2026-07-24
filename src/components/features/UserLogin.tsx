@@ -31,6 +31,11 @@ export default function UserLogin({ setOpen }: UserLoginProps) {
 	const [verificationToken, setVerificationToken] = useState<string | null>(null);
 	const [resendCooldown, setResendCooldown] = useState(0);
 	const [debugOtp, setDebugOtp] = useState<string | null>(null);
+	// Set to true ONLY when the send-otp server response explicitly returns
+	// `demoMode: true` (which requires DEMO_MODE=true AND restaurant="demo").
+	// When true, the customer authorize callback also skips OTP verification,
+	// so we can proceed to the details step without a verificationToken.
+	const [demoMode, setDemoMode] = useState(false);
 	const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
 
 	const phoneNumber = `+91${phone}`;
@@ -70,8 +75,6 @@ export default function UserLogin({ setOpen }: UserLoginProps) {
 		}
 	};
 
-	const isDemoRestaurant = restaurantSlug === "demo";
-
 	const handleSendOtp = async () => {
 		if (!mobilePattern.test(phoneNumber)) {
 			return toast.error("Please enter a valid 10-digit Indian mobile number");
@@ -88,6 +91,19 @@ export default function UserLogin({ setOpen }: UserLoginProps) {
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data?.message || "Failed to send OTP");
+
+			// Demo mode short-circuit: ONLY when the server explicitly confirms
+			// `demoMode: true` in the SUCCESS response body. The server checks
+			// DEMO_MODE=true AND restaurant="demo" (the seeded demo restaurant).
+			// We NEVER skip OTP on a catch — a network error or backend outage must
+			// not let an unverified user "log in".
+			if (data?.demoMode === true) {
+				setDemoMode(true);
+				toast.info("Demo mode — OTP bypassed for the demo restaurant");
+				setStep("details");
+				return;
+			}
+
 			toast.success("OTP sent via WhatsApp", { description: `Check ${phoneNumber} for the 6-digit code` });
 			setStep("otp");
 			setResendCooldown(30);
@@ -96,14 +112,7 @@ export default function UserLogin({ setOpen }: UserLoginProps) {
 			}
 			setTimeout(() => otpRefs.current[0]?.focus(), 200);
 		} catch (err) {
-			// Fallback: if the OTP backend is unavailable (no Redis/WhatsApp) AND we're
-			// on the demo restaurant, skip OTP and go straight to sign-in. The server's
-			// isDemo check (DEMO_MODE=true + restaurant="demo" + non-prod) handles auth.
-			if (isDemoRestaurant) {
-				toast.info("Demo mode — skipping OTP");
-				setStep("details");
-				return;
-			}
+			// NEVER skip OTP on error — surface the real failure to the user.
 			toast.error(err instanceof Error ? err.message : "Failed to send OTP. Please try again.");
 		} finally {
 			setBusy(false);
@@ -145,7 +154,10 @@ export default function UserLogin({ setOpen }: UserLoginProps) {
 
 	const handleSignIn = async (token?: string, firstName?: string, lastName?: string) => {
 		const tokenToUse = token ?? verificationToken;
-		if (!tokenToUse) {
+		// In demo mode the server-side customer authorize callback skips OTP
+		// verification, so no verificationToken is required. Otherwise we MUST
+		// have a token — refusing to sign in without one prevents unverified access.
+		if (!demoMode && !tokenToUse) {
 			toast.error("Session expired. Please verify your phone again.");
 			setStep("phone");
 			return;
@@ -159,7 +171,10 @@ export default function UserLogin({ setOpen }: UserLoginProps) {
 				fname: firstName ?? fname,
 				lname: lastName ?? lname,
 				table: tableId,
-				verificationToken: tokenToUse,
+				// Omit verificationToken in demo mode — the server ignores it when
+				// DEMO_MODE=true && restaurant="demo". In normal mode, the token is
+				// required and verified via HMAC.
+				...(demoMode ? {} : { verificationToken: tokenToUse }),
 				callbackUrl: `${window.location.origin}`,
 			});
 			if (res?.error) {

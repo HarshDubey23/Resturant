@@ -12,6 +12,7 @@ import { Avatar, useXTheme } from "xtreme-ui";
 
 import { useAdmin } from "#components/context/useContext";
 import { DEFAULT_THEME_COLOR } from "#utils/constants/common";
+import { isEmailValid } from "#utils/helper/common";
 import type { TProfile } from "#utils/database/models/profile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,10 @@ export default function LoginSection() {
 	const [logoutLoading, setLogoutLoading] = useState(false);
 	const [profile, setProfile] = useState<TProfile>();
 	const [nextLoading, setNextLoading] = useState(false);
-	const [email, setEmail] = useState("");
+	// Identifier accepts EITHER an email OR a restaurant slug (restaurantID).
+	// The credentials provider's authorize callback looks up the account via
+	// `{ $or: [{ email }, { username }] }` so either form resolves the same account.
+	const [identifier, setIdentifier] = useState("");
 	const [kitchenUsername, setKitchenUsername] = useState("");
 	const [showKitchen, setShowKitchen] = useState(false);
 	const [password, setPassword] = useState("");
@@ -36,25 +40,39 @@ export default function LoginSection() {
 	const onNext = async () => {
 		setNextLoading(true);
 		if (!profile) {
-			const res = await fetch(`/api/baseProfile?email=${email}`);
-			const profileData = await res.json();
-			if (profileData.status === 404) {
-				toast.error("Account does not exist!");
-			} else {
+			if (isEmailValid(identifier)) {
+				// Email login: fetch the profile preview (baseProfile resolves by email).
+				const res = await fetch(`/api/baseProfile?email=${encodeURIComponent(identifier)}`);
+				const profileData = await res.json();
+				if (profileData.status === 404) {
+					toast.error("Account does not exist!");
+					setNextLoading(false);
+					return;
+				}
 				setProfile(profileData);
+			} else {
+				// Restaurant ID (slug) login: baseProfile only resolves by email, so we
+				// skip the preview. The authorize callback will look the account up by
+				// username; if it doesn't exist, signIn returns an error and we surface
+				// a toast on the password step.
+				setProfile({} as TProfile);
 			}
 		} else {
 			const res = await signIn("restaurant", {
 				redirect: false,
-				username: email,
+				username: identifier,
 				...(showKitchen && { kitchen: kitchenUsername }),
 				password,
 				callbackUrl: `${window.location.origin}`,
 			});
 			if (res?.error) {
-				toast.error(res?.error);
+				// authorize returns null on any failure (NextAuth convention) → the
+				// generic "CredentialsSignin" error lands here. Surface a single,
+				// user-friendly message instead of leaking whether the account exists.
+				toast.error("Invalid credentials. Check your Restaurant ID and password.");
 				setPassword("");
-				return setNextLoading(false);
+				setNextLoading(false);
+				return;
 			}
 			if (kitchenUsername) router.push("/kitchen");
 			else router.push("/dashboard");
@@ -74,9 +92,9 @@ export default function LoginSection() {
 		if (newColor) setThemeColor(profile?.themeColor ?? dashboard?.themeColor);
 	}, [profile, dashboard, setThemeColor]);
 
-	const name = profile?.name ?? dashboard?.name ?? (session.data?.customer ? `${session.data.customer.fname} ${session.data.customer.lname}` : "");
-	const avatarUrl = profile?.avatar ?? dashboard?.avatar ?? session.data?.restaurant?.avatar ?? "";
-	const address = profile?.address ?? dashboard?.address ?? session.data?.customer?.phone;
+	const name = profile?.name ?? dashboard?.name ?? (session.data?.user?.customer ? `${session.data.user.customer.fname} ${session.data.user.customer.lname}` : "");
+	const avatarUrl = profile?.avatar ?? dashboard?.avatar ?? session.data?.user?.restaurant?.avatar ?? "";
+	const address = profile?.address ?? dashboard?.address ?? session.data?.user?.customer?.phone;
 
 	return (
 		<section id="login" className="relative py-28 sm:py-36 bg-slate-50">
@@ -143,14 +161,15 @@ export default function LoginSection() {
 									!profile ? (
 										<div className="space-y-4">
 											<div className="space-y-2">
-												<Label htmlFor="login-email">Email</Label>
+												<Label htmlFor="login-identifier">Email or Restaurant ID</Label>
 												<Input
-													id="login-email"
-													type="email"
-													placeholder="you@restaurant.com"
-													value={email}
-													onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+													id="login-identifier"
+													type="text"
+													placeholder="you@restaurant.com or your-restaurant"
+													value={identifier}
+													onChange={(e: ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value.trim())}
 													onKeyDown={(e) => e.key === "Enter" && onNext()}
+													autoComplete="username"
 												/>
 											</div>
 											<Button className="w-full" onClick={onNext} loading={nextLoading}>
@@ -164,7 +183,7 @@ export default function LoginSection() {
 												onClick={() => setProfile(undefined)}
 												className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900 transition-all duration-200">
 												<ChevronLeft className="h-4 w-4" />
-												Change email
+												Change login
 											</button>
 
 											{showKitchen && (
@@ -188,6 +207,7 @@ export default function LoginSection() {
 													value={password}
 													onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
 													onKeyDown={(e) => e.key === "Enter" && onNext()}
+													autoComplete="current-password"
 												/>
 											</div>
 
@@ -204,18 +224,18 @@ export default function LoginSection() {
 									)
 								) : (
 									<div className="space-y-3">
-										{session.data?.role === "admin" && (
+										{session.data?.user?.role === "admin" && (
 											<Button className="w-full" onClick={() => router.push("/dashboard")}>
 												Open dashboard
 											</Button>
 										)}
-										{(session.data?.role === "admin" || session.data?.role === "kitchen") && (
+										{(session.data?.user?.role === "admin" || session.data?.user?.role === "kitchen") && (
 											<Button variant="outline" className="w-full" onClick={() => router.push("/kitchen")}>
 												Open kitchen display
 											</Button>
 										)}
-										{session.data?.role === "customer" && (
-											<Button className="w-full" onClick={() => router.push(`/${session.data?.restaurant?.username}`)}>
+										{session.data?.user?.role === "customer" && (
+											<Button className="w-full" onClick={() => router.push(`/${session.data?.user?.restaurant?.username}`)}>
 												Open restaurant menu
 											</Button>
 										)}

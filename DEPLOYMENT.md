@@ -2,6 +2,10 @@
 
 A multi-tenant restaurant SaaS platform for contactless dining powered by AI. Customers scan QR codes, browse menus, chat with the AI assistant "Jarvis", order by tap or voice, and pay directly from their phone. Owners get a real-time dashboard with rich analytics, a Kitchen Display System, and per-table QR code generation.
 
+> **Canonical source of truth for env vars:** `.env.example` (repo root).
+> **Canonical source of truth for deployment steps (clone → live in <30 min):** `docs/DEPLOYMENT_RUNBOOK.md`.
+> This file is the long-form reference; for a fast walkthrough, defer to the runbook and `.env.example`.
+
 ---
 
 ## What's New (latest)
@@ -345,12 +349,12 @@ You can also use an external cron service (https://cron-job.org, https://healthc
 
 ### Step 8: Security Headers
 
-`Content-Security-Policy` and `Permissions-Policy` are set per-request by `proxy.ts` (the Next.js 16 proxy convention):
-- A unique CSP nonce is generated for every request.
+`Content-Security-Policy` and `Permissions-Policy` are set per-request by `middleware.ts` (the Next.js edge middleware layer — there is no `proxy.ts`; that was an audit-finding misnomer, now corrected):
+- A unique CSP nonce is generated for every request via `buildCsp(nonce, isDev)` in `middleware.ts`.
 - `Permissions-Policy` allows microphone, geolocation, and payment APIs for voice ordering and payments.
-- CORS headers, CSRF tokens, and rate limiting are also handled by the proxy.
+- CORS headers, CSRF tokens, and rate limiting are also handled by `middleware.ts`.
 
-Do not add CSP/Permissions-Policy in `next.config.ts` headers — the proxy owns them.
+Do not add CSP/Permissions-Policy in `next.config.ts` headers — `middleware.ts` owns them (the `next.config.ts` `headers()` config sets only the static security headers: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, HSTS, `X-Robots-Tag`).
 
 ---
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { triggerN8nWorkflow } from "#lib/n8n/client";
 import connectDB from "#utils/database/connect";
+import { awardPointsAtomic } from "#utils/database/helper/loyalty";
 import { Invoices } from "#utils/database/models/invoice";
 import { Orders } from "#utils/database/models/order";
 import { generateInvoiceNumber } from "#utils/helper/invoiceHelper";
@@ -35,9 +36,33 @@ export async function POST(req: Request) {
 			if (!order) break;
 
 			if (session.payment_status === "paid") {
+				// FIX (audit B2 + B4): transition pending_payment → active and
+				// award loyalty points exactly once. The findOneAndUpdate with
+				// loyaltyAwarded: false as a query condition is the single
+				// source of truth across the Stripe + Razorpay webhooks, the
+				// /api/payment/verify route, and the /api/loyalty fallback.
+				if (order.state === "pending_payment") {
+					order.state = "active";
+				}
 				order.paymentStatus = "paid";
 				order.paymentId = session.id;
 				await order.save();
+
+				const claimed = await Orders.findOneAndUpdate({ _id: orderId, loyaltyAwarded: false }, { $set: { loyaltyAwarded: true } }, { new: true });
+				if (claimed && claimed.restaurantID && claimed.customer) {
+					try {
+						const award = await awardPointsAtomic(claimed.restaurantID, claimed.customer, claimed.orderTotal || 0);
+						if (award?.tierUpgraded) {
+							triggerN8nWorkflow("loyalty.tier_upgraded", {
+								customerId: claimed.customer.toString(),
+								restaurantID: claimed.restaurantID,
+								newTier: award.newTier,
+							}).catch(() => {});
+						}
+					} catch (e) {
+						captureError(e, { context: "loyalty-award-after-stripe-payment-failed", orderId });
+					}
+				}
 
 				const invoice = await Invoices.create({
 					restaurantID: order.restaurantID,

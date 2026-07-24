@@ -4,6 +4,7 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 import { AlertTriangle, Flashlight, ZoomIn, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { captureError } from "#utils/helper/sentryWrapper";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -20,6 +21,12 @@ interface ExtendedMediaTrackCapabilities extends MediaTrackCapabilities {
 
 const ScannerClient = () => {
 	const checkInterval = useRef<NodeJS.Timeout | null>(null);
+	const retryCount = useRef(0);
+	// FIX (audit D3): cap the capability-check interval so a denied camera
+	// (or a video element that never attaches) does not poll forever. 20
+	// retries × 500ms = 10s, after which we give up and surface an error
+	// instead of burning CPU/battery indefinitely.
+	const MAX_CAPABILITY_RETRIES = 20;
 
 	const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
 	const [deviceId, setDeviceId] = useState<string | undefined>(undefined);
@@ -36,7 +43,7 @@ const ScannerClient = () => {
 			const videoDevices = devices.filter((device) => device.kind === "videoinput");
 			setDevices(videoDevices);
 		} catch (err) {
-			console.error("Error enumerating devices:", err);
+			captureError(err, { route: "/scan", context: "enumerate-devices" });
 		}
 	}, []);
 
@@ -60,6 +67,11 @@ const ScannerClient = () => {
 	}, [devices, deviceId]);
 
 	useEffect(() => {
+		// FIX (audit D3): if the camera permission was explicitly denied,
+		// there is no point polling for capabilities — the video.srcObject
+		// will never attach. Skip the interval entirely in that case.
+		if (hasPermission === false) return;
+
 		const checkCapabilities = () => {
 			const video = document.querySelector("video");
 			if (video?.srcObject) {
@@ -78,17 +90,34 @@ const ScannerClient = () => {
 						clearInterval(checkInterval.current);
 						checkInterval.current = null;
 					}
+					retryCount.current = 0;
+					return;
 				}
+			}
+
+			// No video track yet — count this as a retry. After
+			// MAX_CAPABILITY_RETRIES, stop polling and surface an error so
+			// the UI is not stuck in an invisible "searching for camera"
+			// state forever.
+			retryCount.current += 1;
+			if (retryCount.current >= MAX_CAPABILITY_RETRIES) {
+				if (checkInterval.current) {
+					clearInterval(checkInterval.current);
+					checkInterval.current = null;
+				}
+				setError("Could not access camera capabilities. Please reload the page or check camera permissions.");
+				captureError(new Error("Scanner capability check timed out"), { route: "/scan", retries: retryCount.current });
 			}
 		};
 
 		if (checkInterval.current) clearInterval(checkInterval.current);
+		retryCount.current = 0;
 		checkInterval.current = setInterval(checkCapabilities, 500);
 
 		return () => {
 			if (checkInterval.current) clearInterval(checkInterval.current);
 		};
-	}, [devices, enumerateDevices]);
+	}, [devices, enumerateDevices, hasPermission, MAX_CAPABILITY_RETRIES]);
 
 	const handleScan = (detectedCodes: unknown) => {
 		const codes = detectedCodes as IDetectedBarcode[];
@@ -123,7 +152,7 @@ const ScannerClient = () => {
 		} else if (errorObj?.name === "NotFoundError" || errorObj?.name === "DevicesNotFoundError") {
 			setError("No camera found on this device.");
 		} else {
-			console.warn("Scanner error:", errorObj);
+			captureError(err, { route: "/scan", context: "scanner-error" });
 		}
 	};
 

@@ -3,7 +3,7 @@ import mongoose, { type HydratedDocument } from "mongoose";
 import type { TCustomer } from "./customer";
 import type { TMenu } from "./menu";
 
-const orderState = ["active", "reject", "cancel", "complete"] as const;
+const orderState = ["active", "pending_payment", "reject", "cancel", "complete"] as const;
 const paymentStatus = ["pending", "paid", "failed", "refunded", "partially_refunded"] as const;
 
 const OrderSchema = new mongoose.Schema<TOrder>(
@@ -38,6 +38,12 @@ const OrderSchema = new mongoose.Schema<TOrder>(
 		},
 		loyaltyAwarded: { type: Boolean, default: false },
 		settledAt: { type: Date },
+		tip: {
+			amount: { type: Number, default: 0 },
+			waiterId: { type: mongoose.Schema.Types.ObjectId },
+			waiterName: { type: String, trim: true },
+			tippedAt: { type: Date },
+		},
 		products: [
 			{
 				product: { type: mongoose.Schema.Types.ObjectId, ref: "menus" },
@@ -99,6 +105,12 @@ export type TOrder = HydratedDocument<{
 		| undefined;
 	loyaltyAwarded: boolean;
 	settledAt: Date;
+	tip?: {
+		amount: number;
+		waiterId?: mongoose.Types.ObjectId;
+		waiterName?: string;
+		tippedAt?: Date;
+	};
 	products: Array<TProduct>;
 }>;
 

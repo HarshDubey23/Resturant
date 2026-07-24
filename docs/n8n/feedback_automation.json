@@ -1,0 +1,209 @@
+{
+	"name": "OrderWorder — Feedback + Refund Automation",
+	"active": true,
+	"nodes": [
+		{
+			"parameters": {
+				"httpMethod": "POST",
+				"path": "orderworder/payment-completed",
+				"responseMode": "responseNode",
+				"options": {}
+			},
+			"id": "pay-webhook",
+			"name": "Payment Completed",
+			"type": "n8n-nodes-base.webhook",
+			"typeVersion": 1.1,
+			"position": [0, 0],
+			"webhookId": "orderworder-payment-completed"
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "whatsappCloudApi",
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"messaging_product\":\"whatsapp\",\n  \"to\":\"{{ $json.body.customerPhone }}\",\n  \"type\":\"template\",\n  \"template\":{\n    \"name\":\"rate_your_visit\",\n    \"language\":{\"code\":\"en\"},\n    \"components\":[{\"type\":\"body\",\"parameters\":[\n      {\"type\":\"text\",\"text\":\"{{ $json.body.restaurantName }}\"},\n      {\"type\":\"text\",\"text\":\"{{ $env.PUBLIC_URL }}/feedback/{{ $json.body.token }}\"}\n    ]}]\n  }\n}",
+				"options": {}
+			},
+			"id": "send-rating-link",
+			"name": "Send Rating Link",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseBody": "={\"status\":\"rating_link_sent\"}",
+				"options": {}
+			},
+			"id": "respond-rating",
+			"name": "Respond (Rating)",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [440, 0]
+		},
+		{
+			"parameters": {
+				"httpMethod": "POST",
+				"path": "orderworder/feedback-negative",
+				"responseMode": "responseNode",
+				"options": {}
+			},
+			"id": "neg-webhook",
+			"name": "Negative Feedback (≤2★)",
+			"type": "n8n-nodes-base.webhook",
+			"typeVersion": 1.1,
+			"position": [0, 220],
+			"webhookId": "orderworder-feedback-negative"
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "whatsappCloudApi",
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"messaging_product\":\"whatsapp\",\n  \"to\":\"{{ $json.body.ownerPhone }}\",\n  \"type\":\"template\",\n  \"template\":{\n    \"name\":\"negative_feedback_alert\",\n    \"language\":{\"code\":\"en\"},\n    \"components\":[{\"type\":\"body\",\"parameters\":[\n      {\"type\":\"text\",\"text\":\"{{ $json.body.customerName }}\"},\n      {\"type\":\"text\",\"text\":\"{{ $json.body.rating }}★\"},\n      {\"type\":\"text\",\"text\":\"{{ $json.body.comment }}\"},\n      {\"type\":\"text\",\"text\":\"{{ $env.PUBLIC_URL }}/dashboard/feedback?orderId={{ $json.body.orderId }}\"}\n    ]}]\n  }\n}",
+				"options": {}
+			},
+			"id": "alert-owner",
+			"name": "Alert Owner",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [220, 220]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseBody": "={\"status\":\"owner_alerted\"}",
+				"options": {}
+			},
+			"id": "respond-negative",
+			"name": "Respond (Negative)",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [440, 220]
+		},
+		{
+			"parameters": {
+				"httpMethod": "POST",
+				"path": "orderworder/refund-code-generated",
+				"responseMode": "responseNode",
+				"options": {}
+			},
+			"id": "refund-webhook",
+			"name": "Refund Code Generated",
+			"type": "n8n-nodes-base.webhook",
+			"typeVersion": 1.1,
+			"position": [0, 440],
+			"webhookId": "orderworder-refund-code-generated"
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "whatsappCloudApi",
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"messaging_product\":\"whatsapp\",\n  \"to\":\"{{ $json.body.customerPhone }}\",\n  \"type\":\"template\",\n  \"template\":{\n    \"name\":\"refund_code\",\n    \"language\":{\"code\":\"en\"},\n    \"components\":[{\"type\":\"body\",\"parameters\":[\n      {\"type\":\"text\",\"text\":\"{{ $json.body.refundCode }}\"},\n      {\"type\":\"text\",\"text\":\"₹{{ $json.body.refundAmount }}\"},\n      {\"type\":\"text\",\"text\":\"{{ $env.PUBLIC_URL }}/{{ $json.body.restaurantID }}/direct\"}\n    ]}]\n  }\n}",
+				"options": {}
+			},
+			"id": "send-refund-wa",
+			"name": "Send Refund Code to Customer",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [220, 440]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseBody": "={\"status\":\"sent\"}",
+				"options": {}
+			},
+			"id": "respond-refund",
+			"name": "Respond (Refund)",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [440, 440]
+		}
+	],
+	"connections": {
+		"Payment Completed": {
+			"main": [
+				[
+					{
+						"node": "Send Rating Link",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Send Rating Link": {
+			"main": [
+				[
+					{
+						"node": "Respond (Rating)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Negative Feedback (≤2★)": {
+			"main": [
+				[
+					{
+						"node": "Alert Owner",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Alert Owner": {
+			"main": [
+				[
+					{
+						"node": "Respond (Negative)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Refund Code Generated": {
+			"main": [
+				[
+					{
+						"node": "Send Refund Code to Customer",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Send Refund Code to Customer": {
+			"main": [
+				[
+					{
+						"node": "Respond (Refund)",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

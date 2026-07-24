@@ -4,12 +4,15 @@ import { AlertCircle, ChefHat, Minus, Plus, ShoppingBag } from "lucide-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useOrder, useRestaurant } from "#components/context/useContext";
 import { formatCurrency } from "#utils/helper/currency";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import type { TMenuCustom } from "./MenuCard";
+
+const TIP_PRESETS = [20, 50, 100] as const;
 
 interface CartPageProps {
 	selectedProducts: Array<TMenuCustom>;
@@ -26,13 +29,46 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 	const { order, placeOrder, placingOrder, cancelOrder, cancelingOrder } = useOrder();
 	const [showTaxSummary, setShowTaxSummary] = useState(false);
 
+	// ── Tip selector state ──────────────────────────────────────────────────
+	// 3-E2 addition: trust feature, NOT a dark pattern. Nothing is pre-selected.
+	// The customer must explicitly pick a preset, "No tip", or enter a custom
+	// amount. Default state = no selection (functionally ₹0 tip).
+	const [tipPreset, setTipPreset] = useState<number | "none" | null>(null);
+	const [customTip, setCustomTip] = useState<string>("");
+
+	const tipAmount = useMemo(() => {
+		if (customTip.trim() !== "") {
+			const n = Number(customTip);
+			if (Number.isFinite(n) && n > 0) return Math.round(n * 100) / 100;
+		}
+		if (tipPreset === "none") return 0;
+		if (typeof tipPreset === "number") return tipPreset;
+		return 0;
+	}, [customTip, tipPreset]);
+
+	const selectPreset = (value: number | "none") => {
+		setTipPreset(value);
+		setCustomTip("");
+	};
+
+	const onCustomTipChange = (raw: string) => {
+		// Allow only non-negative numeric input (incl. decimals). Stripping
+		// non-numeric chars avoids accidental NaN/state corruption.
+		const cleaned = raw.replace(/[^\d.]/g, "").slice(0, 6);
+		setCustomTip(cleaned);
+		if (cleaned !== "") setTipPreset(null);
+		else if (tipPreset !== null) setTipPreset(null);
+	};
+
 	const selectionTotal = selectedProducts.reduce((sum, p) => sum + p.quantity * p.price, 0);
 	const approvedCount = order?.products?.reduce((acc, p) => (p.adminApproved ? acc + 1 : acc), 0) ?? 0;
 	const hasActiveOrder = order?.products?.length && approvedCount === 0;
 
 	const onOrderAction = async () => {
 		if (selectedProducts.length === 0) return;
-		await placeOrder(selectedProducts);
+		// Pass the tip through so the server-side order/place flow (or the
+		// payment webhook) can record it on `order.tip` (field added by 2-C).
+		await placeOrder(selectedProducts, undefined, tipAmount > 0 ? tipAmount : undefined);
 		resetSelectedProducts();
 	};
 
@@ -43,7 +79,16 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 
 	useEffect(() => {
 		if (!order) return;
-		if (order.table && order.table !== table) {
+		// FIX (audit E2): `table` is null during SSR/first hydration render
+		// (useSearchParams returns null on the server). The previous check
+		// `order.table && order.table !== table` evaluated to true whenever
+		// `table` was null but `order.table` was set — cancelling the order
+		// and signing the customer out on every fresh pageload. Now we only
+		// act when BOTH values are defined and genuinely mismatched, so a
+		// transient null can never trigger a destructive side-effect.
+		if (!table) return;
+		if (!order.table) return;
+		if (order.table !== table) {
 			cancelOrder();
 			signOut();
 		}
@@ -72,6 +117,9 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 			</div>
 		);
 	}
+
+	const existingOrderTotal = (order?.orderTotal ?? 0) + (order?.taxTotal ?? 0);
+	const grandTotalWithTip = existingOrderTotal + tipAmount;
 
 	return (
 		<div className="flex flex-col h-full">
@@ -108,13 +156,127 @@ export default function CartPage({ selectedProducts, increaseProductQuantity, de
 					</>
 				)}
 
-				<Button className="w-full" size="lg" loading={placingOrder} onClick={onOrderAction} disabled={selectedProducts.length === 0}>
-					{selectedProducts.length > 0 ? `Place Order — ${formatCurrency(selectionTotal, currency)}` : order?.products?.length ? "Order Placed" : "Cart Empty"}
+				<TipSelector
+					currency={currency}
+					tipPreset={tipPreset}
+					customTip={customTip}
+					tipAmount={tipAmount}
+					onSelectPreset={selectPreset}
+					onCustomTipChange={onCustomTipChange}
+				/>
+
+				{tipAmount > 0 && (
+					<>
+						<div className="flex items-center justify-between text-sm">
+							<span className="text-muted-foreground">Tip for staff</span>
+							<span className="font-medium text-emerald-600 dark:text-emerald-400">+{formatCurrency(tipAmount, currency)}</span>
+						</div>
+						<div className="flex items-center justify-between text-sm font-semibold">
+							<span>Grand total</span>
+							<span className="tabular-nums">{formatCurrency(grandTotalWithTip, currency)}</span>
+						</div>
+					</>
+				)}
+
+				<Button
+					className="w-full"
+					size="lg"
+					loading={placingOrder}
+					onClick={onOrderAction}
+					disabled={selectedProducts.length === 0}>
+					{selectedProducts.length > 0
+						? `Place Order — ${formatCurrency(selectionTotal + tipAmount, currency)}`
+						: order?.products?.length
+							? "Order Placed"
+							: "Cart Empty"}
 				</Button>
 			</div>
 		</div>
 	);
 }
+
+// ─── Tip selector ────────────────────────────────────────────────────────────
+
+interface TipSelectorProps {
+	currency: string;
+	tipPreset: number | "none" | null;
+	customTip: string;
+	tipAmount: number;
+	onSelectPreset: (value: number | "none") => void;
+	onCustomTipChange: (raw: string) => void;
+}
+
+function TipSelector({ currency, tipPreset, customTip, tipAmount, onSelectPreset, onCustomTipChange }: TipSelectorProps) {
+	return (
+		<fieldset className="space-y-2 pt-1">
+			<legend className="text-xs font-medium text-muted-foreground">Add a tip for the staff? (Optional)</legend>
+			<div role="radiogroup" aria-label="Tip amount" className="flex flex-wrap gap-2">
+				{TIP_PRESETS.map((amount) => {
+					const selected = tipPreset === amount;
+					return (
+						<motion.button
+							key={`tip-${amount}`}
+							type="button"
+							role="radio"
+							aria-checked={selected}
+							onClick={() => onSelectPreset(amount)}
+							whileTap={{ scale: 0.94 }}
+							whileHover={{ scale: 1.02 }}
+							transition={{ duration: 0.12, ease: "easeOut" }}
+							className={cn(
+								"min-h-[44px] rounded-full px-4 text-sm font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+								selected ? "bg-primary text-primary-foreground border-primary" : "bg-card text-foreground border-border hover:bg-muted",
+							)}>
+							{currency === "INR" ? "₹" : ""}{amount}
+						</motion.button>
+					);
+				})}
+				<motion.button
+					key="tip-none"
+					type="button"
+					role="radio"
+					aria-checked={tipPreset === "none"}
+					onClick={() => onSelectPreset("none")}
+					whileTap={{ scale: 0.94 }}
+					whileHover={{ scale: 1.02 }}
+					transition={{ duration: 0.12, ease: "easeOut" }}
+					className={cn(
+						"min-h-[44px] rounded-full px-4 text-sm font-medium border transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+						tipPreset === "none" ? "bg-muted text-foreground border-foreground/30" : "bg-card text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+					)}>
+					No tip
+				</motion.button>
+			</div>
+			<div className="flex items-center gap-2 pt-1">
+				<label htmlFor="tip-custom" className="text-xs text-muted-foreground shrink-0">
+					Custom
+				</label>
+				<div className="relative flex-1">
+					<span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none" aria-hidden="true">
+						{currency === "INR" ? "₹" : ""}
+					</span>
+					<input
+						id="tip-custom"
+						type="text"
+						inputMode="decimal"
+						value={customTip}
+						onChange={(e) => onCustomTipChange(e.target.value)}
+						placeholder="0"
+						aria-label="Custom tip amount"
+						className="h-10 w-full rounded-lg border border-input bg-background pl-7 pr-3 text-sm tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-primary"
+					/>
+				</div>
+				{tipAmount > 0 && (
+					<span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium tabular-nums shrink-0" aria-live="polite">
+						+{formatCurrency(tipAmount, currency)}
+					</span>
+				)}
+			</div>
+		</fieldset>
+	);
+}
+
+// ─── Scrollable cart items (unchanged from 1-B) ──────────────────────────────
 
 function ScrollableCartItems({
 	selectedProducts,

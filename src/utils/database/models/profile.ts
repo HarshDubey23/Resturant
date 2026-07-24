@@ -1,3 +1,11 @@
+/** @file Profile model — extended with a tamper-proof `settings` subdocument.
+ *    `noDeleteMode` defaults to true so deletes are blocked at the data layer
+ *    unless an owner explicitly toggles it (which itself appends to the audit
+ *    chain). GST / e-invoice toggles + variance thresholds are also stored here
+ *    so they survive restarts and travel with the tenant.
+ * @phase 2
+ * @audit-finding n/a
+ */
 import mongoose, { type HydratedDocument } from "mongoose";
 import type { TThemeColor } from "xtreme-ui";
 
@@ -25,6 +33,13 @@ const ProfileSchema = new mongoose.Schema<TProfile>(
 		photos: [{ type: String, trim: true }],
 		upiId: { type: String, trim: true },
 		currency: { type: String, default: "INR", enum: ["INR", "USD", "EUR", "GBP", "AED"] },
+		settings: {
+			noDeleteMode: { type: Boolean, default: true },
+			gstEnabled: { type: Boolean, default: false },
+			einvoiceEnabled: { type: Boolean, default: false },
+			varianceThresholdPercent: { type: Number, default: 3 },
+			varianceThresholdRupees: { type: Number, default: 500 },
+		},
 	},
 	{ timestamps: true },
 );
@@ -57,4 +72,11 @@ export type TProfile = HydratedDocument<{
 	categories: Array<string>;
 	upiId?: string;
 	currency: string;
+	settings?: {
+		noDeleteMode: boolean;
+		gstEnabled: boolean;
+		einvoiceEnabled: boolean;
+		varianceThresholdPercent: number;
+		varianceThresholdRupees: number;
+	};
 }>;

@@ -151,6 +151,15 @@ export default function SignupWizard() {
 			});
 			if (!signInRes || signInRes.error) throw new Error("Login failed after signup");
 
+			// Helper: parse JSON and throw with the server's message on non-OK responses.
+			// Every step MUST succeed before we advance — a partial setup leaves the
+			// restaurant in a broken state and the user stranded on the dashboard.
+			const parseAndCheck = async (res: Response, fallback: string) => {
+				const data = await res.json().catch(() => ({}));
+				if (!res.ok) throw new Error((data as { message?: string })?.message || fallback);
+				return data;
+			};
+
 			// 3. Update profile with all wizard data
 			setProgress({ step: 3, message: PROGRESS_MESSAGES[3] });
 			const profileBody: Record<string, unknown> = {
@@ -169,24 +178,26 @@ export default function SignupWizard() {
 				logoUrl: state.logoUrl,
 				brandColor: state.brandColor,
 			};
-			await fetch("/api/admin", {
+			const profileRes = await fetch("/api/admin", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify(profileBody),
 			});
+			await parseAndCheck(profileRes, "Failed to save brand & location. Please retry.");
 
 			// 4. Apply theme
 			setProgress({ step: 4, message: PROGRESS_MESSAGES[4] });
-			await fetch("/api/admin/theme", {
+			const themeRes = await fetch("/api/admin/theme", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ themeColor: { h: state.themeH, s: state.themeS, l: state.themeL } }),
 			});
+			await parseAndCheck(themeRes, "Failed to apply theme. Please retry.");
 
 			// 5. Save AI keys (if any provided)
 			if (state.aiGroq || state.aiCerebras || state.aiGoogle || state.aiSiliconFlow || state.aiHuggingFace) {
 				setProgress({ step: 5, message: PROGRESS_MESSAGES[5] });
-				await fetch("/api/admin/ai-keys", {
+				const aiRes = await fetch("/api/admin/ai-keys", {
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
@@ -197,13 +208,14 @@ export default function SignupWizard() {
 						huggingface: state.aiHuggingFace || undefined,
 					}),
 				});
+				await parseAndCheck(aiRes, "Failed to save AI provider keys. Please retry.");
 			}
 
 			// 6. Add menu items
 			if (state.menuItems.length > 0) {
 				setProgress({ step: 6, message: PROGRESS_MESSAGES[6] });
 				for (const item of state.menuItems) {
-					await fetch("/api/auth/setup-menu", {
+					const menuRes = await fetch("/api/auth/setup-menu", {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
 						body: JSON.stringify({
@@ -214,6 +226,7 @@ export default function SignupWizard() {
 							image: item.image || undefined,
 						}),
 					});
+					await parseAndCheck(menuRes, `Failed to add menu item "${item.name || "unnamed"}". Please retry.`);
 				}
 			}
 
@@ -224,7 +237,7 @@ export default function SignupWizard() {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ restaurantID: state.restaurantID, count: state.tableCount, prefix: state.tablePrefix }),
 			});
-			const tablesData = await tablesRes.json().catch(() => ({}));
+			const tablesData = await parseAndCheck(tablesRes, "Failed to generate table QR codes. Please retry.");
 			const qrCodes = Array.isArray(tablesData?.tables) ? tablesData.tables : [];
 			const restaurantUrl = `${window.location.origin}/${state.restaurantID}`;
 
@@ -234,7 +247,9 @@ export default function SignupWizard() {
 			setProgress(null);
 		} catch (err) {
 			setProgress(null);
-			setErrors({ submit: err instanceof Error ? err.message : "Something went wrong" });
+			const msg = err instanceof Error ? err.message : "Something went wrong";
+			setErrors({ submit: msg });
+			toast.error(msg);
 		} finally {
 			setSubmitting(false);
 		}
@@ -1144,7 +1159,6 @@ function AccountStep({
 	errors: Record<string, string>;
 }) {
 	const [showPwd, setShowPwd] = useState(false);
-	const strength = passwordStrength(state.password);
 
 	return (
 		<div className="grid lg:grid-cols-2 gap-6">
@@ -1167,8 +1181,9 @@ function AccountStep({
 							type={showPwd ? "text" : "password"}
 							value={state.password}
 							onChange={(e) => update("password", e.target.value)}
-							placeholder="Min 6 characters"
+							placeholder="Min 8 characters"
 							className={inputClass(!!errors.password)}
+							autoComplete="new-password"
 						/>
 						<button
 							type="button"
@@ -1177,16 +1192,7 @@ function AccountStep({
 							{showPwd ? "Hide" : "Show"}
 						</button>
 					</div>
-					{state.password && (
-						<div className="mt-2">
-							<div className="flex gap-1">
-								{[0, 1, 2, 3].map((i) => (
-									<div key={i} className={`h-1 flex-1 rounded-full ${i <= strength.score ? strength.color : "bg-muted"}`} />
-								))}
-							</div>
-							<p className="text-xs text-muted-foreground mt-1">Strength: {strength.label}</p>
-						</div>
-					)}
+					<PasswordStrengthMeter password={state.password} />
 				</Field>
 
 				<Field label="Confirm password" required error={errors.passwordConfirm}>
@@ -1499,6 +1505,35 @@ function inputClass(hasError: boolean): string {
 	return `w-full px-4 py-2.5 rounded-xl border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all ${hasError ? "border-destructive" : "border-border"}`;
 }
 
+/* ───────────────────────── Password Strength Meter ───────────────────────── */
+
+/**
+ * Live password strength meter (weak / fair / strong). Reuses the scoring
+ * from `passwordStrength` (0..4) and projects it onto 3 buckets so the user
+ * gets a simple, actionable signal. The validator (`validateStep` n===7)
+ * enforces min 8 chars independently — this meter is purely advisory.
+ */
+function PasswordStrengthMeter({ password }: { password: string }) {
+	if (!password) return null;
+	const strength = passwordStrength(password);
+	// Map 0..4 → weak (0-1) / fair (2) / strong (3-4).
+	const level: "weak" | "fair" | "strong" = strength.score <= 1 ? "weak" : strength.score === 2 ? "fair" : "strong";
+	const filled = level === "weak" ? 1 : level === "fair" ? 2 : 3;
+	const color = level === "weak" ? "bg-red-500" : level === "fair" ? "bg-amber-500" : "bg-emerald-500";
+	return (
+		<div className="mt-2">
+			<div className="flex gap-1">
+				{[0, 1, 2].map((i) => (
+					<div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i < filled ? color : "bg-muted"}`} />
+				))}
+			</div>
+			<p className="text-xs text-muted-foreground mt-1">
+				Strength: <span className="font-medium capitalize">{level}</span>
+			</p>
+		</div>
+	);
+}
+
 /* ───────────────────────── Success Screen ───────────────────────── */
 
 function SuccessScreen({
@@ -1515,19 +1550,19 @@ function SuccessScreen({
 		if (!w) return;
 		const items = success.qrCodes.map((t) => `<div class="qr-card"><img src="${t.qr}" alt="${t.name}" /><div class="name">${t.name}</div></div>`).join("");
 		w.document.write(`<html><head><title>${restaurantName} — Table QR codes</title>
-                        <style>
-                                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; background: #f7f7f7; margin: 0; }
-                                h1 { font-size: 20px; text-align: center; margin: 0 0 8px 0; color: #111; }
-                                .sub { text-align: center; font-size: 12px; color: #666; margin-bottom: 24px; }
-                                .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 700px; margin: 0 auto; }
-                                .qr-card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px; text-align: center; page-break-inside: avoid; }
-                                .qr-card img { width: 200px; height: 200px; object-fit: contain; }
-                                .qr-card .name { font-size: 18px; font-weight: 700; margin-top: 8px; color: #111; }
-                                .brand { text-align: center; font-size: 11px; color: #999; margin-top: 32px; }
-                                @media print { body { background: white; padding: 0; } }
-                        </style></head>
-                        <body><h1>${restaurantName}</h1><div class="sub">Scan to view menu & place order</div><div class="grid">${items}</div>
-                        <div class="brand">Powered by OrderWorder</div></body></html>`);
+			<style>
+				body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 24px; background: #f7f7f7; margin: 0; }
+				h1 { font-size: 20px; text-align: center; margin: 0 0 8px 0; color: #111; }
+				.sub { text-align: center; font-size: 12px; color: #666; margin-bottom: 24px; }
+				.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 700px; margin: 0 auto; }
+				.qr-card { background: white; border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px; text-align: center; page-break-inside: avoid; }
+				.qr-card img { width: 200px; height: 200px; object-fit: contain; }
+				.qr-card .name { font-size: 18px; font-weight: 700; margin-top: 8px; color: #111; }
+				.brand { text-align: center; font-size: 11px; color: #999; margin-top: 32px; }
+				@media print { body { background: white; padding: 0; } }
+			</style></head>
+			<body><h1>${restaurantName}</h1><div class="sub">Scan to view menu & place order</div><div class="grid">${items}</div>
+			<div class="brand">Powered by OrderWorder</div></body></html>`);
 		w.document.close();
 		setTimeout(() => w.print(), 250);
 	};

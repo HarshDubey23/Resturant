@@ -149,13 +149,37 @@ export default function OrderPage() {
 		}
 	}, [category, restaurant, params.set]);
 
+	// FIX (audit D2): debounce URL writes so 300ms of typing collapses into
+	// a single history entry + re-render. Previously every keystroke pushed
+	// a new ?search=… state, trashing browser history and re-rendering the
+	// menu list on each key — visibly janky on slower devices.
 	useEffect(() => {
-		params.set({ search: searchValue });
+		const handle = setTimeout(() => {
+			params.set({ search: searchValue });
+		}, 300);
+		return () => clearTimeout(handle);
 	}, [searchValue, params.set]);
 
+	// FIX (audit E1): guard the cross-restaurant sign-out with a hydration
+	// ref. During SSR/first paint, `restaurant` is undefined (the context
+	// has not yet hydrated from the API), so the previous comparison
+	// `session.data?.restaurant?.username !== restaurant?.username`
+	// evaluated to `"some-username" !== undefined` → true → signOut() fired
+	// on every fresh pageload, booting the customer out before the menu
+	// even rendered. Now we wait until both values are non-null AND the
+	// component has mounted before comparing.
+	const hydrated = useRef(false);
 	useEffect(() => {
+		hydrated.current = true;
+	}, []);
+	useEffect(() => {
+		if (!hydrated.current) return;
 		if (session.data?.role === "customer") return;
-		if (session.status === "authenticated" && session.data?.restaurant?.username !== restaurant?.username) {
+		if (session.status !== "authenticated") return;
+		const sessionRestaurant = session.data?.restaurant?.username;
+		// Only act when both values are defined and genuinely mismatched —
+		// a transient undefined on either side must never trigger signOut.
+		if (sessionRestaurant && restaurant?.username && sessionRestaurant !== restaurant.username) {
 			signOut();
 		}
 	}, [restaurant?.username, session.data?.restaurant?.username, session.status, session.data?.role]);

@@ -2,6 +2,8 @@
 
 import { Building2, Eye, Loader2, Search, Shield, ShieldOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { captureError } from "#utils/helper/sentryWrapper";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -60,15 +62,26 @@ export default function PlatformTenantsPage() {
 	const handleImpersonate = async (accountId: string) => {
 		setImpersonating(accountId);
 		try {
-			await fetch("/api/platform/impersonate", {
+			const res = await fetch("/api/platform/impersonate", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ accountId }),
 			});
-			// In a real app, redirect to dashboard with impersonation cookie
+			// FIX (audit F2): previously this redirected to /dashboard
+			// unconditionally — even when the impersonate API returned a 4xx
+			// or 5xx — landing the operator on a dashboard they had no
+			// impersonation context for. Now we only redirect on res.ok;
+			// on failure we surface the error and stay on the tenants page.
+			if (!res.ok) {
+				const body = await res.json().catch(() => null);
+				const message = (body as { message?: string } | null)?.message ?? `Impersonation failed (HTTP ${res.status})`;
+				toast.error(message);
+				return;
+			}
 			window.location.href = "/dashboard";
 		} catch (err) {
-			console.error("Impersonation failed:", err);
+			captureError(err, { route: "/platform/tenants", context: "impersonate" });
+			toast.error("Network error — could not start impersonation. Please retry.");
 		} finally {
 			setImpersonating(null);
 		}
@@ -77,14 +90,21 @@ export default function PlatformTenantsPage() {
 	const handleSuspend = async (accountId: string, suspended: boolean) => {
 		setSuspending(accountId);
 		try {
-			await fetch("/api/platform/tenants", {
+			const res = await fetch("/api/platform/tenants", {
 				method: "PATCH",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ accountId, suspended }),
 			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => null);
+				const message = (body as { message?: string } | null)?.message ?? `Suspend/unsuspend failed (HTTP ${res.status})`;
+				toast.error(message);
+				return;
+			}
 			await fetchTenants();
 		} catch (err) {
-			console.error("Suspend/unsuspend failed:", err);
+			captureError(err, { route: "/platform/tenants", context: "suspend" });
+			toast.error("Network error — could not update tenant status. Please retry.");
 		} finally {
 			setSuspending(null);
 		}

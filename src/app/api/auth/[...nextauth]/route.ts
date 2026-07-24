@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 
 import { authOptions } from "#utils/helper/authHelper";
 import { rateLimitMiddleware } from "#utils/helper/rateLimit";
+import { captureError } from "#utils/helper/sentryWrapper";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,7 +23,9 @@ async function wrappedHandler(req: Request, ctx: { params: Promise<{ nextauth: s
 		// present and consistent. The body is read once here and re-streamed into
 		// the new request.
 		let reqToPass: Request = req;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// @reason: NextAuth v4 expects a NextRequest with `nextUrl`, but Next.js 16
+		// may pass a plain `Request`. We feature-detect and reconstruct at runtime.
+		// biome-ignore lint/suspicious/noExplicitAny: nextUrl is a NextRequest-only property not present on the Request type
 		if (!(req as any).nextUrl) {
 			try {
 				const host = req.headers.get("host") || "localhost:3050";
@@ -43,8 +46,8 @@ async function wrappedHandler(req: Request, ctx: { params: Promise<{ nextauth: s
 
 		return await handler(reqToPass, ctx);
 	} catch (e) {
-		console.error("Auth route error:", e);
-		return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
+		captureError(e, { route: "[...nextauth]" });
+		return new Response(JSON.stringify({ error: "Auth handler failure" }), { status: 500 });
 	}
 }
 

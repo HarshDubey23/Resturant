@@ -2,6 +2,10 @@
 
 This guide walks you through deploying OrderWorder to production in under 30 minutes. The app is a Next.js 16 app with MongoDB, Redis, and optional Cloudflare R2 for image storage.
 
+> **Canonical source of truth for env vars:** `.env.example` (repo root).
+> **Canonical source of truth for deployment steps:** `docs/DEPLOYMENT_RUNBOOK.md`.
+> This file is a long-form reference; for the current authoritative env-var names, ports, and webhook URLs, defer to the runbook and `.env.example`. Some env-var names and the dev port in older revisions of this doc were wrong (audit findings G-02 through G-05, now corrected below).
+
 ---
 
 ## Architecture Overview
@@ -66,7 +70,7 @@ This guide walks you through deploying OrderWorder to production in under 30 min
 
 3. **Set environment variables** (see `.env.example` below for the full list):
    - In the Vercel project settings → Environment Variables.
-   - Add each variable. Mark `NEXTAUTH_SECRET`, `MONGODB_URI`, `REDIS_URL` as "Production" only.
+   - Add each variable. Mark `NEXTAUTH_SECRET`, `MONGODB_URI`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` as "Production" only.
 
 4. **Deploy.** First build takes ~3 minutes.
 
@@ -146,14 +150,15 @@ For owners who want everything on their own VM (e.g. DigitalOcean droplet, AWS E
    docker compose up -d --build
    ```
 
-5. **Verify:** Visit `http://your-vm-ip:3000/api/health` — should return `{"status":"ok"}`.
+5. **Verify:** Visit `http://your-vm-ip:3050/api/health` — should return `{"status":"ok"}`. (Dev port is **3050** per `package.json` `scripts.dev` = `next dev -p 3050`. In production Vercel/Render manage the port — you do not set it.)
 
 6. **Set up a reverse proxy** (Caddy example):
    ```
    yourdomain.com {
-     reverse_proxy localhost:3000
+     reverse_proxy localhost:3050
    }
    ```
+   (The Dockerfile sets `ENV PORT=3050` and `EXPOSE 3050` — the Next.js standalone server listens on 3050, matching `package.json` `scripts.dev = next dev -p 3050`. The Caddy reverse_proxy must target 3050.)
 
 ---
 
@@ -171,7 +176,12 @@ NEXTAUTH_URL=https://yourdomain.com              # Same as NEXT_PUBLIC_URL
 MONGODB_URI=mongodb+srv://user:pass@cluster.mongodb.net/orderworder
 
 # ─── Redis (OTP + rate limiting) ──────────────────────────────────
-REDIS_URL=rediss://default:password@cluster.upstash.io:6379
+# IMPORTANT: the code reads UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
+# (via @upstash/redis REST client), NOT a `rediss://` connection string.
+# If both are unset, the app falls back to an in-memory LRU cache
+# (single-instance only — multi-instance Vercel deploys MUST configure Upstash).
+UPSTASH_REDIS_REST_URL=https://your-region.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token
 
 # ─── Demo mode ────────────────────────────────────────────────────
 DEMO_MODE=true    # Skips OTP for the "demo" restaurant in non-prod. Set to false in prod.
@@ -182,9 +192,15 @@ R2_ACCESS_KEY_ID=your-r2-access-key
 R2_SECRET_ACCESS_KEY=your-r2-secret
 R2_BUCKET=orderworder
 
-# ─── Optional: WhatsApp (OpenWA) ──────────────────────────────────
-WHATSAPP_BASE_URL=http://your-openwa-instance:3000
-WHATSAPP_API_KEY=your-openwa-api-key
+# ─── Optional: WhatsApp (OpenWA self-hosted OR Meta Cloud API) ─────
+# Path A — self-hosted OpenWA (free; https://github.com/open-wa/wa-automate):
+OPENWA_API_URL=http://your-openwa-instance:8080
+# Path B — Meta WhatsApp Cloud API (recommended for prod):
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_ACCESS_TOKEN=your_permanent_access_token
+# Note: there is no WHATSAPP_BASE_URL or WHATSAPP_API_KEY env var — the code
+# reads only OPENWA_API_URL / WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN
+# (see src/utils/whatsapp/{meta,openwa,index}.ts).
 
 # ─── Optional: Payments ───────────────────────────────────────────
 RAZORPAY_KEY_ID=your-razorpay-key
@@ -206,7 +222,7 @@ SENTRY_DSN=https://...@sentry.io/...
 - `NEXT_PUBLIC_URL` — without this, QR codes point to `localhost`.
 - `NEXTAUTH_SECRET` — without this, sessions don't work.
 - `MONGODB_URI` — without this, nothing works.
-- `REDIS_URL` — without this, customer OTP login fails (but demo mode still works).
+- `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — recommended for multi-instance (Vercel). If unset, the app falls back to an in-memory LRU cache (`src/utils/database/redis-memory.ts`); OTP login still works, but rate limits and OTP cache are per-instance (not shared across Vercel serverless instances). Demo mode works regardless.
 
 ---
 
@@ -289,8 +305,13 @@ Run through this checklist after your first deploy:
 ### "Customer login fails with 'OTP verification is required'"
 **Cause:** Either `DEMO_MODE=false` and Redis isn't configured, OR the customer is trying to log in to a non-demo restaurant without going through OTP.
 **Fix:**
-1. Verify `REDIS_URL` is set and reachable.
-2. Test with: `redis-cli -u $REDIS_URL ping` → should return `PONG`.
+1. Verify `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are set and reachable. (NOT `REDIS_URL` — the code reads only the Upstash REST vars via `src/utils/database/redis.ts:11-12`.) If both are unset, the app falls back to an in-memory cache; OTP login still works in single-instance deploys but is not shared across Vercel serverless instances.
+2. Test the Upstash REST endpoint directly:
+   ```bash
+   curl -H "Authorization: Bearer $UPSTASH_REDIS_REST_TOKEN" \
+        "$UPSTASH_REDIS_REST_URL/ping"
+   # expect: {"result":"PONG"}
+   ```
 3. Check the `/api/auth/send-otp` endpoint directly with curl:
    ```bash
    curl -X POST https://yourdomain.com/api/auth/send-otp \
@@ -336,7 +357,7 @@ Before going live with real customer data:
 - [ ] Stripe/Razorpay webhooks verify signatures (the included routes do this).
 - [ ] HTTPS is enforced (Vercel/Render do this automatically; for self-hosted, use Caddy).
 - [ ] Rate limiting is active (the `/api/auth/send-otp` route enforces 5/hour/phone + 10/hour/IP).
-- [ ] CSP headers are set (see `next.config.ts` for the included policy).
+- [ ] CSP headers are set per-request by `middleware.ts` `buildCsp()` (NOT `next.config.ts` — `next.config.ts` only sets the static `X-Frame-Options`/`X-Content-Type-Options`/`Referrer-Policy`/HSTS/`X-Robots-Tag` headers via its `headers()` config). The middleware generates a fresh nonce per request and applies a strict nonce-based CSP in prod (no `unsafe-inline` in `script-src`).
 - [ ] Sentry is capturing errors (set `SENTRY_DSN`).
 - [ ] Customer phone numbers are verified via OTP before any order is placed.
 

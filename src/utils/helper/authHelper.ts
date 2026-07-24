@@ -6,7 +6,6 @@ import connectDB from "#utils/database/connect";
 import { Accounts, type TAccount } from "#utils/database/models/account";
 import { Customers } from "#utils/database/models/customer";
 
-import { isEmailValid } from "./common";
 import { verifyVerificationToken } from "./otp";
 import { verifyPassword } from "./passwordHelper";
 
@@ -26,36 +25,49 @@ export const authOptions: AuthOptions = {
 				password: { label: "Password", type: "password", placeholder: "Enter your password" },
 			},
 			async authorize(cred) {
-				if (!cred?.username) throw new Error("Restaurant username is required");
-				if (!cred?.password) throw new Error("Password is required");
+				// NextAuth convention: return `null` on any auth failure so the client
+				// receives a generic `CredentialsSignin` error (no info leakage about
+				// whether the account exists). The client surfaces a friendly toast.
+				const identifier = cred?.username?.trim();
+				const password = cred?.password;
+				if (!identifier || !password) return null;
 
 				await connectDB();
-				const credential = isEmailValid(cred?.username) ? { email: cred?.username } : { username: cred?.username };
-				const account = await Accounts.findOne<TAccount>(credential)
+				// Look up by either email OR restaurant slug (username) in a single
+				// query. Both fields are stored lowercase (see AccountSchema), so we
+				// lowercase the identifier to match regardless of user input case.
+				const lower = identifier.toLowerCase();
+				const account = await Accounts.findOne<TAccount>({
+					$or: [{ email: lower }, { username: lower }],
+				})
 					.populate("profile")
 					.populate({ path: "kitchens", match: { username: cred?.kitchen } });
 
-				if (!account) throw new Error("Account not found.");
+				if (!account) return null;
 
 				if (cred?.kitchen) {
-					if (!(await verifyPassword(cred?.password, account?.kitchens?.[0]?.password))) throw new Error("Invalid kitchen credentials");
-
+					const kitchen = account?.kitchens?.[0];
+					if (!kitchen || !(await verifyPassword(password, kitchen?.password))) return null;
 					return {
 						id: account._id.toString(),
-						role: "kitchen",
+						role: "kitchen" as const,
+						name: kitchen?.username ?? account?.profile?.name,
+						username: account?.username,
 						themeColor: account?.profile?.themeColor,
-						_doc: account as unknown as TAccount, // using account as the doc
-					};
-				} else {
-					if (!(await verifyPassword(cred?.password, account?.password))) throw new Error("Invalid admin credentials");
-
-					return {
-						id: account._id.toString(),
-						role: "admin",
-						themeColor: account?.profile?.themeColor,
-						_doc: account as unknown as TAccount,
+						_doc: account as unknown as Record<string, unknown>, // using account as the doc
 					};
 				}
+
+				if (!(await verifyPassword(password, account?.password))) return null;
+
+				return {
+					id: account._id.toString(),
+					role: "admin" as const,
+					name: account?.profile?.name ?? account?.username,
+					username: account?.username,
+					themeColor: account?.profile?.themeColor,
+					_doc: account as unknown as Record<string, unknown>,
+				};
 			},
 		}),
 		CredentialsProvider({
@@ -114,6 +126,7 @@ export const authOptions: AuthOptions = {
 				return {
 					id: customer._id.toString(),
 					role: "customer",
+					name: `${cred?.fname ?? ""} ${cred?.lname ?? ""}`.trim() || undefined,
 					themeColor: account?.profile?.themeColor,
 					_doc: {
 						role: "customer",
@@ -124,8 +137,7 @@ export const authOptions: AuthOptions = {
 							name: account?.profile?.name,
 							avatar: account?.profile?.avatar,
 						},
-						// biome-ignore lint/suspicious/noExplicitAny: next-auth authorize return type is complex
-					} as any,
+					} as Record<string, unknown>,
 				};
 			},
 		}),
@@ -135,15 +147,23 @@ export const authOptions: AuthOptions = {
 		async session({ session, token }) {
 			if (token.expiresAt && Date.now() > (token.expiresAt as number)) {
 				// Return null-like session with explicit expiry flag so downstream
-				// checks (if (!session) / if (!session.role)) correctly reject.
-				return { expires: new Date(0).toISOString() } as Session;
+				// checks (if (!session) / if (!session.user?.role)) correctly reject.
+				return { expires: new Date(0).toISOString(), user: {} } as Session;
 			}
-			session = {
+			// Populate `session.user` with the JWT-attached user fields so call
+			// sites can use the correct NextAuth shape (`session.user.role`).
+			// The token fields are ALSO spread onto the session root for backward
+			// compatibility with the many existing `session.role` / `session.username`
+			// call sites that have not yet been migrated — see worklog Task 1-A.
+			const tokenUser = (token?.user ?? {}) as Record<string, unknown>;
+			return {
 				...session,
-				...token?.user,
+				...tokenUser,
+				user: {
+					...(session.user ?? {}),
+					...tokenUser,
+				},
 			};
-			delete session.user;
-			return session;
 		},
 		async jwt({ token, user, account }) {
 			if (user) {
@@ -151,19 +171,29 @@ export const authOptions: AuthOptions = {
 				token.expiresAt = Date.now() + maxAge * 1000;
 			}
 
+			// `user` is the object returned from `authorize`. It carries an internal
+			// `_doc` field (the populated account / synthetic customer context) that
+			// we project onto `token.user`. `_doc` is typed on the extended User
+			// interface in `next-auth.d.ts` but kept out of the public session shape.
+			// @reason: the jwt callback's `user` param is `User | AdapterUser`; the
+			// cast guarantees `_doc` access regardless of which union member next-auth
+			// resolves at the type level.
+			const u = user as (typeof user) & { _doc?: Record<string, unknown> };
+
 			if (account?.provider === "restaurant") {
 				if (user) {
 					token.user = {
-						role: user?.role,
-						themeColor: user?.themeColor,
-						...pick(user._doc, ["email", "accountActive", "subscriptionActive", "username", "verified", "platformAdmin"]),
-					};
+						role: u?.role,
+						name: u?.name,
+						themeColor: u?.themeColor,
+						...pick(u?._doc ?? {}, ["email", "accountActive", "subscriptionActive", "username", "verified", "platformAdmin"]),
+					} as unknown as typeof token.user;
 				}
 			}
 
 			if (account?.provider === "customer") {
 				if (user) {
-					token.user = user._doc;
+					token.user = (u?._doc ?? {}) as unknown as typeof token.user;
 				}
 			}
 			return token;

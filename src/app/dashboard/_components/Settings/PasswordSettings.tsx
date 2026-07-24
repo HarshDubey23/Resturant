@@ -3,6 +3,7 @@
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { type ChangeEvent, useState } from "react";
 import { toast } from "sonner";
+import { captureError } from "#utils/helper/sentryWrapper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,36 +40,54 @@ export default function PasswordSettings() {
 		}
 
 		setLoading(true);
-		const req = await fetch("/api/admin/password/change", {
-			method: "POST",
-			body: JSON.stringify({ password, newPassword }),
-		});
-		const res = await req.json();
-		if (res?.status === 200) toast.success(res?.message);
-		else toast.error(res?.message);
-
-		setAuthenticated(false);
-		setPassword("");
-		setNewPassword("");
-		setNewConfPassword("");
-		setLoading(false);
+		try {
+			// FIX (audit F1): wrap the network call in try/catch/finally so a
+			// thrown fetch (offline, DNS failure, aborted request) is surfaced
+			// via toast and the loading spinner is always cleared. Previously
+			// a network throw skipped setLoading(false), leaving the button
+			// in its loading state forever.
+			const req = await fetch("/api/admin/password/change", {
+				method: "POST",
+				body: JSON.stringify({ password, newPassword }),
+			});
+			const res = await req.json();
+			if (res?.status === 200) toast.success(res?.message);
+			else toast.error(res?.message);
+		} catch (err) {
+			captureError(err, { route: "/dashboard/settings/password", context: "change" });
+			toast.error("Network error — could not change password. Please retry.");
+		} finally {
+			setAuthenticated(false);
+			setPassword("");
+			setNewPassword("");
+			setNewConfPassword("");
+			setLoading(false);
+		}
 	};
 
 	const onPasswordKeyPress = async () => {
 		if (!authenticated) {
 			setLoading(true);
-			const req = await fetch("/api/admin/password/check", {
-				method: "POST",
-				body: JSON.stringify({ password }),
-			});
-			const res = await req.json();
-			if (res?.status === 200) setAuthenticated(true);
-			else {
-				setPasswordShake(true);
-				setTimeout(() => setPasswordShake(false), 600);
-				toast.error(res?.message);
+			try {
+				// FIX (audit F1): same try/catch/finally guard as onSave — a
+				// network throw must not strand the button in its loading state.
+				const req = await fetch("/api/admin/password/check", {
+					method: "POST",
+					body: JSON.stringify({ password }),
+				});
+				const res = await req.json();
+				if (res?.status === 200) setAuthenticated(true);
+				else {
+					setPasswordShake(true);
+					setTimeout(() => setPasswordShake(false), 600);
+					toast.error(res?.message);
+				}
+			} catch (err) {
+				captureError(err, { route: "/dashboard/settings/password", context: "check" });
+				toast.error("Network error — could not verify password. Please retry.");
+			} finally {
+				setLoading(false);
 			}
-			setLoading(false);
 		}
 	};
 

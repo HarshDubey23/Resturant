@@ -9,6 +9,7 @@ import { Profiles } from "#utils/database/models/profile";
 import { Tables } from "#utils/database/models/table";
 import { authOptions } from "#utils/helper/authHelper";
 import { CatchNextResponse } from "#utils/helper/common";
+import { captureError } from "#utils/helper/sentryWrapper";
 import brewpointData from "./_data/brewpoint/brewpoint";
 import demoData from "./_data/demo/demo";
 import empire from "./_data/empire/empire";
@@ -75,15 +76,30 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET() {
-	await connectDB();
+	// FIX (audit C4): hard-disable this route in production. Demo seeding
+	// overwrites real customer data and must NEVER be reachable in a live
+	// deployment, regardless of how DEMO_MODE is configured.
+	if (process.env.NODE_ENV === "production") {
+		return new Response(JSON.stringify({ message: "Not Found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+	}
+
 	try {
-		if (process.env.DEMO_MODE !== "true") {
-			return new Response(JSON.stringify({ message: "Demo mode is disabled. Set DEMO_MODE=true to seed demo data." }), { status: 403 });
-		}
+		// FIX (audit C4): authenticate the admin FIRST, before checking
+		// DEMO_MODE. Previously the DEMO_MODE check ran before auth, leaking
+		// the demo-mode-enabled/disabled state to unauthenticated callers and
+		// allowing a 403 (demo disabled) to be distinguished from a 401 (not
+		// logged in) — an information-disclosure oracle. Now every
+		// unauthenticated caller gets a 401 with no env-state leak.
 		const session = await getServerSession(authOptions);
 		if (!session || session.role !== "admin") {
-			return new Response(JSON.stringify({ message: "Unauthorized. Admin access required." }), { status: 401 });
+			return new Response(JSON.stringify({ message: "Unauthorized. Admin access required." }), { status: 401, headers: { "Content-Type": "application/json" } });
 		}
+
+		if (process.env.DEMO_MODE !== "true") {
+			return new Response(JSON.stringify({ message: "Demo mode is disabled. Set DEMO_MODE=true to seed demo data." }), { status: 403, headers: { "Content-Type": "application/json" } });
+		}
+
+		await connectDB();
 		const start = performance.now();
 		const deleteResult = await deleteData(["demo", "empire", "brewpoint", "spiceroute"]);
 
@@ -113,7 +129,7 @@ export async function GET() {
 		};
 		return new Response(JSON.stringify(res, null, 4));
 	} catch (err) {
-		console.log(err);
+		captureError(err, { route: "/api/refreshDemoData" });
 		return CatchNextResponse(err);
 	}
 }

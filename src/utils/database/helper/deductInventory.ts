@@ -65,3 +65,25 @@ export async function deductInventoryForOrder(restaurantID: string, products: Ar
 
 	return Array.from(lowStockIds);
 }
+
+/**
+ * Reverse a previous `deductInventoryForOrder` call by re-adding the same
+ * recipe quantities back to stock. Used when an order save/delete fails AFTER
+ * a successful deduction — the deduction helper's internal rollback only
+ * fires on its own errors (insufficient stock mid-loop), not on downstream
+ * failures (e.g. order.save() throwing). Without this, a failed order
+ * placement would permanently reduce inventory.
+ */
+export async function restoreInventoryForOrder(restaurantID: string, products: Array<{ product: mongoose.Types.ObjectId; quantity: number }>): Promise<void> {
+	await connectDB();
+	for (const p of products) {
+		const recipe = await Recipes.findOne({ menuItem: p.product }).lean();
+		if (!recipe) continue;
+		for (const ing of recipe.ingredients) {
+			const restoreQty = ing.quantity * p.quantity;
+			await Inventory.updateOne({ _id: ing.inventoryItem }, { $inc: { currentStock: restoreQty } }).catch((e: unknown) =>
+				captureError(e, { context: "inventory-restore-failed", restaurantID, inventoryItem: ing.inventoryItem?.toString() }),
+			);
+		}
+	}
+}

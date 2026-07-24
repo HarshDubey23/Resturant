@@ -1,0 +1,77 @@
+{
+	"name": "OrderWorder — Shift-Z Shortfall Alert",
+	"active": true,
+	"nodes": [
+		{
+			"parameters": {
+				"httpMethod": "POST",
+				"path": "orderworder/shift-short",
+				"responseMode": "responseNode",
+				"options": {}
+			},
+			"id": "short-webhook",
+			"name": "Shift Short Webhook",
+			"type": "n8n-nodes-base.webhook",
+			"typeVersion": 1.1,
+			"position": [0, 0],
+			"webhookId": "orderworder-shift-short"
+		},
+		{
+			"parameters": {
+				"method": "POST",
+				"url": "https://graph.facebook.com/v18.0/{{ $env.WHATSAPP_PHONE_NUMBER_ID }}/messages",
+				"authentication": "genericCredentialType",
+				"genericAuthType": "whatsappCloudApi",
+				"sendBody": true,
+				"contentType": "json",
+				"specifyBody": "json",
+				"jsonBody": "={\n  \"messaging_product\":\"whatsapp\",\n  \"to\":\"{{ $json.body.ownerPhone }}\",\n  \"type\":\"template\",\n  \"template\":{\n    \"name\":\"shift_short_alert\",\n    \"language\":{\"code\":\"en\"},\n    \"components\":[{\"type\":\"body\",\"parameters\":[\n      {\"type\":\"text\",\"text\":\"{{ $json.body.cashierName }}\"},\n      {\"type\":\"text\",\"text\":\"₹{{ $json.body.expected }}\"},\n      {\"type\":\"text\",\"text\":\"₹{{ $json.body.counted }}\"},\n      {\"type\":\"text\",\"text\":\"₹{{ $json.body.shortfall }}\"}\n    ]}]\n  }\n}",
+				"options": {}
+			},
+			"id": "send-wa",
+			"name": "Alert Owner WhatsApp",
+			"type": "n8n-nodes-base.httpRequest",
+			"typeVersion": 4,
+			"position": [220, 0]
+		},
+		{
+			"parameters": {
+				"respondWith": "json",
+				"responseBody": "={\"status\":\"alert_sent\"}",
+				"options": {}
+			},
+			"id": "respond",
+			"name": "Respond",
+			"type": "n8n-nodes-base.respondToWebhook",
+			"typeVersion": 1,
+			"position": [440, 0]
+		}
+	],
+	"connections": {
+		"Shift Short Webhook": {
+			"main": [
+				[
+					{
+						"node": "Alert Owner WhatsApp",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		},
+		"Alert Owner WhatsApp": {
+			"main": [
+				[
+					{
+						"node": "Respond",
+						"type": "main",
+						"index": 0
+					}
+				]
+			]
+		}
+	},
+	"settings": {
+		"executionOrder": "v1"
+	}
+}

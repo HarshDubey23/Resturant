@@ -5,9 +5,30 @@ import type { TCustomer } from "#utils/database/models/customer";
 import type { TMenu } from "#utils/database/models/menu";
 import { Orders, type TOrder, type TProduct } from "#utils/database/models/order";
 import { authOptions } from "#utils/helper/authHelper";
+import { captureError } from "#utils/helper/sentryWrapper";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+// FIX (audit D1): cap concurrent SSE streams per restaurant so a single
+// restaurant cannot exhaust the server's connection pool. Each stream holds
+// a MongoDB change-stream open, which is expensive — a runaway dashboard
+// with many open tabs would otherwise degrade the whole deployment.
+const MAX_STREAMS_PER_RESTAURANT = 50;
+const activeStreams = new Map<string, number>();
+
+function acquireStream(restaurantID: string): boolean {
+	const current = activeStreams.get(restaurantID) ?? 0;
+	if (current >= MAX_STREAMS_PER_RESTAURANT) return false;
+	activeStreams.set(restaurantID, current + 1);
+	return true;
+}
+
+function releaseStream(restaurantID: string): void {
+	const current = activeStreams.get(restaurantID) ?? 0;
+	if (current <= 1) activeStreams.delete(restaurantID);
+	else activeStreams.set(restaurantID, current - 1);
+}
 
 export async function GET(req: Request) {
 	const session = await getServerSession(authOptions);
@@ -20,13 +41,17 @@ export async function GET(req: Request) {
 		return new Response("Restaurant ID required", { status: 400 });
 	}
 
+	if (!acquireStream(restaurantID)) {
+		return new Response("Too many concurrent live streams for this restaurant. Please close other dashboard tabs and retry.", { status: 429 });
+	}
+
 	await connectDB();
 
 	const encoder = new TextEncoder();
 	let lastEventId = 0;
 	let changeStream: ReturnType<typeof Orders.watch> | null = null;
-	let pollingInterval: ReturnType<typeof setInterval> | null = null;
-	let usePolling = false;
+	let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+	let closed = false;
 
 	const stream = new ReadableStream({
 		async start(controller) {
@@ -35,7 +60,10 @@ export async function GET(req: Request) {
 				const message = `id: ${lastEventId}\nevent: order\ndata: ${JSON.stringify(data)}\n\n`;
 				try {
 					controller.enqueue(encoder.encode(message));
-				} catch {}
+				} catch {
+					// controller already closed — swallow, the abort handler
+					// will tear everything down.
+				}
 			};
 
 			const formatOrders = async () => {
@@ -61,68 +89,100 @@ export async function GET(req: Request) {
 				sendEvent({ type: "orders", data: formattedOrders, timestamp: Date.now() });
 			};
 
-			const pollAndSend = async () => {
+			const sendInitialSnapshot = async () => {
 				try {
 					await formatOrders();
-				} catch {
+				} catch (err) {
+					captureError(err, { route: "/api/order/stream", context: "initial-snapshot" });
 					sendEvent({ type: "error", message: "Failed to fetch orders" });
 				}
 			};
 
-			try {
-				const db = (await import("mongoose")).default.connection.db;
-				if (db) {
-					changeStream = Orders.watch(
-						[
-							{
-								$match: {
-									operationType: { $in: ["insert", "update", "replace"] },
-									"fullDocument.restaurantID": restaurantID,
-								},
-							},
-						],
-						{ fullDocument: "updateLookup" },
-					);
-
-					changeStream.on("change", async () => {
-						try {
-							await formatOrders();
-						} catch {
-							sendEvent({ type: "error", message: "Failed to fetch orders after change" });
-						}
-					});
-
-					changeStream.on("error", (err: Error) => {
-						console.warn("[order/stream] Change Stream error (replica set required?):", err.message);
-						console.warn("[order/stream] Falling back to polling mode at 10s interval");
-						usePolling = true;
-						changeStream?.close();
-						changeStream = null;
-						pollingInterval = setInterval(pollAndSend, 10000);
-					});
-				} else {
-					throw new Error("No MongoDB connection available");
+			const cleanup = () => {
+				if (closed) return;
+				closed = true;
+				if (heartbeatInterval) {
+					clearInterval(heartbeatInterval);
+					heartbeatInterval = null;
 				}
-			} catch (err) {
-				console.warn("[order/stream] Change Stream setup failed:", (err as Error).message);
-				console.warn("[order/stream] Falling back to polling mode at 10s interval");
-				usePolling = true;
-				pollingInterval = setInterval(pollAndSend, 10000);
-			}
-
-			await pollAndSend();
-
-			if (!usePolling && !pollingInterval) {
-				pollingInterval = setInterval(pollAndSend, 10000);
-			}
-
-			req.signal.addEventListener("abort", () => {
-				if (changeStream) changeStream.close();
-				if (pollingInterval) clearInterval(pollingInterval);
+				if (changeStream) {
+					try {
+						changeStream.close();
+					} catch {
+						// change-stream already closed by MongoDB — ignore.
+					}
+					changeStream = null;
+				}
 				try {
 					controller.close();
-				} catch {}
-			});
+				} catch {
+					// controller already closed — ignore.
+				}
+				releaseStream(restaurantID);
+			};
+
+			// FIX (audit D1): use ONE real-time source (change-stream) instead
+			// of running BOTH a change-stream AND a 10s polling interval per
+			// client. The previous setup doubled the MongoDB load per dashboard
+			// tab for zero latency benefit. A 15s heartbeat comment keeps
+			// intermediate proxies (nginx, Cloudflare) from closing the idle
+			// connection.
+			heartbeatInterval = setInterval(() => {
+				try {
+					controller.enqueue(encoder.encode(": heartbeat\n\n"));
+				} catch {
+					cleanup();
+				}
+			}, 15000);
+
+			try {
+				const db = (await import("mongoose")).default.connection.db;
+				if (!db) throw new Error("No MongoDB connection available");
+
+				changeStream = Orders.watch(
+					[
+						{
+							$match: {
+								operationType: { $in: ["insert", "update", "replace"] },
+								"fullDocument.restaurantID": restaurantID,
+							},
+						},
+					],
+					{ fullDocument: "updateLookup" },
+				);
+
+				changeStream.on("change", async () => {
+					try {
+						await formatOrders();
+					} catch (err) {
+						captureError(err, { route: "/api/order/stream", context: "change-event-fetch" });
+						sendEvent({ type: "error", message: "Failed to fetch orders after change" });
+					}
+				});
+
+				changeStream.on("error", (err: Error) => {
+					// Replica set / change-stream unavailable — report and tear
+					// down. The client will reconnect and retry; we do NOT
+					// silently fall back to polling, which previously created
+					// a second long-lived connection per client.
+					captureError(err, { route: "/api/order/stream", context: "change-stream-error" });
+					sendEvent({ type: "error", message: "Live updates unavailable; reconnecting…" });
+					cleanup();
+				});
+			} catch (err) {
+				captureError(err, { route: "/api/order/stream", context: "change-stream-setup" });
+				sendEvent({ type: "error", message: "Live updates unavailable; reconnecting…" });
+				cleanup();
+				return;
+			}
+
+			await sendInitialSnapshot();
+
+			// FIX (audit D1): close the stream on client disconnect. The
+			// previous code had an abort listener but it did not release the
+			// per-restaurant stream slot, so the cap would leak until the
+			// process restarted.
+			req.signal.addEventListener("abort", cleanup);
 		},
 	});
 

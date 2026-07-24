@@ -33,3 +33,14 @@ export async function validateAndRedeemCoupon(code: string, restaurantID: string
 		discountAmount: computeDiscount(coupon, cartTotal),
 	};
 }
+
+/**
+ * Reverse a previous `validateAndRedeemCoupon` call by decrementing
+ * `usedCount`. Used when an order placement fails AFTER the coupon has
+ * already been redeemed (e.g. inventory shortage, order save failure) —
+ * otherwise the customer's coupon usage is consumed but no discount is
+ * ever granted, a direct money-loss bug.
+ */
+export async function rollbackCouponUsage(code: string, restaurantID: string): Promise<void> {
+	await Coupons.updateOne({ restaurantID, code: code.toUpperCase(), usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } });
+}
