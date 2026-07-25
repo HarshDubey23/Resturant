@@ -14,8 +14,14 @@ allowBuilds:
   unrs-resolver: true
 onlyBuiltDependencies:
   - '@parcel/watcher'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@sentry/cli'
+  - '@swc/core'
   - bcrypt
   - es5-ext
+  - esbuild
   - onnxruntime-node
+  - prisma
   - protobufjs
   - sharp
