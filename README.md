@@ -18,13 +18,13 @@
 
 ## ✨ Why OrderWorder?
 
-> *"A restaurant running PetPooja will fire PetPooja and pay me ₹2,500/month — because PetPooja's bulk-delete feature put my competitor under audit, and **OrderWorder cannot delete a single bill.**"*
+Restaurant billing software that lets bills be deleted makes under-reporting sales easy
+and hard to detect. OrderWorder is designed so that a bill, once raised, can't be silently
+removed.
 
-The Indian restaurant POS market was just shaken. **PetPooja — the market leader — was hit with a ₹70,000 crore GST-evasion scandal** because their software shipped with a *bulk-delete* feature that allowed owners to wipe thousands of bills in a single click. Tax authorities found that the deleted bills never made it into GSTR-1 returns. The result: audits, penalties, and criminal cases.
+**How OrderWorder addresses it.** Every bill ever raised is written into a SHA-256 **hash-chain audit log**. Each entry's hash incorporates the previous entry's hash — modify one byte, and every hash downstream breaks. A pre-delete Mongoose hook *throws* on any attempt to remove an `AuditChain` document. The `noDeleteMode` flag is **on by default**. Disabling it requires 2FA, audit-chain entries, and an n8n alert to the owner. The variance report cross-references **theoretical consumption** (from recipe BOMs × bills) against **actual consumption** (from physical counts) and flags the delta in red — *the theft detector*.
 
-**OrderWorder is the antidote.** Every bill ever raised is written into a SHA-256 **hash-chain audit log**. Each entry's hash incorporates the previous entry's hash — modify one byte, and every hash downstream breaks. A pre-delete Mongoose hook *throws* on any attempt to remove an `AuditChain` document. The `noDeleteMode` flag is **on by default**. Disabling it requires 2FA, audit-chain entries, and an n8n alert to the owner. The variance report cross-references **theoretical consumption** (from recipe BOMs × bills) against **actual consumption** (from physical counts) and flags the delta in red — *the theft detector*.
-
-On top of that moat sit **5 killer automation features** that no ₹2,500/month competitor offers: a Commission Saver that captures every QR customer's phone and re-engages them 3 days later with a 10%-off direct-order WhatsApp offer (skipping Zomato/Swiggy's 20–30% cut); an 11 PM owner WhatsApp daily report; a Shift-Z cashier lock that flags cash shortfalls in real time; digital waiter tips via UPI; and a feedback loop that auto-generates refund codes for ≤2★ ratings. All wired through n8n — no vendor lock-in, no proprietary cloud.
+On top of that moat sit **5 killer automation features** built on top of it: a Commission Saver that captures every QR customer's phone and re-engages them 3 days later with a 10%-off direct-order WhatsApp offer (skipping Zomato/Swiggy's 20–30% cut); an 11 PM owner WhatsApp daily report; a Shift-Z cashier lock that flags cash shortfalls in real time; digital waiter tips via UPI; and a feedback loop that auto-generates refund codes for ≤2★ ratings. All wired through n8n — no vendor lock-in, no proprietary cloud.
 
 ![Restaurant Interior](public/food-images/ambiance/restaurant-interior.png)
 
