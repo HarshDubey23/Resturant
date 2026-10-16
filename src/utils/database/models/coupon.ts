@@ -19,7 +19,7 @@ const CouponSchema = new mongoose.Schema<TCoupon>(
 
 CouponSchema.index({ restaurantID: 1, code: 1 }, { unique: true });
 
-export const Coupons = mongoose.models?.coupons ?? mongoose.model<TCoupon>("coupons", CouponSchema);
+export const Coupons = (mongoose.models?.coupons as mongoose.Model<TCoupon> | undefined) ?? mongoose.model<TCoupon>("coupons", CouponSchema);
 
 export type TCoupon = HydratedDocument<{
 	restaurantID: string;

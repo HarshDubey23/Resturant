@@ -1,6 +1,6 @@
-import type { Config } from "jest";
+/** @type {import("jest").Config} */
 
-const config: Config = {
+const config = {
 	preset: "ts-jest",
 	testEnvironment: "node",
 	roots: ["<rootDir>/src"],

@@ -30,7 +30,7 @@ const AggregatorOrderSchema = new mongoose.Schema<TAggregatorOrder>(
 
 AggregatorOrderSchema.index({ restaurantID: 1, createdAt: -1 });
 
-export const AggregatorOrders = mongoose.models?.aggregatorOrders ?? mongoose.model<TAggregatorOrder>("aggregatorOrders", AggregatorOrderSchema);
+export const AggregatorOrders = (mongoose.models?.aggregatorOrders as mongoose.Model<TAggregatorOrder> | undefined) ?? mongoose.model<TAggregatorOrder>("aggregatorOrders", AggregatorOrderSchema);
 
 export type TAggregatorOrder = HydratedDocument<{
 	restaurantID: string;

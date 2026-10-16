@@ -49,7 +49,7 @@ export async function computeTheoreticalConsumption(restaurantID: string, date: 
 	for (const o of orders) {
 		for (const p of o.products ?? []) {
 			if (!p.product) continue;
-			lineItems.push({ menuItem: p.product as ObjectIdLike, qty: p.quantity ?? 0 });
+			lineItems.push({ menuItem: p.product as unknown as ObjectIdLike, qty: p.quantity ?? 0 });
 		}
 	}
 

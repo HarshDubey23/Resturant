@@ -28,7 +28,7 @@ const SupplierSchema = new mongoose.Schema<TSupplier>(
 
 SupplierSchema.index({ restaurantID: 1, name: 1 });
 
-export const Suppliers = mongoose.models?.suppliers ?? mongoose.model<TSupplier>("suppliers", SupplierSchema);
+export const Suppliers = (mongoose.models?.suppliers as mongoose.Model<TSupplier> | undefined) ?? mongoose.model<TSupplier>("suppliers", SupplierSchema);
 
 export type TSupplier = HydratedDocument<{
 	restaurantID: string;

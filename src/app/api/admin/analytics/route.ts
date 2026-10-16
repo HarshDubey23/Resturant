@@ -95,7 +95,7 @@ export const GET = withPermission("analytics.view", async (req, session) => {
 		if (customerIds.length > 0) {
 			const customers = await Customers.find({ _id: { $in: customerIds } }, "fname lname").lean();
 			for (const c of customers) {
-				customerMap[(c as { _id: string })._id.toString()] = c as { fname: string; lname: string };
+				customerMap[String((c as { _id: unknown })._id)] = c as unknown as { fname: string; lname: string };
 			}
 		}
 

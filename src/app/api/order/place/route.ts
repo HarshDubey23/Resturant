@@ -208,7 +208,7 @@ export async function POST(req: Request) {
 				grandTotal: 0,
 			},
 		});
-		newOrder.cartSnapshot.grandTotal = baseTotal - discountAmount;
+		if (newOrder.cartSnapshot) newOrder.cartSnapshot.grandTotal = baseTotal - discountAmount;
 
 		try {
 			await newOrder.save();

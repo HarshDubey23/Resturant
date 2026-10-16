@@ -63,7 +63,7 @@ MenuSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $addToSet: { menus: this._id } });
 });
 
-export const Menus = mongoose.models?.menus ?? mongoose.model<TMenu>("menus", MenuSchema);
+export const Menus = (mongoose.models?.menus as mongoose.Model<TMenu> | undefined) ?? mongoose.model<TMenu>("menus", MenuSchema);
 export type TMenu = HydratedDocument<{
 	name: string;
 	restaurantID: string;

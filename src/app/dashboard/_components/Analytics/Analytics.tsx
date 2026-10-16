@@ -2,8 +2,10 @@
 
 import { Activity, Bot, Calendar, CreditCard, DollarSign, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, type TooltipValueType, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAdmin } from "#components/context/useContext";
+
+type TooltipValueType = number | string | Array<number | string>;
 import { currencySymbol, formatCurrency } from "#utils/helper/currency";
 
 interface AnalyticsData {

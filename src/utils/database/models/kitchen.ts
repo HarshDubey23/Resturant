@@ -26,7 +26,7 @@ KitchenSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $addToSet: { kitchens: this._id } });
 });
 
-export const Kitchens = mongoose.models?.kitchens ?? mongoose.model<TKitchen>("kitchens", KitchenSchema);
+export const Kitchens = (mongoose.models?.kitchens as mongoose.Model<TKitchen> | undefined) ?? mongoose.model<TKitchen>("kitchens", KitchenSchema);
 export type TKitchen = {
 	username: string;
 	password: string;

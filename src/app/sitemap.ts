@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
 		const restaurantEntries: MetadataRoute.Sitemap = restaurants.map((r) => ({
 			url: `${SITE_URL}/${r.restaurantID}`,
-			lastModified: r.updatedAt ?? new Date(),
+			lastModified: (r as { updatedAt?: Date }).updatedAt ?? new Date(),
 			changeFrequency: "daily",
 			priority: 0.8,
 		}));

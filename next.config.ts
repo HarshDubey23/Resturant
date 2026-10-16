@@ -70,7 +70,7 @@ const nextConfig: NextConfig = {
 	},
 	// Type errors are checked separately via `tsc --noEmit` to avoid OOM during build.
 	// Re-enable when running on a host with more memory.
-	typescript: { ignoreBuildErrors: true },
+	typescript: { ignoreBuildErrors: false },
 	turbopack: {
 		rules: {
 			"*.svg": {

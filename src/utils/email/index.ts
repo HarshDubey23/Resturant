@@ -44,7 +44,7 @@ const FROM_ADDRESS = process.env.NODE_ENV === "production" ? "OrderWorder <norep
 export async function sendEmail<T extends EmailTemplate>(params: { to: string; template: T; params: EmailParams[T] }): Promise<{ id: string } | null> {
 	const client = getClient();
 
-	const { render } = await import("react-email");
+	const { render } = await import("@react-email/components");
 	const templateModule = await import(`./templates/${params.template}`);
 
 	const element = templateModule.default(params.params);

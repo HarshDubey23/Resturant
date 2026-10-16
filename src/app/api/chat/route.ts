@@ -87,7 +87,7 @@ export async function POST(req: Request) {
 
 		if (!account) return Response.json({ text: `Restaurant '${name}' not found`, toolResults: [] }, { status: 404 });
 
-		const items: TMenu[] = account?.menus || [];
+		const items = (account?.menus || []) as unknown as TMenu[];
 		const menuMap = new Map(items.map((i) => [i.name.toLowerCase(), i]));
 
 		const budget = await checkDailyBudget(restaurantId);
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
 							language: loyalty.preferences?.language,
 							spiceTolerance: loyalty.preferences?.spiceTolerance,
 							allergens: loyalty.preferences?.allergens,
-							favoriteDishes: loyalty.preferences?.favoriteDishes as Array<{ name: string }> | undefined,
+							favoriteDishes: loyalty.preferences?.favoriteDishes as unknown as Array<{ name: string }> | undefined,
 							notes: loyalty.preferences?.notes,
 						},
 						birthday: loyalty.birthday?.toISOString(),
@@ -136,8 +136,8 @@ export async function POST(req: Request) {
 			messages,
 		});
 
-		const inputTokens = result.usage?.inputTokens ?? 0;
-		const outputTokens = result.usage?.outputTokens ?? 0;
+		const inputTokens = result.usage?.promptTokens ?? 0;
+		const outputTokens = result.usage?.completionTokens ?? 0;
 		const totalTokens = inputTokens + outputTokens;
 		const estimatedCost = totalTokens * 0.000002;
 		recordDailyUsage(restaurantId, totalTokens, estimatedCost).catch(() => {});

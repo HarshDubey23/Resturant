@@ -52,7 +52,7 @@ BillAuditChainSchema.pre("findOneAndDelete", () => {
 	throw new Error(APPEND_ONLY_ERROR);
 });
 
-export const BillAuditChains = mongoose.models?.billAuditChain ?? mongoose.model<TBillAuditChain>("billAuditChain", BillAuditChainSchema);
+export const BillAuditChains = (mongoose.models?.billAuditChain as mongoose.Model<TBillAuditChain> | undefined) ?? mongoose.model<TBillAuditChain>("billAuditChain", BillAuditChainSchema);
 
 export type TBillAuditChain = HydratedDocument<{
 	billId?: mongoose.Types.ObjectId;

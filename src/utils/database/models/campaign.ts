@@ -19,7 +19,7 @@ const CampaignSchema = new mongoose.Schema<TCampaign>(
 
 CampaignSchema.index({ restaurantID: 1, createdAt: -1 });
 
-export const Campaigns = mongoose.models?.campaigns ?? mongoose.model<TCampaign>("campaigns", CampaignSchema);
+export const Campaigns = (mongoose.models?.campaigns as mongoose.Model<TCampaign> | undefined) ?? mongoose.model<TCampaign>("campaigns", CampaignSchema);
 
 export type TCampaign = HydratedDocument<{
 	restaurantID: string;

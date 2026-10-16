@@ -10,8 +10,8 @@ export const weeklyDigest = inngest.createFunction(
 		id: "weekly-digest",
 		name: "Weekly Analytics Digest",
 		retries: 1,
-		triggers: [{ cron: "30 3 * * 1" }],
 	},
+	{ cron: "30 3 * * 1" },
 	async ({ step }) => {
 		await step.run("send-weekly-digest-emails", async () => {
 			await connectDB();
@@ -54,7 +54,7 @@ export const weeklyDigest = inngest.createFunction(
 					});
 
 					// Build digest summary text
-					const profile = account.profile as Record<string, unknown> | null;
+					const profile = account.profile as unknown as Record<string, unknown> | null;
 					const restaurantName = (profile?.name as string) || username;
 
 					const digestHtml = `

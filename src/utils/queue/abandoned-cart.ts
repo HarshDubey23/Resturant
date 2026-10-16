@@ -12,8 +12,8 @@ export const abandonedCartReminder = inngest.createFunction(
 		id: "abandoned-cart-reminder",
 		name: "Abandoned Cart Reminder",
 		retries: 1,
-		triggers: [{ cron: "*/5 * * * *" }],
 	},
+	{ cron: "*/5 * * * *" },
 	async ({ step }) => {
 		await step.run("find-and-remind-abandoned-carts", async () => {
 			await connectDB();

@@ -32,7 +32,7 @@ const ShiftSchema = new mongoose.Schema<TShift>(
 ShiftSchema.index({ restaurantID: 1, status: 1 });
 ShiftSchema.index({ restaurantID: 1, openedAt: -1 });
 
-export const Shifts = mongoose.models?.shifts ?? mongoose.model<TShift>("shifts", ShiftSchema);
+export const Shifts = (mongoose.models?.shifts as mongoose.Model<TShift> | undefined) ?? mongoose.model<TShift>("shifts", ShiftSchema);
 
 export type TShift = HydratedDocument<{
 	restaurantID: string;

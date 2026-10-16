@@ -28,8 +28,8 @@ export const birthdayOffer = inngest.createFunction(
 		id: "birthday-offer",
 		name: "Birthday & Anniversary Offer",
 		retries: 1,
-		triggers: [{ cron: "30 3 * * *" }],
 	},
+	{ cron: "30 3 * * *" },
 	async ({ step }) => {
 		await step.run("send-birthday-anniversary-offers", async () => {
 			await connectDB();
