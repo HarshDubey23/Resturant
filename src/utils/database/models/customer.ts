@@ -38,7 +38,7 @@ CustomerSchema.index({ phone: 1, restaurantID: 1 }, { unique: true });
 // rejected legitimate sign-ups at a second restaurant.
 CustomerSchema.index({ email: 1, restaurantID: 1 }, { unique: true, sparse: true });
 
-export const Customers = mongoose.models?.customers ?? mongoose.model<TCustomer>("customers", CustomerSchema);
+export const Customers = (mongoose.models?.customers as mongoose.Model<TCustomer> | undefined) ?? mongoose.model<TCustomer>("customers", CustomerSchema);
 export type TCustomer = HydratedDocument<{
 	fname: string;
 	lname: string;

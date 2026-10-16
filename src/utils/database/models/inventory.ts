@@ -81,7 +81,7 @@ InventorySchema.method("recomputeCurrentStock", function (): number {
 InventorySchema.set("toJSON", { virtuals: true });
 InventorySchema.set("toObject", { virtuals: true });
 
-export const Inventory = mongoose.models?.inventory ?? mongoose.model<TInventory>("inventory", InventorySchema);
+export const Inventory = (mongoose.models?.inventory as mongoose.Model<TInventory> | undefined) ?? mongoose.model<TInventory>("inventory", InventorySchema);
 
 /**
  * Pure helper that recomputes the running balance for a hydrated inventory

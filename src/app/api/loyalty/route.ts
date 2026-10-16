@@ -71,8 +71,8 @@ export async function POST(req: Request) {
 
 			const order = await Orders.findById(orderId);
 			if (!order) throw { status: 404, message: "Order not found" };
-			if (order.restaurantID !== restaurantID) throw { status: 403, message: "Order belongs to another restaurant" };
-			if (order.customer?.toString() !== customerId) throw { status: 403, message: "Order does not belong to this customer" };
+			if (String(order.restaurantID) !== String(restaurantID)) throw { status: 403, message: "Order belongs to another restaurant" };
+			if (order.customer?.toString() !== String(customerId)) throw { status: 403, message: "Order does not belong to this customer" };
 			if (order.state !== "complete") throw { status: 400, message: "Order is not completed" };
 			if (order.loyaltyAwarded) throw { status: 409, message: "Loyalty points already awarded for this order" };
 

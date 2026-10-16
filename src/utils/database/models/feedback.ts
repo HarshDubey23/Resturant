@@ -33,7 +33,7 @@ FeedbackSchema.index({ restaurantID: 1, order: 1 }, { unique: true });
 FeedbackSchema.index({ restaurantID: 1, customer: 1 });
 FeedbackSchema.index({ restaurantID: 1, refunded: 1, rating: 1 });
 
-export const Feedbacks = mongoose.models?.feedbacks ?? mongoose.model<TFeedback>("feedbacks", FeedbackSchema);
+export const Feedbacks = (mongoose.models?.feedbacks as mongoose.Model<TFeedback> | undefined) ?? mongoose.model<TFeedback>("feedbacks", FeedbackSchema);
 
 export type TFeedback = HydratedDocument<{
 	restaurantID: string;

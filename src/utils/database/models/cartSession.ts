@@ -25,7 +25,7 @@ const CartSessionSchema = new mongoose.Schema<TCartSession>(
 CartSessionSchema.index({ restaurantID: 1, customer: 1 });
 CartSessionSchema.index({ abandonedAt: 1 }, { sparse: true });
 
-export const CartSessions = mongoose.models?.cartSessions ?? mongoose.model<TCartSession>("cartSessions", CartSessionSchema);
+export const CartSessions = (mongoose.models?.cartSessions as mongoose.Model<TCartSession> | undefined) ?? mongoose.model<TCartSession>("cartSessions", CartSessionSchema);
 
 export type TCartSession = HydratedDocument<{
 	restaurantID: string;

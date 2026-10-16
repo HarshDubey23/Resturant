@@ -28,7 +28,7 @@ const SplitPaymentSchema = new mongoose.Schema<TSplitPayment>(
 SplitPaymentSchema.index({ restaurantID: 1, order: 1, createdAt: -1 });
 SplitPaymentSchema.index({ "splits.paymentLinkId": 1 });
 
-export const SplitPayments = mongoose.models?.splitpayments ?? mongoose.model<TSplitPayment>("splitpayments", SplitPaymentSchema);
+export const SplitPayments = (mongoose.models?.splitpayments as mongoose.Model<TSplitPayment> | undefined) ?? mongoose.model<TSplitPayment>("splitpayments", SplitPaymentSchema);
 
 export type TSplit = {
 	name: string;

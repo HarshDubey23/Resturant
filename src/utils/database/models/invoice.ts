@@ -30,7 +30,7 @@ const InvoiceSchema = new mongoose.Schema<TInvoice>(
 	{ timestamps: true },
 );
 
-export const Invoices = mongoose.models?.invoices ?? mongoose.model<TInvoice>("invoices", InvoiceSchema);
+export const Invoices = (mongoose.models?.invoices as mongoose.Model<TInvoice> | undefined) ?? mongoose.model<TInvoice>("invoices", InvoiceSchema);
 
 export type TInvoice = HydratedDocument<{
 	restaurantID: string;

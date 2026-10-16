@@ -37,7 +37,7 @@ const LoyaltySchema = new mongoose.Schema<TLoyalty>(
 
 LoyaltySchema.index({ restaurantID: 1, customer: 1 }, { unique: true });
 
-export const Loyalties = mongoose.models?.loyalties ?? mongoose.model<TLoyalty>("loyalties", LoyaltySchema);
+export const Loyalties = (mongoose.models?.loyalties as mongoose.Model<TLoyalty> | undefined) ?? mongoose.model<TLoyalty>("loyalties", LoyaltySchema);
 
 export type TLoyalty = HydratedDocument<{
 	restaurantID: string;

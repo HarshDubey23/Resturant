@@ -26,7 +26,7 @@ const TipLedgerSchema = new mongoose.Schema<TTipLedger>(
 
 TipLedgerSchema.index({ restaurantID: 1, waiterId: 1 });
 
-export const TipLedgers = mongoose.models?.tipLedger ?? mongoose.model<TTipLedger>("tipLedger", TipLedgerSchema);
+export const TipLedgers = (mongoose.models?.tipLedger as mongoose.Model<TTipLedger> | undefined) ?? mongoose.model<TTipLedger>("tipLedger", TipLedgerSchema);
 
 export type TTipLedger = HydratedDocument<{
 	restaurantID: string;

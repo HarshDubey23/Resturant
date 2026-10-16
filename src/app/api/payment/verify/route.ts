@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 		const claimed = await Orders.findOneAndUpdate({ _id: orderId, loyaltyAwarded: false }, { $set: { loyaltyAwarded: true } }, { new: true });
 		if (claimed?.restaurantID && claimed.customer) {
 			try {
-				const award = await awardPointsAtomic(claimed.restaurantID, claimed.customer, claimed.orderTotal || 0);
+				const award = await awardPointsAtomic(claimed.restaurantID, claimed.customer as unknown as Parameters<typeof awardPointsAtomic>[1], claimed.orderTotal || 0);
 				if (award?.tierUpgraded) {
 					triggerN8nWorkflow("loyalty.tier_upgraded", {
 						customerId: claimed.customer.toString(),

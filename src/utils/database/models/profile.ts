@@ -54,7 +54,7 @@ ProfileSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $set: { profile: this._id } });
 });
 
-export const Profiles = mongoose.models?.profiles ?? mongoose.model<TProfile>("profiles", ProfileSchema);
+export const Profiles = (mongoose.models?.profiles as mongoose.Model<TProfile> | undefined) ?? mongoose.model<TProfile>("profiles", ProfileSchema);
 export type TProfile = HydratedDocument<{
 	name: string;
 	restaurantID: string;

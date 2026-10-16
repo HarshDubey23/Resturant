@@ -57,7 +57,7 @@ export const InvoiceDocument = ({ order, profile, invoiceNumber }: TInvoiceDocPr
                                                 <Text style={styles.companyAddress}>{companyAddress}</Text>
                                                 {profile?.gstNumber && <Text style={styles.companyAddress}>GST: {profile.gstNumber}</Text>}
                                         </View>
-                                        {logo && <Image style={styles.logo} src={logo} alt="" />}
+                                        {logo && <Image style={styles.logo} src={logo} />}
                                 </View>
 
                                 <View style={styles.invoiceDetails}>

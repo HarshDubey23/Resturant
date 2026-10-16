@@ -43,3 +43,8 @@ upload/
 
 # local skill reference files (not part of the application)
 skills/
+
+# local data and agent scratch
+db/*.db
+upload/
+download/

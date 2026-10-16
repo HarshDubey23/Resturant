@@ -79,7 +79,7 @@ OrderSchema.pre("save", function () {
 	}
 });
 
-export const Orders = mongoose.models?.orders ?? mongoose.model<TOrder>("orders", OrderSchema);
+export const Orders = (mongoose.models?.orders as mongoose.Model<TOrder> | undefined) ?? mongoose.model<TOrder>("orders", OrderSchema);
 export type TOrder = HydratedDocument<{
 	restaurantID: string;
 	table: string;

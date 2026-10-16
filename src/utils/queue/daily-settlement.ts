@@ -11,8 +11,8 @@ export const dailySettlement = inngest.createFunction(
 		id: "daily-settlement",
 		name: "Daily Settlement",
 		retries: 3,
-		triggers: [{ cron: "30 18 * * *" }],
 	},
+	{ cron: "30 18 * * *" },
 	async ({ step }) => {
 		await step.run("settle-completed-orders", async () => {
 			await connectDB();
@@ -30,7 +30,7 @@ export const dailySettlement = inngest.createFunction(
 			for (const order of pendingSettlements) {
 				try {
 					const account = await Accounts.findOne({ username: order.restaurantID }).populate("profile");
-					const profile = account?.profile as Record<string, unknown> | null;
+					const profile = account?.profile as unknown as Record<string, unknown> | null;
 					if (!profile?.razorpayFundAccountId) {
 						results.push({ orderId: order._id, status: "skipped", reason: "no_fund_account" });
 						continue;

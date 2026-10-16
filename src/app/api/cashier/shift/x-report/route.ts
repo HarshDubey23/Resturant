@@ -144,7 +144,7 @@ export async function GET(): Promise<Response> {
 
 		return NextResponse.json<XReportResponse>({
 			status: 200,
-			shift,
+			shift: shift as unknown as XReportResponse["shift"],
 			metrics: {
 				cashSales: acc.cashSales,
 				upiSales: acc.upiSales,

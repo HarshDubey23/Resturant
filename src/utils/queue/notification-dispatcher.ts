@@ -67,8 +67,8 @@ export const notificationDispatcher = inngest.createFunction(
 		id: "notification-dispatcher",
 		name: "Notification Dispatcher",
 		retries: 2,
-		triggers: [{ cron: "*/30 * * * * *" }],
 	},
+	{ cron: "* * * * *" },
 	async ({ step }) => {
 		await step.run("process-pending-notifications", async () => {
 			await connectDB();
@@ -101,7 +101,7 @@ export const notificationDispatcher = inngest.createFunction(
 				}
 
 				try {
-					await dispatcher(claimed.toObject());
+					await dispatcher(claimed.toObject() as unknown as Record<string, unknown>);
 					await NotificationQueue.updateOne({ _id: claimed._id }, { $set: { status: "sent", sentAt: new Date() } });
 					results.processed++;
 				} catch (err) {

@@ -27,7 +27,7 @@ const deleteData = async (ids: string[]) => {
 
 	const results = await Promise.all(
 		models.map(async ({ model, name, field = "restaurantID" }) => {
-			const res = await model.deleteMany({ [field]: { $in: ids } });
+			const res = await (model as import("mongoose").Model<unknown>).deleteMany({ [field]: { $in: ids } });
 			return { model: name, ...res };
 		}),
 	);
@@ -57,9 +57,9 @@ const createData = async (props: TDocumentData) => {
 
 	// After menus are saved, push their IDs onto account.menus so the
 	// account payload returned to the client has the full menu list.
-	newAccount.menus = newMenus.map((m) => m._id);
-	newAccount.kitchens = newKitchen.map((k) => k._id);
-	newAccount.tables = newTables.map((t) => t._id);
+	newAccount.menus = newMenus.map((m) => m._id) as unknown as typeof newAccount.menus;
+	newAccount.kitchens = newKitchen.map((k) => k._id) as unknown as typeof newAccount.kitchens;
+	newAccount.tables = newTables.map((t) => t._id) as unknown as typeof newAccount.tables;
 	await newAccount.save();
 
 	return {

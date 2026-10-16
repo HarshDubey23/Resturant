@@ -23,7 +23,7 @@ TableSchema.post("save", async function () {
 	await Accounts.updateOne({ username: this.restaurantID }, { $addToSet: { tables: this._id } });
 });
 
-export const Tables = mongoose.models?.tables ?? mongoose.model<TTable>("tables", TableSchema);
+export const Tables = (mongoose.models?.tables as mongoose.Model<TTable> | undefined) ?? mongoose.model<TTable>("tables", TableSchema);
 export type TTable = {
 	name: string;
 	username: string;

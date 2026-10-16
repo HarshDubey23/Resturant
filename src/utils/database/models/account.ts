@@ -110,7 +110,7 @@ AccountSchema.pre("findOneAndDelete", async function () {
 	await cascadeDeleteRestaurant((doc as { username?: string } | null)?.username);
 });
 
-export const Accounts = mongoose.models?.accounts ?? mongoose.model<TAccount>("accounts", AccountSchema);
+export const Accounts = (mongoose.models?.accounts as mongoose.Model<TAccount> | undefined) ?? mongoose.model<TAccount>("accounts", AccountSchema);
 export type TAccount = HydratedDocument<{
 	username: string;
 	email: string;

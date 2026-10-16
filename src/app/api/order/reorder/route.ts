@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 				orderTotal: addedTotal,
 			});
 		} else {
-			activeOrder.products.push(...productsToAdd);
+			activeOrder.products.push(...(productsToAdd as unknown as typeof activeOrder.products));
 			activeOrder.orderTotal = (activeOrder.orderTotal || 0) + addedTotal;
 			await activeOrder.save();
 		}

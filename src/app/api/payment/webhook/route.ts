@@ -37,7 +37,7 @@ async function finalizePaidOrder(orderId: string, paymentId: string): Promise<vo
 	if (!claimed.restaurantID || !claimed.customer) return;
 
 	try {
-		const award = await awardPointsAtomic(claimed.restaurantID, claimed.customer, claimed.orderTotal || 0);
+		const award = await awardPointsAtomic(claimed.restaurantID, claimed.customer as unknown as Parameters<typeof awardPointsAtomic>[1], claimed.orderTotal || 0);
 		if (award?.tierUpgraded) {
 			triggerN8nWorkflow("loyalty.tier_upgraded", {
 				customerId: claimed.customer.toString(),

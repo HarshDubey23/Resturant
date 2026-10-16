@@ -25,7 +25,7 @@ const NotificationQueueSchema = new mongoose.Schema<TNotificationQueue>(
 NotificationQueueSchema.index({ restaurantID: 1, status: 1, priority: -1, createdAt: 1 });
 NotificationQueueSchema.index({ status: 1, scheduledAt: 1 });
 
-export const NotificationQueue = mongoose.models?.notificationQueue ?? mongoose.model<TNotificationQueue>("notificationQueue", NotificationQueueSchema);
+export const NotificationQueue = (mongoose.models?.notificationQueue as mongoose.Model<TNotificationQueue> | undefined) ?? mongoose.model<TNotificationQueue>("notificationQueue", NotificationQueueSchema);
 
 export type TNotificationQueue = HydratedDocument<{
 	restaurantID: string;

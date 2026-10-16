@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 		}
 
 		const account = await Accounts.findOne({ username: session.username }).populate("profile");
-		const profile = account?.profile as Record<string, unknown> | null;
+		const profile = account?.profile as unknown as Record<string, unknown> | null;
 		if (!profile) throw { status: 404, message: "Restaurant profile not found" };
 
 		let contactId = profile.razorpayContactId as string | undefined;
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 		if (!contactId) {
 			const contact = await createRazorpayContact({
 				name: profile.name as string,
-				email: account?.email,
+				email: account?.email ?? "",
 				contact: (profile.phone as string) || "",
 				type: "vendor",
 			});
